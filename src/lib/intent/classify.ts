@@ -1,10 +1,10 @@
 // Understand step: intent + confidence for one customer message.
 // Primary: Cohere on Bedrock (1 bounded retry on timeout/unavailable). Fallback: local e5-small in-process.
-// The decision rule (act vs ask) is the validation-chosen threshold of whichever model answered
+// The fallback module is imported lazily so a problem loading it (native runtime, model files) can never take
+// down the primary path. The decision rule (act vs ask) is the validation-chosen threshold of whichever model answered
 // (docs/intent-model.md D11, D15, D16). Every step's timing and outcome is returned for the trace.
 import { randomUUID } from "node:crypto";
 import { BedrockError, embedBedrock } from "./embed-bedrock";
-import { embedLocal } from "./embed-local";
 import { classifyEmbedding, MODELS, type IntentLabel, type ModelId, type Scores } from "./model";
 
 export type Attempt = { model: ModelId; ok: boolean; ms: number; error?: string };
@@ -22,6 +22,12 @@ export type IntentResult = {
   attempts: Attempt[];
   totalMs: number;
 };
+
+export class IntentUnavailableError extends Error {
+  constructor(message: string, readonly attempts: Attempt[]) {
+    super(message);
+  }
+}
 
 export async function classifyMessage(text: string, opts: { forceFallback?: boolean } = {}): Promise<IntentResult> {
   const traceId = randomUUID();
@@ -49,8 +55,14 @@ export async function classifyMessage(text: string, opts: { forceFallback?: bool
   if (!embedding) {
     model = "e5small";
     const t0 = performance.now();
-    embedding = await embedLocal(text);
-    attempts.push({ model, ok: true, ms: performance.now() - t0 });
+    try {
+      const { embedLocal } = await import("./embed-local");
+      embedding = await embedLocal(text);
+      attempts.push({ model, ok: true, ms: performance.now() - t0 });
+    } catch (err) {
+      attempts.push({ model, ok: false, ms: performance.now() - t0, error: "fallback_unavailable" });
+      throw new IntentUnavailableError(`primary failed (${fallbackReason}) and fallback failed: ${String(err)}`, attempts);
+    }
   } else {
     fallbackReason = null;
   }

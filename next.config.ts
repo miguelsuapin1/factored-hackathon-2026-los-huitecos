@@ -10,6 +10,12 @@ const nextConfig: NextConfig = {
       "./node_modules/onnxruntime-node/package.json",
       "./node_modules/onnxruntime-node/dist/**/*.js",
       "./node_modules/onnxruntime-node/bin/napi-v*/linux/x64/**",
+      // ...and requires onnxruntime-common's CommonJS build, while the tracer only follows the ESM one
+      "./node_modules/onnxruntime-common/package.json",
+      "./node_modules/onnxruntime-common/dist/cjs/**",
+      // transformers imports sharp, which also picks its native binary by platform at runtime (Vercel = Linux x64)
+      "./node_modules/@img/sharp-linux-x64/**",
+      "./node_modules/@img/sharp-libvips-linux-x64/**",
     ],
   },
   outputFileTracingExcludes: {

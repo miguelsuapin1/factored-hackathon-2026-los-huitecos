@@ -1,10 +1,12 @@
-import { classifyMessage } from "@/lib/intent/classify";
-import { loadLocalModel } from "@/lib/intent/embed-local";
+import { classifyMessage, IntentUnavailableError } from "@/lib/intent/classify";
 
 export const maxDuration = 30;
 
-// Start loading the fallback model when the function boots, so an outage doesn't also pay the cold start.
-void loadLocalModel().catch((err) => console.error(JSON.stringify({ event: "fallback_model_load_failed", error: String(err) })));
+// Warm the fallback model when the function boots, so an outage doesn't also pay its cold start. Imported
+// lazily: if it fails to load, only the fallback is affected and the error is logged.
+void import("@/lib/intent/embed-local")
+  .then((m) => m.loadLocalModel())
+  .catch((err) => console.error(JSON.stringify({ event: "fallback_model_load_failed", error: String(err) })));
 
 const MAX_CHARS = 500;
 
@@ -32,7 +34,8 @@ export async function POST(request: Request) {
     }));
     return Response.json(result);
   } catch (err) {
-    console.error(JSON.stringify({ event: "intent_failed", error: String(err) }));
+    const attempts = err instanceof IntentUnavailableError ? err.attempts : undefined;
+    console.error(JSON.stringify({ event: "intent_failed", error: String(err), attempts }));
     return Response.json({ error: "The intent service is unavailable. Try again shortly." }, { status: 503 });
   }
 }
