@@ -12,6 +12,7 @@ Read first: [docs/phase-1-walkthrough.md](docs/phase-1-walkthrough.md) (what exi
 - **Reply:** Claude Haiku 4.5 (`claude-haiku-4-5`) phrases a code-chosen instruction; code rejects replies with numbers not in the customer message; ES/PT templates as fallback. `PROMPT_VERSION` in compose.ts.
 - **Auth:** demo gate only (`src/proxy.ts`, `src/lib/auth/session.ts`), env `DEMO_USERNAME`, `DEMO_PASSWORD`, `SESSION_SECRET`. Per-customer test login is Phase 2.
 - Tracing: one JSON log line per turn (`event: "turn"`) in Vercel runtime logs. Not persisted yet.
+- **Known gap (start of step 11):** no conversation memory. Each message is classified and answered in isolation, so answers to clarifying questions get misread and details get asked twice. See docs/test-conversations.md TC-01.
 - Not built yet: data cleaning layer (silver/gold), Supabase schema/load, lookup tool, policy engine, verification, handoff, conversation memory, eval harness, agent console.
 
 ## Phase 2 plan (build steps 7–21, see the published build plan)
