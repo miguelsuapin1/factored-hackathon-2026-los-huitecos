@@ -1,0 +1,529 @@
+phrase_id,family,label,alt_label,ambiguous,lang,style,text,source,scenario
+UC01-es-0,UC01,unrecognized_charge,,False,es,formal,"Buenas tardes, en mi estado de cuenta aparece un cargo de 1.250 pesos en una tienda que no conozco.",claude-generated,Unknown merchant on the card statement
+UC01-es-1,UC01,unrecognized_charge,,False,es,casual,"che, me aparece una compra en un comercio que ni idea qué es, yo no fui",claude-generated,Unknown merchant on the card statement
+UC01-es-2,UC01,unrecognized_charge,,False,es,short,cargo desconocido en mi tarjeta,claude-generated,Unknown merchant on the card statement
+UC01-pt-0,UC01,unrecognized_charge,,False,pt,formal,"Boa tarde, apareceu na minha fatura uma compra de 1.250 pesos numa loja que eu não conheço.",claude-generated,Unknown merchant on the card statement
+UC01-pt-1,UC01,unrecognized_charge,,False,pt,casual,"gente, tem uma compra no meu cartão de um lugar que eu nunca fui",claude-generated,Unknown merchant on the card statement
+UC01-pt-2,UC01,unrecognized_charge,,False,pt,short,compra desconhecida no cartao,claude-generated,Unknown merchant on the card statement
+UC02-es-0,UC02,unrecognized_charge,,False,es,formal,"Creo que clonaron mi tarjeta, hay compras en Estados Unidos y yo no he salido del país.",claude-generated,"Suspected cloned card, purchases abroad"
+UC02-es-1,UC02,unrecognized_charge,,False,es,casual,"neta hay cargos en dólares de otro país y yo estoy en Monterrey, alguien usó mi tarjeta",claude-generated,"Suspected cloned card, purchases abroad"
+UC02-es-2,UC02,unrecognized_charge,,False,es,short,me clonaron la tarjeta???,claude-generated,"Suspected cloned card, purchases abroad"
+UC02-pt-0,UC02,unrecognized_charge,,False,pt,formal,"Acho que clonaram meu cartão, tem compras nos Estados Unidos e eu não saí do país.",claude-generated,"Suspected cloned card, purchases abroad"
+UC02-pt-1,UC02,unrecognized_charge,,False,pt,casual,"tem umas compras em dólar lá fora e eu tô aqui, alguém usou meu cartão",claude-generated,"Suspected cloned card, purchases abroad"
+UC02-pt-2,UC02,unrecognized_charge,,False,pt,short,clonaram meu cartao,claude-generated,"Suspected cloned card, purchases abroad"
+UC03-es-0,UC03,unrecognized_charge,,False,es,formal,Tengo varios cargos pequeños de 99 pesos cada mes por una suscripción que nunca contraté.,claude-generated,Recurring subscription never signed up for
+UC03-es-1,UC03,unrecognized_charge,,False,es,casual,"me están cobrando cada mes una plataforma que yo nunca pedí, qué onda",claude-generated,Recurring subscription never signed up for
+UC03-es-2,UC03,unrecognized_charge,,False,es,short,cobros mensuales que no reconozco,claude-generated,Recurring subscription never signed up for
+UC03-pt-0,UC03,unrecognized_charge,,False,pt,formal,Estou com várias cobranças pequenas todo mês de uma assinatura que eu nunca contratei.,claude-generated,Recurring subscription never signed up for
+UC03-pt-1,UC03,unrecognized_charge,,False,pt,casual,todo mês cai uma cobrança de um app que eu nunca assinei,claude-generated,Recurring subscription never signed up for
+UC03-pt-2,UC03,unrecognized_charge,,False,pt,short,cobranca mensal que nao reconheço,claude-generated,Recurring subscription never signed up for
+UC04-es-0,UC04,unrecognized_charge,,False,es,formal,Hay una compra por internet de 3.400 pesos que yo no hice. ¿Qué hago?,claude-generated,Online purchase the customer did not make
+UC04-es-1,UC04,unrecognized_charge,,False,es,casual,"alguien compró online con mi tarjeta, yo no compré nada ayer",claude-generated,Online purchase the customer did not make
+UC04-es-2,UC04,unrecognized_charge,,False,es,short,compra en linea que no hice,claude-generated,Online purchase the customer did not make
+UC04-pt-0,UC04,unrecognized_charge,,False,pt,formal,Tem uma compra pela internet de 3.400 que eu não fiz. O que eu faço?,claude-generated,Online purchase the customer did not make
+UC04-pt-1,UC04,unrecognized_charge,,False,pt,casual,"alguém comprou online com meu cartão, eu não comprei nada ontem",claude-generated,Online purchase the customer did not make
+UC04-pt-2,UC04,unrecognized_charge,,False,pt,short,compra online que nao fiz,claude-generated,Online purchase the customer did not make
+UC05-es-0,UC05,unrecognized_charge,,False,es,formal,En mis movimientos aparece un retiro en cajero de 2.000 pesos que yo no realicé.,claude-generated,ATM withdrawal not made by the customer
+UC05-es-1,UC05,unrecognized_charge,,False,es,casual,me sacaron plata del cajero y yo tengo la tarjeta acá conmigo,claude-generated,ATM withdrawal not made by the customer
+UC05-es-2,UC05,unrecognized_charge,,False,es,short,retiro que no hice,claude-generated,ATM withdrawal not made by the customer
+UC05-pt-0,UC05,unrecognized_charge,,False,pt,formal,No meu extrato aparece um saque de 2.000 no caixa eletrônico que eu não fiz.,claude-generated,ATM withdrawal not made by the customer
+UC05-pt-1,UC05,unrecognized_charge,,False,pt,casual,sacaram dinheiro do caixa e o cartão tá comigo,claude-generated,ATM withdrawal not made by the customer
+UC05-pt-2,UC05,unrecognized_charge,,False,pt,short,saque que eu nao fiz,claude-generated,ATM withdrawal not made by the customer
+UC06-es-0,UC06,unrecognized_charge,,False,es,formal,Salió una transferencia de mi cuenta a una persona que no conozco. Yo no la autoricé.,claude-generated,Outgoing transfer the customer did not authorize
+UC06-es-1,UC06,unrecognized_charge,,False,es,casual,"me vaciaron la cuenta con una transferencia que yo no mandé, ayuda",claude-generated,Outgoing transfer the customer did not authorize
+UC06-es-2,UC06,unrecognized_charge,,False,es,short,transferencia no autorizada,claude-generated,Outgoing transfer the customer did not authorize
+UC06-pt-0,UC06,unrecognized_charge,,False,pt,formal,Saiu uma transferência da minha conta para uma pessoa que eu não conheço. Eu não autorizei.,claude-generated,Outgoing transfer the customer did not authorize
+UC06-pt-1,UC06,unrecognized_charge,,False,pt,casual,"fizeram uma transferência da minha conta que eu não mandei, socorro",claude-generated,Outgoing transfer the customer did not authorize
+UC06-pt-2,UC06,unrecognized_charge,,False,pt,short,transferencia nao autorizada,claude-generated,Outgoing transfer the customer did not authorize
+UC07-es-0,UC07,unrecognized_charge,,False,es,formal,No reconozco un débito que dice 'PAYU*SERV 8841'. No sé de dónde salió.,claude-generated,Cryptic merchant descriptor
+UC07-es-1,UC07,unrecognized_charge,,False,es,casual,"q es este cobro que dice algo como PAYU no se q, yo no compre eso",claude-generated,Cryptic merchant descriptor
+UC07-es-2,UC07,unrecognized_charge,,False,es,short,que es PAYU*SERV en mi cuenta,claude-generated,Cryptic merchant descriptor
+UC07-pt-0,UC07,unrecognized_charge,,False,pt,formal,Não reconheço um débito escrito 'PAYU*SERV 8841'. Não sei de onde veio.,claude-generated,Cryptic merchant descriptor
+UC07-pt-1,UC07,unrecognized_charge,,False,pt,casual,que cobrança é essa escrita PAYU alguma coisa? não comprei isso,claude-generated,Cryptic merchant descriptor
+UC07-pt-2,UC07,unrecognized_charge,,False,pt,short,o que é PAYU*SERV no meu extrato,claude-generated,Cryptic merchant descriptor
+UC08-es-0,UC08,unrecognized_charge,,False,es,formal,Perdí mi tarjeta el fin de semana y ahora veo compras que no son mías.,claude-generated,Lost card followed by purchases
+UC08-es-1,UC08,unrecognized_charge,,False,es,casual,"se me perdió la tarjeta y ya me hicieron compras, no puede ser",claude-generated,Lost card followed by purchases
+UC08-es-2,UC08,unrecognized_charge,,False,es,short,perdi tarjeta y hay compras,claude-generated,Lost card followed by purchases
+UC08-pt-0,UC08,unrecognized_charge,,False,pt,formal,Perdi meu cartão no fim de semana e agora vejo compras que não são minhas.,claude-generated,Lost card followed by purchases
+UC08-pt-1,UC08,unrecognized_charge,,False,pt,casual,"perdi o cartão e já fizeram compra, não acredito",claude-generated,Lost card followed by purchases
+UC08-pt-2,UC08,unrecognized_charge,,False,pt,short,perdi cartao e tem compras,claude-generated,Lost card followed by purchases
+UC09-es-0,UC09,unrecognized_charge,,False,es,formal,"Me llegó una notificación de compra en Córdoba y yo vivo en Bogotá, nunca he estado allá.",claude-generated,Purchase notification from a city never visited
+UC09-es-1,UC09,unrecognized_charge,,False,es,casual,"me llegó un mensaje de una compra en otra ciudad, yo no estaba ahí",claude-generated,Purchase notification from a city never visited
+UC09-es-2,UC09,unrecognized_charge,,False,es,short,notificacion de compra que no es mia,claude-generated,Purchase notification from a city never visited
+UC09-pt-0,UC09,unrecognized_charge,,False,pt,formal,"Recebi uma notificação de compra em Córdoba e eu moro em Bogotá, nunca estive lá.",claude-generated,Purchase notification from a city never visited
+UC09-pt-1,UC09,unrecognized_charge,,False,pt,casual,"chegou mensagem de compra em outra cidade, eu não tava lá",claude-generated,Purchase notification from a city never visited
+UC09-pt-2,UC09,unrecognized_charge,,False,pt,short,notificação de compra que não é minha,claude-generated,Purchase notification from a city never visited
+UC10-es-0,UC10,unrecognized_charge,,False,es,formal,"Deseo presentar un reclamo por una transacción que desconozco, realizada el 12 de marzo por 5.800 pesos.",claude-generated,Formal claim for an unrecognized transaction
+UC10-es-1,UC10,unrecognized_charge,,False,es,casual,quiero reclamar un movimiento que no reconozco del 12 de marzo,claude-generated,Formal claim for an unrecognized transaction
+UC10-es-2,UC10,unrecognized_charge,,False,es,short,reclamo por transaccion desconocida,claude-generated,Formal claim for an unrecognized transaction
+UC10-pt-0,UC10,unrecognized_charge,,False,pt,formal,"Gostaria de registrar uma reclamação por uma transação que desconheço, feita em 12 de março no valor de 5.800.",claude-generated,Formal claim for an unrecognized transaction
+UC10-pt-1,UC10,unrecognized_charge,,False,pt,casual,quero reclamar de uma movimentação que não reconheço do dia 12 de março,claude-generated,Formal claim for an unrecognized transaction
+UC10-pt-2,UC10,unrecognized_charge,,False,pt,short,reclamação transação desconhecida,claude-generated,Formal claim for an unrecognized transaction
+UC11-es-0,UC11,unrecognized_charge,,False,es,formal,"Tengo un charge en mi tarjeta que no reconozco, like I never bought that.",claude-generated,Code-switching with English
+UC11-es-1,UC11,unrecognized_charge,,False,es,casual,"hay un cargo random en mi card, yo no fui",claude-generated,Code-switching with English
+UC11-es-2,UC11,unrecognized_charge,,False,es,short,unknown charge en mi tarjeta,claude-generated,Code-switching with English
+UC11-pt-0,UC11,unrecognized_charge,,False,pt,formal,"Tem um charge no meu cartão que eu não reconheço, I never bought that.",claude-generated,Code-switching with English
+UC11-pt-1,UC11,unrecognized_charge,,False,pt,casual,"apareceu uma compra random no meu card, não fui eu",claude-generated,Code-switching with English
+UC11-pt-2,UC11,unrecognized_charge,,False,pt,short,cobrança estranha que não é minha,claude-generated,Code-switching with English
+WF01-es-0,WF01,wrongful_fee,,False,es,formal,Me cobraron dos veces la misma compra en el supermercado.,claude-generated,Same purchase charged twice
+WF01-es-1,WF01,wrongful_fee,,False,es,casual,en el súper me pasaron la tarjeta dos veces y me aparece doble el cobro,claude-generated,Same purchase charged twice
+WF01-es-2,WF01,wrongful_fee,,False,es,short,cobro duplicado,claude-generated,Same purchase charged twice
+WF01-pt-0,WF01,wrongful_fee,,False,pt,formal,Me cobraram duas vezes a mesma compra no supermercado.,claude-generated,Same purchase charged twice
+WF01-pt-1,WF01,wrongful_fee,,False,pt,casual,passaram meu cartão duas vezes no mercado e cobrou em dobro,claude-generated,Same purchase charged twice
+WF01-pt-2,WF01,wrongful_fee,,False,pt,short,cobrança duplicada,claude-generated,Same purchase charged twice
+WF02-es-0,WF02,wrongful_fee,,False,es,formal,Me cobraron la anualidad de la tarjeta y me dijeron que el primer año era gratis.,claude-generated,Annual fee charged despite a waiver
+WF02-es-1,WF02,wrongful_fee,,False,es,casual,me clavaron la anualidad y me habían dicho que no la iba a pagar,claude-generated,Annual fee charged despite a waiver
+WF02-es-2,WF02,wrongful_fee,,False,es,short,cobro de anualidad indebido,claude-generated,Annual fee charged despite a waiver
+WF02-pt-0,WF02,wrongful_fee,,False,pt,formal,Cobraram a anuidade do cartão e me disseram que o primeiro ano era grátis.,claude-generated,Annual fee charged despite a waiver
+WF02-pt-1,WF02,wrongful_fee,,False,pt,casual,me cobraram anuidade e tinham falado que era isenta,claude-generated,Annual fee charged despite a waiver
+WF02-pt-2,WF02,wrongful_fee,,False,pt,short,anuidade cobrada errado,claude-generated,Annual fee charged despite a waiver
+WF03-es-0,WF03,wrongful_fee,,False,es,formal,¿Por qué me descontaron una comisión por manejo de cuenta si mi cuenta es sin costo?,claude-generated,Account maintenance fee on a free account
+WF03-es-1,WF03,wrongful_fee,,False,es,casual,me están cobrando cuota de manejo y mi cuenta supuestamente es gratis,claude-generated,Account maintenance fee on a free account
+WF03-es-2,WF03,wrongful_fee,,False,es,short,comision de manejo que no debo pagar,claude-generated,Account maintenance fee on a free account
+WF03-pt-0,WF03,wrongful_fee,,False,pt,formal,Por que descontaram uma tarifa de manutenção se minha conta é sem custo?,claude-generated,Account maintenance fee on a free account
+WF03-pt-1,WF03,wrongful_fee,,False,pt,casual,tão me cobrando tarifa da conta e ela era pra ser gratuita,claude-generated,Account maintenance fee on a free account
+WF03-pt-2,WF03,wrongful_fee,,False,pt,short,tarifa de manutenção indevida,claude-generated,Account maintenance fee on a free account
+WF04-es-0,WF04,wrongful_fee,,False,es,formal,Pagué 450 pesos en un restaurante pero en mi cuenta aparece un cargo de 4.500.,claude-generated,Charged a different amount than paid
+WF04-es-1,WF04,wrongful_fee,,False,es,casual,"el cobro salió por diez veces más de lo que pagué, se equivocaron",claude-generated,Charged a different amount than paid
+WF04-es-2,WF04,wrongful_fee,,False,es,short,me cobraron mas de lo que pague,claude-generated,Charged a different amount than paid
+WF04-pt-0,WF04,wrongful_fee,,False,pt,formal,Paguei 450 num restaurante mas na minha conta aparece uma cobrança de 4.500.,claude-generated,Charged a different amount than paid
+WF04-pt-1,WF04,wrongful_fee,,False,pt,casual,a cobrança veio dez vezes maior do que eu paguei,claude-generated,Charged a different amount than paid
+WF04-pt-2,WF04,wrongful_fee,,False,pt,short,cobraram a mais,claude-generated,Charged a different amount than paid
+WF05-es-0,WF05,wrongful_fee,,False,es,formal,Cancelé el gimnasio hace dos meses y me lo siguen cobrando.,claude-generated,Still charged after cancelling a service
+WF05-es-1,WF05,wrongful_fee,,False,es,casual,"ya di de baja el servicio y me siguen debitando todos los meses, vos podés creer",claude-generated,Still charged after cancelling a service
+WF05-es-2,WF05,wrongful_fee,,False,es,short,me cobran algo que ya cancele,claude-generated,Still charged after cancelling a service
+WF05-pt-0,WF05,wrongful_fee,,False,pt,formal,Cancelei a academia há dois meses e continuam me cobrando.,claude-generated,Still charged after cancelling a service
+WF05-pt-1,WF05,wrongful_fee,,False,pt,casual,já cancelei o serviço e continuam debitando todo mês,claude-generated,Still charged after cancelling a service
+WF05-pt-2,WF05,wrongful_fee,,False,pt,short,cobrança depois de cancelar,claude-generated,Still charged after cancelling a service
+WF06-es-0,WF06,wrongful_fee,,False,es,formal,Me cobraron intereses por mora pero pagué la tarjeta antes de la fecha límite.,claude-generated,Late interest despite paying on time
+WF06-es-1,WF06,wrongful_fee,,False,es,casual,"pagué a tiempo y aun así me metieron intereses, no es justo",claude-generated,Late interest despite paying on time
+WF06-es-2,WF06,wrongful_fee,,False,es,short,intereses de mora injustos,claude-generated,Late interest despite paying on time
+WF06-pt-0,WF06,wrongful_fee,,False,pt,formal,Me cobraram juros por atraso mas eu paguei a fatura antes do vencimento.,claude-generated,Late interest despite paying on time
+WF06-pt-1,WF06,wrongful_fee,,False,pt,casual,paguei em dia e mesmo assim cobraram juros,claude-generated,Late interest despite paying on time
+WF06-pt-2,WF06,wrongful_fee,,False,pt,short,juros de atraso indevidos,claude-generated,Late interest despite paying on time
+WF07-es-0,WF07,wrongful_fee,,False,es,formal,"Retiré en un cajero del mismo banco y me cobraron comisión, eso no debería pasar.",claude-generated,Fee for using the bank's own ATM
+WF07-es-1,WF07,wrongful_fee,,False,es,casual,saqué plata en un cajero de ustedes y me cobraron igual la comisión,claude-generated,Fee for using the bank's own ATM
+WF07-es-2,WF07,wrongful_fee,,False,es,short,comision por retiro en cajero propio,claude-generated,Fee for using the bank's own ATM
+WF07-pt-0,WF07,wrongful_fee,,False,pt,formal,"Saquei num caixa do próprio banco e cobraram tarifa, isso não deveria acontecer.",claude-generated,Fee for using the bank's own ATM
+WF07-pt-1,WF07,wrongful_fee,,False,pt,casual,saquei num caixa de vocês e cobraram tarifa do mesmo jeito,claude-generated,Fee for using the bank's own ATM
+WF07-pt-2,WF07,wrongful_fee,,False,pt,short,tarifa de saque no caixa do banco,claude-generated,Fee for using the bank's own ATM
+WF08-es-0,WF08,wrongful_fee,,False,es,formal,Aparece un cobro mensual de un seguro que nunca solicité junto con mi tarjeta.,claude-generated,Insurance premium never requested
+WF08-es-1,WF08,wrongful_fee,,False,es,casual,me metieron un seguro en la tarjeta que yo nunca pedí,claude-generated,Insurance premium never requested
+WF08-es-2,WF08,wrongful_fee,,False,es,short,seguro que no contrate,claude-generated,Insurance premium never requested
+WF08-pt-0,WF08,wrongful_fee,,False,pt,formal,Aparece uma cobrança mensal de um seguro que eu nunca pedi junto com o cartão.,claude-generated,Insurance premium never requested
+WF08-pt-1,WF08,wrongful_fee,,False,pt,casual,enfiaram um seguro no meu cartão que eu nunca pedi,claude-generated,Insurance premium never requested
+WF08-pt-2,WF08,wrongful_fee,,False,pt,short,seguro que nao contratei,claude-generated,Insurance premium never requested
+WF09-es-0,WF09,wrongful_fee,,False,es,formal,Me cobraron una comisión por compra en el extranjero mucho más alta de lo que dice el contrato.,claude-generated,Foreign purchase fee above the contract
+WF09-es-1,WF09,wrongful_fee,,False,es,casual,"la comisión por compras en dólares está altísima, no es lo que me dijeron",claude-generated,Foreign purchase fee above the contract
+WF09-es-2,WF09,wrongful_fee,,False,es,short,comision por conversion excesiva,claude-generated,Foreign purchase fee above the contract
+WF09-pt-0,WF09,wrongful_fee,,False,pt,formal,Cobraram uma taxa por compra no exterior bem maior do que diz o contrato.,claude-generated,Foreign purchase fee above the contract
+WF09-pt-1,WF09,wrongful_fee,,False,pt,casual,"a taxa de compra em dólar veio altíssima, não foi isso que me falaram",claude-generated,Foreign purchase fee above the contract
+WF09-pt-2,WF09,wrongful_fee,,False,pt,short,taxa de conversão cobrada a mais,claude-generated,Foreign purchase fee above the contract
+WF10-es-0,WF10,wrongful_fee,,False,es,formal,Me están cobrando por las notificaciones por SMS y yo nunca activé ese servicio.,claude-generated,SMS alert fee never activated
+WF10-es-1,WF10,wrongful_fee,,False,es,casual,me cobran los mensajitos de alerta y yo no los pedí,claude-generated,SMS alert fee never activated
+WF10-es-2,WF10,wrongful_fee,,False,es,short,cobro por sms,claude-generated,SMS alert fee never activated
+WF10-pt-0,WF10,wrongful_fee,,False,pt,formal,Estão me cobrando pelas notificações por SMS e eu nunca ativei esse serviço.,claude-generated,SMS alert fee never activated
+WF10-pt-1,WF10,wrongful_fee,,False,pt,casual,tão cobrando os alertas por mensagem e eu não pedi,claude-generated,SMS alert fee never activated
+WF10-pt-2,WF10,wrongful_fee,,False,pt,short,cobrança de sms,claude-generated,SMS alert fee never activated
+WF11-es-0,WF11,wrongful_fee,,False,es,formal,Solicito la revisión de un cobro indebido por comisión de transferencia aplicado el 3 de mayo.,claude-generated,Formal review of a wrongful transfer fee
+WF11-es-1,WF11,wrongful_fee,,False,es,casual,quiero que revisen una comisión que me cobraron mal por una transferencia,claude-generated,Formal review of a wrongful transfer fee
+WF11-es-2,WF11,wrongful_fee,,False,es,short,revision de cobro indebido,claude-generated,Formal review of a wrongful transfer fee
+WF11-pt-0,WF11,wrongful_fee,,False,pt,formal,Solicito a revisão de uma cobrança indevida de tarifa de transferência aplicada em 3 de maio.,claude-generated,Formal review of a wrongful transfer fee
+WF11-pt-1,WF11,wrongful_fee,,False,pt,casual,quero que revisem uma tarifa de transferência cobrada errado,claude-generated,Formal review of a wrongful transfer fee
+WF11-pt-2,WF11,wrongful_fee,,False,pt,short,revisão de cobrança indevida,claude-generated,Formal review of a wrongful transfer fee
+TS01-es-0,TS01,transaction_status,,False,es,formal,¿Por qué rechazaron mi tarjeta en la farmacia si tengo saldo?,claude-generated,Card declined despite having funds
+TS01-es-1,TS01,transaction_status,,False,es,casual,"me rebotó la tarjeta en el súper y tengo plata, qué pasó",claude-generated,Card declined despite having funds
+TS01-es-2,TS01,transaction_status,,False,es,short,tarjeta rechazada,claude-generated,Card declined despite having funds
+TS01-pt-0,TS01,transaction_status,,False,pt,formal,Por que meu cartão foi recusado na farmácia se eu tenho saldo?,claude-generated,Card declined despite having funds
+TS01-pt-1,TS01,transaction_status,,False,pt,casual,"meu cartão foi recusado no mercado e eu tenho dinheiro, o que houve",claude-generated,Card declined despite having funds
+TS01-pt-2,TS01,transaction_status,,False,pt,short,cartão recusado,claude-generated,Card declined despite having funds
+TS02-es-0,TS02,transaction_status,,False,es,formal,Hice una transferencia ayer y la otra persona todavía no la recibe.,claude-generated,Outgoing transfer not received
+TS02-es-1,TS02,transaction_status,,False,es,casual,mandé plata ayer y a mi hermana no le llegó nada,claude-generated,Outgoing transfer not received
+TS02-es-2,TS02,transaction_status,,False,es,short,transferencia no llega,claude-generated,Outgoing transfer not received
+TS02-pt-0,TS02,transaction_status,,False,pt,formal,Fiz uma transferência ontem e a outra pessoa ainda não recebeu.,claude-generated,Outgoing transfer not received
+TS02-pt-1,TS02,transaction_status,,False,pt,casual,mandei dinheiro ontem e não chegou pra minha irmã,claude-generated,Outgoing transfer not received
+TS02-pt-2,TS02,transaction_status,,False,pt,short,transferência não chegou,claude-generated,Outgoing transfer not received
+TS03-es-0,TS03,transaction_status,,False,es,formal,Tengo una compra que sigue apareciendo como pendiente desde hace cinco días.,claude-generated,Purchase stuck as pending
+TS03-es-1,TS03,transaction_status,,False,es,casual,"hay una compra que sigue 'en proceso' hace días, cuándo se confirma",claude-generated,Purchase stuck as pending
+TS03-es-2,TS03,transaction_status,,False,es,short,compra pendiente,claude-generated,Purchase stuck as pending
+TS03-pt-0,TS03,transaction_status,,False,pt,formal,Tenho uma compra que continua aparecendo como pendente há cinco dias.,claude-generated,Purchase stuck as pending
+TS03-pt-1,TS03,transaction_status,,False,pt,casual,"tem uma compra 'em processamento' faz dias, quando confirma?",claude-generated,Purchase stuck as pending
+TS03-pt-2,TS03,transaction_status,,False,pt,short,compra pendente,claude-generated,Purchase stuck as pending
+TS04-es-0,TS04,transaction_status,,False,es,formal,"La tienda me dijo que ya hizo la devolución, ¿cuándo se ve reflejada en mi cuenta?",claude-generated,Merchant refund not yet credited
+TS04-es-1,TS04,transaction_status,,False,es,casual,"devolví un producto y la plata no aparece, cuánto tarda",claude-generated,Merchant refund not yet credited
+TS04-es-2,TS04,transaction_status,,False,es,short,estado de devolucion,claude-generated,Merchant refund not yet credited
+TS04-pt-0,TS04,transaction_status,,False,pt,formal,"A loja disse que já fez o estorno, quando aparece na minha conta?",claude-generated,Merchant refund not yet credited
+TS04-pt-1,TS04,transaction_status,,False,pt,casual,"devolvi um produto e o dinheiro não voltou ainda, quanto tempo demora",claude-generated,Merchant refund not yet credited
+TS04-pt-2,TS04,transaction_status,,False,pt,short,status do estorno,claude-generated,Merchant refund not yet credited
+TS05-es-0,TS05,transaction_status,,False,es,formal,"Pagué mi tarjeta de crédito ayer, ¿ya se aplicó el pago?",claude-generated,Credit card payment applied or not
+TS05-es-1,TS05,transaction_status,,False,es,casual,"pagué la tarjeta y sigue saliendo que debo, ya entró el pago?",claude-generated,Credit card payment applied or not
+TS05-es-2,TS05,transaction_status,,False,es,short,se aplico mi pago?,claude-generated,Credit card payment applied or not
+TS05-pt-0,TS05,transaction_status,,False,pt,formal,"Paguei meu cartão de crédito ontem, o pagamento já foi processado?",claude-generated,Credit card payment applied or not
+TS05-pt-1,TS05,transaction_status,,False,pt,casual,"paguei a fatura e ainda aparece que devo, o pagamento entrou?",claude-generated,Credit card payment applied or not
+TS05-pt-2,TS05,transaction_status,,False,pt,short,pagamento caiu?,claude-generated,Credit card payment applied or not
+TS06-es-0,TS06,transaction_status,,False,es,formal,Me depositaron el sueldo esta mañana y todavía no lo veo en mi cuenta.,claude-generated,Salary deposit not showing
+TS06-es-1,TS06,transaction_status,,False,es,casual,mi quincena no aparece y en la empresa dicen que ya la depositaron,claude-generated,Salary deposit not showing
+TS06-es-2,TS06,transaction_status,,False,es,short,deposito no aparece,claude-generated,Salary deposit not showing
+TS06-pt-0,TS06,transaction_status,,False,pt,formal,Depositaram meu salário hoje de manhã e ainda não aparece na conta.,claude-generated,Salary deposit not showing
+TS06-pt-1,TS06,transaction_status,,False,pt,casual,meu salário não caiu e a empresa diz que já pagou,claude-generated,Salary deposit not showing
+TS06-pt-2,TS06,transaction_status,,False,pt,short,depósito não aparece,claude-generated,Salary deposit not showing
+TS07-es-0,TS07,transaction_status,,False,es,formal,"En mis movimientos dice 'reversado' en una compra, ¿qué significa eso?",claude-generated,Meaning of a reversed transaction
+TS07-es-1,TS07,transaction_status,,False,es,casual,"una compra me sale como reversada, eso quiere decir que me devuelven la plata?",claude-generated,Meaning of a reversed transaction
+TS07-es-2,TS07,transaction_status,,False,es,short,que significa reversado,claude-generated,Meaning of a reversed transaction
+TS07-pt-0,TS07,transaction_status,,False,pt,formal,"No meu extrato aparece 'estornado' numa compra, o que isso significa?",claude-generated,Meaning of a reversed transaction
+TS07-pt-1,TS07,transaction_status,,False,pt,casual,"uma compra aparece como estornada, quer dizer que o dinheiro volta?",claude-generated,Meaning of a reversed transaction
+TS07-pt-2,TS07,transaction_status,,False,pt,short,o que é estornado,claude-generated,Meaning of a reversed transaction
+TS08-es-0,TS08,transaction_status,,False,es,formal,"Intenté pagar el servicio de luz desde la app y me salió error, ¿se hizo el pago o no?",claude-generated,Bill payment returned an error
+TS08-es-1,TS08,transaction_status,,False,es,casual,"pagué la luz por la app y me tiró error, se pagó o no?",claude-generated,Bill payment returned an error
+TS08-es-2,TS08,transaction_status,,False,es,short,error al pagar servicio,claude-generated,Bill payment returned an error
+TS08-pt-0,TS08,transaction_status,,False,pt,formal,"Tentei pagar a conta de luz pelo app e deu erro, o pagamento foi feito ou não?",claude-generated,Bill payment returned an error
+TS08-pt-1,TS08,transaction_status,,False,pt,casual,"paguei a luz no app e deu erro, foi pago ou não?",claude-generated,Bill payment returned an error
+TS08-pt-2,TS08,transaction_status,,False,pt,short,erro ao pagar conta,claude-generated,Bill payment returned an error
+TS09-es-0,TS09,transaction_status,,False,es,formal,"No me deja comprar en una página extranjera, siempre me sale transacción rechazada.",claude-generated,Foreign online purchases always declined
+TS09-es-1,TS09,transaction_status,,False,es,casual,intento comprar en una página de afuera y me rechaza la tarjeta siempre,claude-generated,Foreign online purchases always declined
+TS09-es-2,TS09,transaction_status,,False,es,short,no puedo comprar en paginas del exterior,claude-generated,Foreign online purchases always declined
+TS09-pt-0,TS09,transaction_status,,False,pt,formal,"Não consigo comprar num site estrangeiro, sempre dá transação recusada.",claude-generated,Foreign online purchases always declined
+TS09-pt-1,TS09,transaction_status,,False,pt,casual,tento comprar num site de fora e o cartão sempre é recusado,claude-generated,Foreign online purchases always declined
+TS09-pt-2,TS09,transaction_status,,False,pt,short,não consigo comprar em site internacional,claude-generated,Foreign online purchases always declined
+TS10-es-0,TS10,transaction_status,,False,es,formal,"Tengo un monto retenido en mi cuenta por una reserva de hotel, ¿cuándo lo liberan?",claude-generated,Hotel hold not released
+TS10-es-1,TS10,transaction_status,,False,es,casual,"el hotel me retuvo plata y ya me fui, cuándo me la sueltan",claude-generated,Hotel hold not released
+TS10-es-2,TS10,transaction_status,,False,es,short,monto retenido,claude-generated,Hotel hold not released
+TS10-pt-0,TS10,transaction_status,,False,pt,formal,"Tenho um valor bloqueado na conta por uma reserva de hotel, quando vão liberar?",claude-generated,Hotel hold not released
+TS10-pt-1,TS10,transaction_status,,False,pt,casual,"o hotel segurou um valor e eu já fiz checkout, quando libera?",claude-generated,Hotel hold not released
+TS10-pt-2,TS10,transaction_status,,False,pt,short,valor retido,claude-generated,Hotel hold not released
+TS11-es-0,TS11,transaction_status,,False,es,formal,Quisiera conocer el estado de la transferencia internacional que envié el lunes.,claude-generated,Status of an international transfer
+TS11-es-1,TS11,transaction_status,,False,es,casual,cómo va la transferencia al exterior que mandé el lunes?,claude-generated,Status of an international transfer
+TS11-es-2,TS11,transaction_status,,False,es,short,estado transferencia internacional,claude-generated,Status of an international transfer
+TS11-pt-0,TS11,transaction_status,,False,pt,formal,Gostaria de saber o status da transferência internacional que enviei na segunda-feira.,claude-generated,Status of an international transfer
+TS11-pt-1,TS11,transaction_status,,False,pt,casual,como tá a transferência pro exterior que mandei segunda?,claude-generated,Status of an international transfer
+TS11-pt-2,TS11,transaction_status,,False,pt,short,status transferência internacional,claude-generated,Status of an international transfer
+BC01-es-0,BC01,balance_check,,False,es,formal,"Buenos días, ¿me puede decir cuánto tengo en mi cuenta de ahorros?",claude-generated,Savings account balance
+BC01-es-1,BC01,balance_check,,False,es,casual,cuánta plata tengo en la cuenta?,claude-generated,Savings account balance
+BC01-es-2,BC01,balance_check,,False,es,short,saldo ahorros,claude-generated,Savings account balance
+BC01-pt-0,BC01,balance_check,,False,pt,formal,"Bom dia, pode me dizer quanto tenho na minha conta poupança?",claude-generated,Savings account balance
+BC01-pt-1,BC01,balance_check,,False,pt,casual,quanto dinheiro eu tenho na conta?,claude-generated,Savings account balance
+BC01-pt-2,BC01,balance_check,,False,pt,short,saldo poupança,claude-generated,Savings account balance
+BC02-es-0,BC02,balance_check,,False,es,formal,¿Cuánto debo en mi tarjeta de crédito?,claude-generated,Amount owed on the credit card
+BC02-es-1,BC02,balance_check,,False,es,casual,cuánto le debo a la tarjeta este mes?,claude-generated,Amount owed on the credit card
+BC02-es-2,BC02,balance_check,,False,es,short,deuda tarjeta,claude-generated,Amount owed on the credit card
+BC02-pt-0,BC02,balance_check,,False,pt,formal,Quanto eu devo no meu cartão de crédito?,claude-generated,Amount owed on the credit card
+BC02-pt-1,BC02,balance_check,,False,pt,casual,quanto tá minha fatura esse mês?,claude-generated,Amount owed on the credit card
+BC02-pt-2,BC02,balance_check,,False,pt,short,valor da fatura,claude-generated,Amount owed on the credit card
+BC03-es-0,BC03,balance_check,,False,es,formal,¿Cuánto cupo disponible me queda en la tarjeta?,claude-generated,Available credit
+BC03-es-1,BC03,balance_check,,False,es,casual,cuánto me queda para gastar en la tarjeta?,claude-generated,Available credit
+BC03-es-2,BC03,balance_check,,False,es,short,cupo disponible,claude-generated,Available credit
+BC03-pt-0,BC03,balance_check,,False,pt,formal,Quanto de limite disponível eu ainda tenho no cartão?,claude-generated,Available credit
+BC03-pt-1,BC03,balance_check,,False,pt,casual,quanto ainda posso gastar no cartão?,claude-generated,Available credit
+BC03-pt-2,BC03,balance_check,,False,pt,short,limite disponível,claude-generated,Available credit
+BC04-es-0,BC04,balance_check,,False,es,formal,Quiero ver mis últimos movimientos de la cuenta corriente.,claude-generated,Recent account movements
+BC04-es-1,BC04,balance_check,,False,es,casual,me mostrás las últimas compras que hice?,claude-generated,Recent account movements
+BC04-es-2,BC04,balance_check,,False,es,short,ultimos movimientos,claude-generated,Recent account movements
+BC04-pt-0,BC04,balance_check,,False,pt,formal,Quero ver as últimas movimentações da minha conta corrente.,claude-generated,Recent account movements
+BC04-pt-1,BC04,balance_check,,False,pt,casual,me mostra as últimas compras que fiz?,claude-generated,Recent account movements
+BC04-pt-2,BC04,balance_check,,False,pt,short,últimas movimentações,claude-generated,Recent account movements
+BC05-es-0,BC05,balance_check,,False,es,formal,¿Cuál es el pago mínimo y la fecha límite de mi tarjeta?,claude-generated,Minimum payment and due date
+BC05-es-1,BC05,balance_check,,False,es,casual,para cuándo tengo que pagar la tarjeta y cuánto es lo mínimo?,claude-generated,Minimum payment and due date
+BC05-es-2,BC05,balance_check,,False,es,short,pago minimo,claude-generated,Minimum payment and due date
+BC05-pt-0,BC05,balance_check,,False,pt,formal,Qual é o pagamento mínimo e o vencimento do meu cartão?,claude-generated,Minimum payment and due date
+BC05-pt-1,BC05,balance_check,,False,pt,casual,até quando tenho que pagar o cartão e qual o mínimo?,claude-generated,Minimum payment and due date
+BC05-pt-2,BC05,balance_check,,False,pt,short,pagamento mínimo,claude-generated,Minimum payment and due date
+BC06-es-0,BC06,balance_check,,False,es,formal,¿Cuál es el saldo de mi cuenta en dólares?,claude-generated,US dollar account balance
+BC06-es-1,BC06,balance_check,,False,es,casual,cuántos dólares tengo?,claude-generated,US dollar account balance
+BC06-es-2,BC06,balance_check,,False,es,short,saldo usd,claude-generated,US dollar account balance
+BC06-pt-0,BC06,balance_check,,False,pt,formal,Qual é o saldo da minha conta em dólar?,claude-generated,US dollar account balance
+BC06-pt-1,BC06,balance_check,,False,pt,casual,quantos dólares eu tenho?,claude-generated,US dollar account balance
+BC06-pt-2,BC06,balance_check,,False,pt,short,saldo em dólar,claude-generated,US dollar account balance
+BC07-es-0,BC07,balance_check,,False,es,formal,¿Cuánto me falta por pagar de mi préstamo personal?,claude-generated,Remaining personal loan balance
+BC07-es-1,BC07,balance_check,,False,es,casual,cuánto me queda del préstamo?,claude-generated,Remaining personal loan balance
+BC07-es-2,BC07,balance_check,,False,es,short,saldo prestamo,claude-generated,Remaining personal loan balance
+BC07-pt-0,BC07,balance_check,,False,pt,formal,Quanto falta pagar do meu empréstimo pessoal?,claude-generated,Remaining personal loan balance
+BC07-pt-1,BC07,balance_check,,False,pt,casual,quanto ainda devo do empréstimo?,claude-generated,Remaining personal loan balance
+BC07-pt-2,BC07,balance_check,,False,pt,short,saldo do empréstimo,claude-generated,Remaining personal loan balance
+BC08-es-0,BC08,balance_check,,False,es,formal,¿Cuánto he gastado este mes con mi tarjeta de débito?,claude-generated,Spending so far this month
+BC08-es-1,BC08,balance_check,,False,es,casual,cuánto llevo gastado este mes?,claude-generated,Spending so far this month
+BC08-es-2,BC08,balance_check,,False,es,short,gastos del mes,claude-generated,Spending so far this month
+BC08-pt-0,BC08,balance_check,,False,pt,formal,Quanto eu gastei esse mês no cartão de débito?,claude-generated,Spending so far this month
+BC08-pt-1,BC08,balance_check,,False,pt,casual,quanto já gastei esse mês?,claude-generated,Spending so far this month
+BC08-pt-2,BC08,balance_check,,False,pt,short,gastos do mês,claude-generated,Spending so far this month
+BC09-es-0,BC09,balance_check,,False,es,formal,Me gustaría un resumen del saldo de todas mis cuentas.,claude-generated,Summary of all accounts
+BC09-es-1,BC09,balance_check,,False,es,casual,cómo están mis cuentas? dame el resumen,claude-generated,Summary of all accounts
+BC09-es-2,BC09,balance_check,,False,es,short,resumen de cuentas,claude-generated,Summary of all accounts
+BC09-pt-0,BC09,balance_check,,False,pt,formal,Gostaria de um resumo do saldo de todas as minhas contas.,claude-generated,Summary of all accounts
+BC09-pt-1,BC09,balance_check,,False,pt,casual,como estão minhas contas? me dá um resumo,claude-generated,Summary of all accounts
+BC09-pt-2,BC09,balance_check,,False,pt,short,resumo das contas,claude-generated,Summary of all accounts
+BC10-es-0,BC10,balance_check,,False,es,formal,¿Cuánto me han pagado de intereses en mi cuenta de ahorros este año?,claude-generated,Interest earned on savings
+BC10-es-1,BC10,balance_check,,False,es,casual,cuánto me dio de intereses la cuenta?,claude-generated,Interest earned on savings
+BC10-es-2,BC10,balance_check,,False,es,short,intereses ganados,claude-generated,Interest earned on savings
+BC10-pt-0,BC10,balance_check,,False,pt,formal,Quanto rendeu de juros minha poupança esse ano?,claude-generated,Interest earned on savings
+BC10-pt-1,BC10,balance_check,,False,pt,casual,quanto a poupança rendeu?,claude-generated,Interest earned on savings
+BC10-pt-2,BC10,balance_check,,False,pt,short,rendimento da poupança,claude-generated,Interest earned on savings
+BC11-es-0,BC11,balance_check,,False,es,formal,"Necesito checar mi balance, ¿cuánto tengo disponible?",claude-generated,Code-switching balance request
+BC11-es-1,BC11,balance_check,,False,es,casual,quiero checar el balance de mi cuenta porfa,claude-generated,Code-switching balance request
+BC11-es-2,BC11,balance_check,,False,es,short,balance,claude-generated,Code-switching balance request
+BC11-pt-0,BC11,balance_check,,False,pt,formal,"Preciso checar meu saldo, quanto tenho disponível?",claude-generated,Code-switching balance request
+BC11-pt-1,BC11,balance_check,,False,pt,casual,quero ver meu saldo por favor,claude-generated,Code-switching balance request
+BC11-pt-2,BC11,balance_check,,False,pt,short,saldo,claude-generated,Code-switching balance request
+MM01-es-0,MM01,move_money,,False,es,formal,Quiero que me devuelvan mi dinero ahora mismo.,claude-generated,Demand for an immediate refund
+MM01-es-1,MM01,move_money,,False,es,casual,"devuélvanme la plata ya, no quiero esperar",claude-generated,Demand for an immediate refund
+MM01-es-2,MM01,move_money,,False,es,short,reembolso inmediato,claude-generated,Demand for an immediate refund
+MM01-pt-0,MM01,move_money,,False,pt,formal,Quero meu dinheiro de volta agora mesmo.,claude-generated,Demand for an immediate refund
+MM01-pt-1,MM01,move_money,,False,pt,casual,"devolvam meu dinheiro já, não quero esperar",claude-generated,Demand for an immediate refund
+MM01-pt-2,MM01,move_money,,False,pt,short,reembolso imediato,claude-generated,Demand for an immediate refund
+MM02-es-0,MM02,move_money,,False,es,formal,"Reversen el cargo de 800 pesos de hoy, por favor.",claude-generated,Reverse a specific charge now
+MM02-es-1,MM02,move_money,,False,es,casual,cancelame ese cobro de 800 ya mismo,claude-generated,Reverse a specific charge now
+MM02-es-2,MM02,move_money,,False,es,short,reversar cargo ahora,claude-generated,Reverse a specific charge now
+MM02-pt-0,MM02,move_money,,False,pt,formal,"Estornem a cobrança de 800 de hoje, por favor.",claude-generated,Reverse a specific charge now
+MM02-pt-1,MM02,move_money,,False,pt,casual,cancela essa cobrança de 800 agora,claude-generated,Reverse a specific charge now
+MM02-pt-2,MM02,move_money,,False,pt,short,estornar cobrança agora,claude-generated,Reverse a specific charge now
+MM03-es-0,MM03,move_money,,False,es,formal,Transfiere 5.000 pesos de mi cuenta de ahorros a la de mi mamá.,claude-generated,Transfer to a family member
+MM03-es-1,MM03,move_money,,False,es,casual,mandale 5 lucas a mi vieja de la caja de ahorro,claude-generated,Transfer to a family member
+MM03-es-2,MM03,move_money,,False,es,short,transferir 5000,claude-generated,Transfer to a family member
+MM03-pt-0,MM03,move_money,,False,pt,formal,Transfere 5.000 da minha poupança pra conta da minha mãe.,claude-generated,Transfer to a family member
+MM03-pt-1,MM03,move_money,,False,pt,casual,manda 5 mil pra minha mãe da poupança,claude-generated,Transfer to a family member
+MM03-pt-2,MM03,move_money,,False,pt,short,transferir 5 mil,claude-generated,Transfer to a family member
+MM04-es-0,MM04,move_money,,False,es,formal,Exijo que me abonen una compensación en mi cuenta por las molestias.,claude-generated,Demand for compensation credited
+MM04-es-1,MM04,move_money,,False,es,casual,me tienen que depositar algo por todo este lío,claude-generated,Demand for compensation credited
+MM04-es-2,MM04,move_money,,False,es,short,quiero compensacion,claude-generated,Demand for compensation credited
+MM04-pt-0,MM04,move_money,,False,pt,formal,Exijo que depositem uma compensação na minha conta pelo transtorno.,claude-generated,Demand for compensation credited
+MM04-pt-1,MM04,move_money,,False,pt,casual,vocês têm que me depositar alguma coisa por essa confusão,claude-generated,Demand for compensation credited
+MM04-pt-2,MM04,move_money,,False,pt,short,quero compensação,claude-generated,Demand for compensation credited
+MM05-es-0,MM05,move_money,,False,es,formal,Paga mi tarjeta de crédito con el dinero de mi cuenta de ahorros.,claude-generated,Pay the card from savings
+MM05-es-1,MM05,move_money,,False,es,casual,pagá la tarjeta con lo que tengo en la caja de ahorro,claude-generated,Pay the card from savings
+MM05-es-2,MM05,move_money,,False,es,short,pagar tarjeta desde ahorros,claude-generated,Pay the card from savings
+MM05-pt-0,MM05,move_money,,False,pt,formal,Paga meu cartão de crédito com o dinheiro da poupança.,claude-generated,Pay the card from savings
+MM05-pt-1,MM05,move_money,,False,pt,casual,paga a fatura com o que tenho na poupança,claude-generated,Pay the card from savings
+MM05-pt-2,MM05,move_money,,False,pt,short,pagar fatura com poupança,claude-generated,Pay the card from savings
+MM06-es-0,MM06,move_money,,False,es,formal,Liberen ahora el monto retenido y pásenlo a mi cuenta.,claude-generated,Release a held amount into the account
+MM06-es-1,MM06,move_money,,False,es,casual,suelten ya la plata retenida y pásenmela,claude-generated,Release a held amount into the account
+MM06-es-2,MM06,move_money,,False,es,short,liberar dinero retenido ya,claude-generated,Release a held amount into the account
+MM06-pt-0,MM06,move_money,,False,pt,formal,Liberem agora o valor retido e passem pra minha conta.,claude-generated,Release a held amount into the account
+MM06-pt-1,MM06,move_money,,False,pt,casual,soltem já o dinheiro retido e passem pra mim,claude-generated,Release a held amount into the account
+MM06-pt-2,MM06,move_money,,False,pt,short,liberar valor retido já,claude-generated,Release a held amount into the account
+MM07-es-0,MM07,move_money,,False,es,formal,Solicito que se efectúe de inmediato el contracargo y se me acredite el importe.,claude-generated,"Immediate chargeback, formal"
+MM07-es-1,MM07,move_money,,False,es,casual,"quiero el contracargo hoy mismo, acredítenme la plata",claude-generated,"Immediate chargeback, formal"
+MM07-es-2,MM07,move_money,,False,es,short,contracargo inmediato,claude-generated,"Immediate chargeback, formal"
+MM07-pt-0,MM07,move_money,,False,pt,formal,Solicito que o chargeback seja feito imediatamente e o valor creditado na minha conta.,claude-generated,"Immediate chargeback, formal"
+MM07-pt-1,MM07,move_money,,False,pt,casual,"quero o chargeback hoje, credita o dinheiro",claude-generated,"Immediate chargeback, formal"
+MM07-pt-2,MM07,move_money,,False,pt,short,chargeback imediato,claude-generated,"Immediate chargeback, formal"
+MM08-es-0,MM08,move_money,,False,es,formal,Págale 1.200 pesos al proveedor de internet desde mi cuenta.,claude-generated,Pay a bill to a provider
+MM08-es-1,MM08,move_money,,False,es,casual,"pagame el internet, son 1200",claude-generated,Pay a bill to a provider
+MM08-es-2,MM08,move_money,,False,es,short,pagar internet 1200,claude-generated,Pay a bill to a provider
+MM08-pt-0,MM08,move_money,,False,pt,formal,Paga 1.200 pro provedor de internet da minha conta.,claude-generated,Pay a bill to a provider
+MM08-pt-1,MM08,move_money,,False,pt,casual,"paga minha internet, são 1200",claude-generated,Pay a bill to a provider
+MM08-pt-2,MM08,move_money,,False,pt,short,pagar internet 1.200,claude-generated,Pay a bill to a provider
+MM09-es-0,MM09,move_money,,False,es,formal,"Me equivoqué de cuenta en una transferencia, devuélvanla a mi cuenta ya.",claude-generated,Undo a transfer sent to the wrong account
+MM09-es-1,MM09,move_money,,False,es,casual,"le mandé plata a quien no era, regrésenmela ya",claude-generated,Undo a transfer sent to the wrong account
+MM09-es-2,MM09,move_money,,False,es,short,cancelar transferencia equivocada,claude-generated,Undo a transfer sent to the wrong account
+MM09-pt-0,MM09,move_money,,False,pt,formal,"Errei a conta numa transferência, devolvam pra minha conta agora.",claude-generated,Undo a transfer sent to the wrong account
+MM09-pt-1,MM09,move_money,,False,pt,casual,"mandei dinheiro pra pessoa errada, devolvam já",claude-generated,Undo a transfer sent to the wrong account
+MM09-pt-2,MM09,move_money,,False,pt,short,cancelar transferência errada,claude-generated,Undo a transfer sent to the wrong account
+MM10-es-0,MM10,move_money,,False,es,formal,Deposítenme un adelanto de 10.000 pesos de mi tarjeta en la cuenta.,claude-generated,Cash advance into the account
+MM10-es-1,MM10,move_money,,False,es,casual,pásame un avance de la tarjeta a la cuenta,claude-generated,Cash advance into the account
+MM10-es-2,MM10,move_money,,False,es,short,avance en efectivo,claude-generated,Cash advance into the account
+MM10-pt-0,MM10,move_money,,False,pt,formal,Depositem um adiantamento de 10.000 do cartão na minha conta.,claude-generated,Cash advance into the account
+MM10-pt-1,MM10,move_money,,False,pt,casual,passa um saque do cartão pra minha conta,claude-generated,Cash advance into the account
+MM10-pt-2,MM10,move_money,,False,pt,short,saque do cartão,claude-generated,Cash advance into the account
+MM11-es-0,MM11,move_money,,False,es,formal,Devuélvanme los 300 pesos ahora.,claude-generated,Short refund demand with an amount
+MM11-es-1,MM11,move_money,,False,es,casual,regresame los 300 ya porfa,claude-generated,Short refund demand with an amount
+MM11-es-2,MM11,move_money,,False,es,short,reembolsar 300,claude-generated,Short refund demand with an amount
+MM11-pt-0,MM11,move_money,,False,pt,formal,Devolvam os 300 agora.,claude-generated,Short refund demand with an amount
+MM11-pt-1,MM11,move_money,,False,pt,casual,devolve os 300 já pfv,claude-generated,Short refund demand with an amount
+MM11-pt-2,MM11,move_money,,False,pt,short,reembolso 300,claude-generated,Short refund demand with an amount
+HA01-es-0,HA01,human_agent,,False,es,formal,Quiero hablar con un asesor.,claude-generated,Ask for an advisor
+HA01-es-1,HA01,human_agent,,False,es,casual,pasame con una persona de verdad,claude-generated,Ask for an advisor
+HA01-es-2,HA01,human_agent,,False,es,short,asesor humano,claude-generated,Ask for an advisor
+HA01-pt-0,HA01,human_agent,,False,pt,formal,Quero falar com um atendente.,claude-generated,Ask for an advisor
+HA01-pt-1,HA01,human_agent,,False,pt,casual,me passa pra uma pessoa de verdade,claude-generated,Ask for an advisor
+HA01-pt-2,HA01,human_agent,,False,pt,short,atendente humano,claude-generated,Ask for an advisor
+HA02-es-0,HA02,human_agent,,False,es,formal,"¿Me pueden llamar por teléfono, por favor?",claude-generated,Ask for a phone call
+HA02-es-1,HA02,human_agent,,False,es,casual,"llámenme mejor, no quiero escribir",claude-generated,Ask for a phone call
+HA02-es-2,HA02,human_agent,,False,es,short,llamada,claude-generated,Ask for a phone call
+HA02-pt-0,HA02,human_agent,,False,pt,formal,"Vocês podem me ligar, por favor?",claude-generated,Ask for a phone call
+HA02-pt-1,HA02,human_agent,,False,pt,casual,"me liga, não quero digitar",claude-generated,Ask for a phone call
+HA02-pt-2,HA02,human_agent,,False,pt,short,ligação,claude-generated,Ask for a phone call
+HA03-es-0,HA03,human_agent,,False,es,formal,"No quiero hablar con un robot, necesito una persona.",claude-generated,Refuses to talk to a bot
+HA03-es-1,HA03,human_agent,,False,es,casual,"ya me cansé del bot, quiero un humano",claude-generated,Refuses to talk to a bot
+HA03-es-2,HA03,human_agent,,False,es,short,no bot,claude-generated,Refuses to talk to a bot
+HA03-pt-0,HA03,human_agent,,False,pt,formal,"Não quero falar com robô, preciso de uma pessoa.",claude-generated,Refuses to talk to a bot
+HA03-pt-1,HA03,human_agent,,False,pt,casual,"cansei desse robô, quero um humano",claude-generated,Refuses to talk to a bot
+HA03-pt-2,HA03,human_agent,,False,pt,short,sem robô,claude-generated,Refuses to talk to a bot
+HA04-es-0,HA04,human_agent,,False,es,formal,Necesito hablar con un supervisor.,claude-generated,Ask for a supervisor
+HA04-es-1,HA04,human_agent,,False,es,casual,comunicame con tu jefe,claude-generated,Ask for a supervisor
+HA04-es-2,HA04,human_agent,,False,es,short,supervisor,claude-generated,Ask for a supervisor
+HA04-pt-0,HA04,human_agent,,False,pt,formal,Preciso falar com um supervisor.,claude-generated,Ask for a supervisor
+HA04-pt-1,HA04,human_agent,,False,pt,casual,me passa pro seu chefe,claude-generated,Ask for a supervisor
+HA04-pt-2,HA04,human_agent,,False,pt,short,chamar supervisor,claude-generated,Ask for a supervisor
+HA05-es-0,HA05,human_agent,,False,es,formal,Prefiero que me atienda alguien del banco directamente.,claude-generated,Prefers personal attention
+HA05-es-1,HA05,human_agent,,False,es,casual,quiero que me atienda alguien de carne y hueso,claude-generated,Prefers personal attention
+HA05-es-2,HA05,human_agent,,False,es,short,atencion personalizada,claude-generated,Prefers personal attention
+HA05-pt-0,HA05,human_agent,,False,pt,formal,Prefiro ser atendido diretamente por alguém do banco.,claude-generated,Prefers personal attention
+HA05-pt-1,HA05,human_agent,,False,pt,casual,quero falar com alguém de carne e osso,claude-generated,Prefers personal attention
+HA05-pt-2,HA05,human_agent,,False,pt,short,atendimento pessoal,claude-generated,Prefers personal attention
+HA06-es-0,HA06,human_agent,,False,es,formal,¿Cuál es el número para hablar con servicio al cliente?,claude-generated,Ask for the call center number
+HA06-es-1,HA06,human_agent,,False,es,casual,dame el número del call center,claude-generated,Ask for the call center number
+HA06-es-2,HA06,human_agent,,False,es,short,telefono atencion,claude-generated,Ask for the call center number
+HA06-pt-0,HA06,human_agent,,False,pt,formal,Qual é o número pra falar com o atendimento?,claude-generated,Ask for the call center number
+HA06-pt-1,HA06,human_agent,,False,pt,casual,me passa o número da central,claude-generated,Ask for the call center number
+HA06-pt-2,HA06,human_agent,,False,pt,short,telefone atendimento,claude-generated,Ask for the call center number
+HA07-es-0,HA07,human_agent,,False,es,formal,Quiero escalar mi caso con alguien que pueda resolverlo.,claude-generated,Escalate the case to someone who can solve it
+HA07-es-1,HA07,human_agent,,False,es,casual,"esto no se resuelve acá, quiero que lo vea alguien",claude-generated,Escalate the case to someone who can solve it
+HA07-es-2,HA07,human_agent,,False,es,short,escalar caso,claude-generated,Escalate the case to someone who can solve it
+HA07-pt-0,HA07,human_agent,,False,pt,formal,Quero escalar meu caso com alguém que possa resolver.,claude-generated,Escalate the case to someone who can solve it
+HA07-pt-1,HA07,human_agent,,False,pt,casual,"isso não se resolve aqui, quero que alguém veja",claude-generated,Escalate the case to someone who can solve it
+HA07-pt-2,HA07,human_agent,,False,pt,short,escalar meu caso,claude-generated,Escalate the case to someone who can solve it
+HA08-es-0,HA08,human_agent,,False,es,formal,"Transfer me to an agent, por favor.",claude-generated,Code-switching agent request
+HA08-es-1,HA08,human_agent,,False,es,casual,agente please,claude-generated,Code-switching agent request
+HA08-es-2,HA08,human_agent,,False,es,short,agente,claude-generated,Code-switching agent request
+HA08-pt-0,HA08,human_agent,,False,pt,formal,"Me transfere pra um agente, please.",claude-generated,Code-switching agent request
+HA08-pt-1,HA08,human_agent,,False,pt,casual,agente pfv,claude-generated,Code-switching agent request
+HA08-pt-2,HA08,human_agent,,False,pt,short,falar com agente,claude-generated,Code-switching agent request
+HA09-es-0,HA09,human_agent,,False,es,formal,"Disculpe, no entiendo bien esto del chat, ¿me comunica con alguien?",claude-generated,Customer uncomfortable with chat
+HA09-es-1,HA09,human_agent,,False,es,casual,"no sé usar esto, mejor con una persona",claude-generated,Customer uncomfortable with chat
+HA09-es-2,HA09,human_agent,,False,es,short,ayuda persona,claude-generated,Customer uncomfortable with chat
+HA09-pt-0,HA09,human_agent,,False,pt,formal,"Desculpa, não entendo bem esse chat, pode me passar pra alguém?",claude-generated,Customer uncomfortable with chat
+HA09-pt-1,HA09,human_agent,,False,pt,casual,"não sei mexer nisso, melhor com uma pessoa",claude-generated,Customer uncomfortable with chat
+HA09-pt-2,HA09,human_agent,,False,pt,short,ajuda pessoa,claude-generated,Customer uncomfortable with chat
+HA10-es-0,HA10,human_agent,,False,es,formal,"Es urgente, necesito hablar con alguien ahora.",claude-generated,Urgent request for a person
+HA10-es-1,HA10,human_agent,,False,es,casual,urgente!! alguien que me atienda ya,claude-generated,Urgent request for a person
+HA10-es-2,HA10,human_agent,,False,es,short,urgente humano,claude-generated,Urgent request for a person
+HA10-pt-0,HA10,human_agent,,False,pt,formal,"É urgente, preciso falar com alguém agora.",claude-generated,Urgent request for a person
+HA10-pt-1,HA10,human_agent,,False,pt,casual,urgente!! alguém me atende já,claude-generated,Urgent request for a person
+HA10-pt-2,HA10,human_agent,,False,pt,short,urgente atendente,claude-generated,Urgent request for a person
+HA11-es-0,HA11,human_agent,,False,es,formal,Solicito ser atendido por un ejecutivo de servicio al cliente.,claude-generated,Formal request for an executive
+HA11-es-1,HA11,human_agent,,False,es,casual,me gustaría que me atienda un ejecutivo,claude-generated,Formal request for an executive
+HA11-es-2,HA11,human_agent,,False,es,short,ejecutivo,claude-generated,Formal request for an executive
+HA11-pt-0,HA11,human_agent,,False,pt,formal,Solicito atendimento com um executivo de atendimento.,claude-generated,Formal request for an executive
+HA11-pt-1,HA11,human_agent,,False,pt,casual,gostaria de ser atendido por um executivo,claude-generated,Formal request for an executive
+HA11-pt-2,HA11,human_agent,,False,pt,short,executivo,claude-generated,Formal request for an executive
+OS01-es-0,OS01,out_of_scope,,False,es,formal,"Quiero solicitar un préstamo personal, ¿qué requisitos piden?",claude-generated,Loan application
+OS01-es-1,OS01,out_of_scope,,False,es,casual,cuánto me prestan si gano 20 mil?,claude-generated,Loan application
+OS01-es-2,OS01,out_of_scope,,False,es,short,prestamo requisitos,claude-generated,Loan application
+OS01-pt-0,OS01,out_of_scope,,False,pt,formal,"Quero pedir um empréstimo pessoal, quais são os requisitos?",claude-generated,Loan application
+OS01-pt-1,OS01,out_of_scope,,False,pt,casual,quanto vocês me emprestam se eu ganho 20 mil?,claude-generated,Loan application
+OS01-pt-2,OS01,out_of_scope,,False,pt,short,requisitos empréstimo,claude-generated,Loan application
+OS02-es-0,OS02,out_of_scope,,False,es,formal,¿Cómo abro una cuenta de ahorros para mi hijo?,claude-generated,Open a new account
+OS02-es-1,OS02,out_of_scope,,False,es,casual,quiero abrir una cuenta nueva,claude-generated,Open a new account
+OS02-es-2,OS02,out_of_scope,,False,es,short,abrir cuenta,claude-generated,Open a new account
+OS02-pt-0,OS02,out_of_scope,,False,pt,formal,Como abro uma poupança pro meu filho?,claude-generated,Open a new account
+OS02-pt-1,OS02,out_of_scope,,False,pt,casual,quero abrir uma conta nova,claude-generated,Open a new account
+OS02-pt-2,OS02,out_of_scope,,False,pt,short,abrir conta,claude-generated,Open a new account
+OS03-es-0,OS03,out_of_scope,,False,es,formal,¿A qué hora abre la sucursal del centro?,claude-generated,Branch opening hours
+OS03-es-1,OS03,out_of_scope,,False,es,casual,horario sucursal sábados?,claude-generated,Branch opening hours
+OS03-es-2,OS03,out_of_scope,,False,es,short,horario,claude-generated,Branch opening hours
+OS03-pt-0,OS03,out_of_scope,,False,pt,formal,Que horas abre a agência do centro?,claude-generated,Branch opening hours
+OS03-pt-1,OS03,out_of_scope,,False,pt,casual,horário da agência sábado?,claude-generated,Branch opening hours
+OS03-pt-2,OS03,out_of_scope,,False,pt,short,horário agência,claude-generated,Branch opening hours
+OS04-es-0,OS04,out_of_scope,,False,es,formal,"Olvidé mi contraseña de la app, ¿cómo la recupero?",claude-generated,Forgotten app password
+OS04-es-1,OS04,out_of_scope,,False,es,casual,"no puedo entrar a la app, se me olvidó la clave",claude-generated,Forgotten app password
+OS04-es-2,OS04,out_of_scope,,False,es,short,recuperar contraseña,claude-generated,Forgotten app password
+OS04-pt-0,OS04,out_of_scope,,False,pt,formal,"Esqueci minha senha do app, como recupero?",claude-generated,Forgotten app password
+OS04-pt-1,OS04,out_of_scope,,False,pt,casual,"não consigo entrar no app, esqueci a senha",claude-generated,Forgotten app password
+OS04-pt-2,OS04,out_of_scope,,False,pt,short,recuperar senha,claude-generated,Forgotten app password
+OS05-es-0,OS05,out_of_scope,,False,es,formal,"Hola, ¿cómo estás?",claude-generated,Greeting and small talk
+OS05-es-1,OS05,out_of_scope,,False,es,casual,"jaja buenas, todo bien?",claude-generated,Greeting and small talk
+OS05-es-2,OS05,out_of_scope,,False,es,short,hola,claude-generated,Greeting and small talk
+OS05-pt-0,OS05,out_of_scope,,False,pt,formal,"Oi, tudo bem?",claude-generated,Greeting and small talk
+OS05-pt-1,OS05,out_of_scope,,False,pt,casual,"kkk boa, beleza?",claude-generated,Greeting and small talk
+OS05-pt-2,OS05,out_of_scope,,False,pt,short,oi,claude-generated,Greeting and small talk
+OS06-es-0,OS06,out_of_scope,,False,es,formal,¿Me recomiendas un restaurante bueno en Medellín?,claude-generated,Non-banking questions
+OS06-es-1,OS06,out_of_scope,,False,es,casual,quién ganó el partido anoche?,claude-generated,Non-banking questions
+OS06-es-2,OS06,out_of_scope,,False,es,short,clima mañana,claude-generated,Non-banking questions
+OS06-pt-0,OS06,out_of_scope,,False,pt,formal,Me recomenda um restaurante bom em Medellín?,claude-generated,Non-banking questions
+OS06-pt-1,OS06,out_of_scope,,False,pt,casual,quem ganhou o jogo ontem?,claude-generated,Non-banking questions
+OS06-pt-2,OS06,out_of_scope,,False,pt,short,previsão do tempo amanhã,claude-generated,Non-banking questions
+OS07-es-0,OS07,out_of_scope,,False,es,formal,¿Conviene invertir en dólares o en un plazo fijo ahora?,claude-generated,Investment advice
+OS07-es-1,OS07,out_of_scope,,False,es,casual,en qué invierto mis ahorros?,claude-generated,Investment advice
+OS07-es-2,OS07,out_of_scope,,False,es,short,consejo inversion,claude-generated,Investment advice
+OS07-pt-0,OS07,out_of_scope,,False,pt,formal,Vale mais a pena investir em dólar ou num prazo fixo agora?,claude-generated,Investment advice
+OS07-pt-1,OS07,out_of_scope,,False,pt,casual,onde eu invisto minhas economias?,claude-generated,Investment advice
+OS07-pt-2,OS07,out_of_scope,,False,pt,short,dica de investimento,claude-generated,Investment advice
+OS08-es-0,OS08,out_of_scope,,False,es,formal,Quiero que me aumenten el límite de la tarjeta.,claude-generated,Credit limit increase
+OS08-es-1,OS08,out_of_scope,,False,es,casual,súbanme el cupo porfa,claude-generated,Credit limit increase
+OS08-es-2,OS08,out_of_scope,,False,es,short,aumento de cupo,claude-generated,Credit limit increase
+OS08-pt-0,OS08,out_of_scope,,False,pt,formal,Quero aumentar o limite do cartão.,claude-generated,Credit limit increase
+OS08-pt-1,OS08,out_of_scope,,False,pt,casual,aumenta meu limite pfv,claude-generated,Credit limit increase
+OS08-pt-2,OS08,out_of_scope,,False,pt,short,aumento de limite,claude-generated,Credit limit increase
+OS09-es-0,OS09,out_of_scope,,False,es,formal,¿Qué seguros de auto ofrecen?,claude-generated,Insurance products
+OS09-es-1,OS09,out_of_scope,,False,es,casual,cuánto cuesta el seguro de vida?,claude-generated,Insurance products
+OS09-es-2,OS09,out_of_scope,,False,es,short,seguros,claude-generated,Insurance products
+OS09-pt-0,OS09,out_of_scope,,False,pt,formal,Quais seguros de carro vocês oferecem?,claude-generated,Insurance products
+OS09-pt-1,OS09,out_of_scope,,False,pt,casual,quanto custa o seguro de vida?,claude-generated,Insurance products
+OS09-pt-2,OS09,out_of_scope,,False,pt,short,seguro auto,claude-generated,Insurance products
+OS10-es-0,OS10,out_of_scope,,False,es,formal,Necesito actualizar mi dirección y mi número de celular.,claude-generated,Update personal data
+OS10-es-1,OS10,out_of_scope,,False,es,casual,"cambié de celu, cómo actualizo el número?",claude-generated,Update personal data
+OS10-es-2,OS10,out_of_scope,,False,es,short,actualizar datos,claude-generated,Update personal data
+OS10-pt-0,OS10,out_of_scope,,False,pt,formal,Preciso atualizar meu endereço e meu celular.,claude-generated,Update personal data
+OS10-pt-1,OS10,out_of_scope,,False,pt,casual,"troquei de número, como atualizo?",claude-generated,Update personal data
+OS10-pt-2,OS10,out_of_scope,,False,pt,short,atualizar dados,claude-generated,Update personal data
+OS11-es-0,OS11,out_of_scope,,False,es,formal,"Muchas gracias por la ayuda, eso es todo.",claude-generated,Thanks and goodbye
+OS11-es-1,OS11,out_of_scope,,False,es,casual,"listo gracias, chau",claude-generated,Thanks and goodbye
+OS11-es-2,OS11,out_of_scope,,False,es,short,gracias,claude-generated,Thanks and goodbye
+OS11-pt-0,OS11,out_of_scope,,False,pt,formal,"Muito obrigado pela ajuda, é só isso.",claude-generated,Thanks and goodbye
+OS11-pt-1,OS11,out_of_scope,,False,pt,casual,"valeu, tchau",claude-generated,Thanks and goodbye
+OS11-pt-2,OS11,out_of_scope,,False,pt,short,obrigado,claude-generated,Thanks and goodbye
+OS12-es-0,OS12,out_of_scope,,False,es,formal,"Perdí mi tarjeta, ¿cómo la bloqueo?",claude-generated,"Block a lost card (card support, not disputes)"
+OS12-es-1,OS12,out_of_scope,,False,es,casual,"se me cayó la tarjeta en el taxi, bloqueala porfa",claude-generated,"Block a lost card (card support, not disputes)"
+OS12-es-2,OS12,out_of_scope,,False,es,short,bloquear tarjeta,claude-generated,"Block a lost card (card support, not disputes)"
+OS12-pt-0,OS12,out_of_scope,,False,pt,formal,"Perdi meu cartão, como faço pra bloquear?",claude-generated,"Block a lost card (card support, not disputes)"
+OS12-pt-1,OS12,out_of_scope,,False,pt,casual,"meu cartão caiu no táxi, bloqueia pfv",claude-generated,"Block a lost card (card support, not disputes)"
+OS12-pt-2,OS12,out_of_scope,,False,pt,short,bloquear cartão,claude-generated,"Block a lost card (card support, not disputes)"
+AM01-es-0,AM01,unrecognized_charge,wrongful_fee,True,es,formal,Me cobraron algo raro en la tarjeta.,claude-generated,"Strange charge, unclear whether unknown or wrong"
+AM01-es-1,AM01,unrecognized_charge,wrongful_fee,True,es,casual,"tengo un cobro medio raro, qué es eso?",claude-generated,"Strange charge, unclear whether unknown or wrong"
+AM01-es-2,AM01,unrecognized_charge,wrongful_fee,True,es,short,cobro raro,claude-generated,"Strange charge, unclear whether unknown or wrong"
+AM01-pt-0,AM01,unrecognized_charge,wrongful_fee,True,pt,formal,Me cobraram uma coisa estranha no cartão.,claude-generated,"Strange charge, unclear whether unknown or wrong"
+AM01-pt-1,AM01,unrecognized_charge,wrongful_fee,True,pt,casual,"tem uma cobrança meio esquisita, o que é isso?",claude-generated,"Strange charge, unclear whether unknown or wrong"
+AM01-pt-2,AM01,unrecognized_charge,wrongful_fee,True,pt,short,cobrança esquisita,claude-generated,"Strange charge, unclear whether unknown or wrong"
+AM02-es-0,AM02,unrecognized_charge,transaction_status,True,es,formal,Tengo un problema con un cargo.,claude-generated,Vague problem with a charge
+AM02-es-1,AM02,unrecognized_charge,transaction_status,True,es,casual,hay un tema con un cobro de la tarjeta,claude-generated,Vague problem with a charge
+AM02-es-2,AM02,unrecognized_charge,transaction_status,True,es,short,problema cargo,claude-generated,Vague problem with a charge
+AM02-pt-0,AM02,unrecognized_charge,transaction_status,True,pt,formal,Estou com um problema com uma cobrança.,claude-generated,Vague problem with a charge
+AM02-pt-1,AM02,unrecognized_charge,transaction_status,True,pt,casual,tem um lance com uma cobrança do cartão,claude-generated,Vague problem with a charge
+AM02-pt-2,AM02,unrecognized_charge,transaction_status,True,pt,short,problema cobrança,claude-generated,Vague problem with a charge
+AM03-es-0,AM03,transaction_status,unrecognized_charge,True,es,formal,Me falta plata en la cuenta.,claude-generated,Money missing from the account
+AM03-es-1,AM03,transaction_status,unrecognized_charge,True,es,casual,"no me cuadra lo que tengo, falta dinero",claude-generated,Money missing from the account
+AM03-es-2,AM03,transaction_status,unrecognized_charge,True,es,short,falta dinero,claude-generated,Money missing from the account
+AM03-pt-0,AM03,transaction_status,unrecognized_charge,True,pt,formal,Está faltando dinheiro na minha conta.,claude-generated,Money missing from the account
+AM03-pt-1,AM03,transaction_status,unrecognized_charge,True,pt,casual,"não bate o que eu tenho, sumiu dinheiro",claude-generated,Money missing from the account
+AM03-pt-2,AM03,transaction_status,unrecognized_charge,True,pt,short,falta dinheiro,claude-generated,Money missing from the account
+AM04-es-0,AM04,unrecognized_charge,move_money,True,es,formal,No reconozco un cargo y quiero que me devuelvan la plata ya.,claude-generated,Unrecognized charge plus immediate refund demand
+AM04-es-1,AM04,unrecognized_charge,move_money,True,es,casual,"yo no hice esa compra, devuélvanme todo ahora",claude-generated,Unrecognized charge plus immediate refund demand
+AM04-es-2,AM04,unrecognized_charge,move_money,True,es,short,"cargo que no hice, devuelvan ya",claude-generated,Unrecognized charge plus immediate refund demand
+AM04-pt-0,AM04,unrecognized_charge,move_money,True,pt,formal,Não reconheço uma cobrança e quero meu dinheiro de volta agora.,claude-generated,Unrecognized charge plus immediate refund demand
+AM04-pt-1,AM04,unrecognized_charge,move_money,True,pt,casual,"eu não fiz essa compra, devolvam tudo agora",claude-generated,Unrecognized charge plus immediate refund demand
+AM04-pt-2,AM04,unrecognized_charge,move_money,True,pt,short,"compra que não fiz, devolvam já",claude-generated,Unrecognized charge plus immediate refund demand
+AM05-es-0,AM05,transaction_status,balance_check,True,es,formal,No entiendo un movimiento de mi cuenta.,claude-generated,Doesn't understand an account movement
+AM05-es-1,AM05,transaction_status,balance_check,True,es,casual,hay algo en mis movimientos que no entiendo,claude-generated,Doesn't understand an account movement
+AM05-es-2,AM05,transaction_status,balance_check,True,es,short,movimiento raro,claude-generated,Doesn't understand an account movement
+AM05-pt-0,AM05,transaction_status,balance_check,True,pt,formal,Não entendo uma movimentação da minha conta.,claude-generated,Doesn't understand an account movement
+AM05-pt-1,AM05,transaction_status,balance_check,True,pt,casual,tem uma coisa no meu extrato que eu não entendo,claude-generated,Doesn't understand an account movement
+AM05-pt-2,AM05,transaction_status,balance_check,True,pt,short,movimentação estranha,claude-generated,Doesn't understand an account movement
+AM06-es-0,AM06,out_of_scope,transaction_status,True,es,formal,Tengo un problema con mi tarjeta.,claude-generated,Vague card problem
+AM06-es-1,AM06,out_of_scope,transaction_status,True,es,casual,la tarjeta me anda fallando,claude-generated,Vague card problem
+AM06-es-2,AM06,out_of_scope,transaction_status,True,es,short,problema tarjeta,claude-generated,Vague card problem
+AM06-pt-0,AM06,out_of_scope,transaction_status,True,pt,formal,Estou com um problema no meu cartão.,claude-generated,Vague card problem
+AM06-pt-1,AM06,out_of_scope,transaction_status,True,pt,casual,o cartão tá dando problema,claude-generated,Vague card problem
+AM06-pt-2,AM06,out_of_scope,transaction_status,True,pt,short,problema cartão,claude-generated,Vague card problem
+AM07-es-0,AM07,wrongful_fee,unrecognized_charge,True,es,formal,Me descontaron 500 pesos.,claude-generated,Deduction with no context
+AM07-es-1,AM07,wrongful_fee,unrecognized_charge,True,es,casual,me sacaron 500 de la cuenta así nomás,claude-generated,Deduction with no context
+AM07-es-2,AM07,wrongful_fee,unrecognized_charge,True,es,short,descuento 500,claude-generated,Deduction with no context
+AM07-pt-0,AM07,wrongful_fee,unrecognized_charge,True,pt,formal,Descontaram 500 da minha conta.,claude-generated,Deduction with no context
+AM07-pt-1,AM07,wrongful_fee,unrecognized_charge,True,pt,casual,tiraram 500 da minha conta do nada,claude-generated,Deduction with no context
+AM07-pt-2,AM07,wrongful_fee,unrecognized_charge,True,pt,short,desconto 500,claude-generated,Deduction with no context
+AM08-es-0,AM08,out_of_scope,human_agent,True,es,formal,Necesito ayuda con mi cuenta.,claude-generated,Generic help request
+AM08-es-1,AM08,out_of_scope,human_agent,True,es,casual,me ayudás con algo de la cuenta?,claude-generated,Generic help request
+AM08-es-2,AM08,out_of_scope,human_agent,True,es,short,ayuda,claude-generated,Generic help request
+AM08-pt-0,AM08,out_of_scope,human_agent,True,pt,formal,Preciso de ajuda com minha conta.,claude-generated,Generic help request
+AM08-pt-1,AM08,out_of_scope,human_agent,True,pt,casual,me ajuda com uma coisa da conta?,claude-generated,Generic help request
+AM08-pt-2,AM08,out_of_scope,human_agent,True,pt,short,ajuda,claude-generated,Generic help request
+AM09-es-0,AM09,wrongful_fee,transaction_status,True,es,formal,La compra de ayer está mal.,claude-generated,Yesterday's purchase is wrong
+AM09-es-1,AM09,wrongful_fee,transaction_status,True,es,casual,lo de ayer salió mal en la tarjeta,claude-generated,Yesterday's purchase is wrong
+AM09-es-2,AM09,wrongful_fee,transaction_status,True,es,short,compra mal,claude-generated,Yesterday's purchase is wrong
+AM09-pt-0,AM09,wrongful_fee,transaction_status,True,pt,formal,A compra de ontem está errada.,claude-generated,Yesterday's purchase is wrong
+AM09-pt-1,AM09,wrongful_fee,transaction_status,True,pt,casual,a compra de ontem veio errada no cartão,claude-generated,Yesterday's purchase is wrong
+AM09-pt-2,AM09,wrongful_fee,transaction_status,True,pt,short,compra errada,claude-generated,Yesterday's purchase is wrong
+AM10-es-0,AM10,wrongful_fee,move_money,True,es,formal,"Me cobraron una comisión que no corresponde, devuélvanmela ya.",claude-generated,Wrongful fee plus demand to return it now
+AM10-es-1,AM10,wrongful_fee,move_money,True,es,casual,"esa comisión está mal, reintégrenla ahora",claude-generated,Wrongful fee plus demand to return it now
+AM10-es-2,AM10,wrongful_fee,move_money,True,es,short,"comision mal, devolver ya",claude-generated,Wrongful fee plus demand to return it now
+AM10-pt-0,AM10,wrongful_fee,move_money,True,pt,formal,"Me cobraram uma tarifa que não devia, devolvam agora.",claude-generated,Wrongful fee plus demand to return it now
+AM10-pt-1,AM10,wrongful_fee,move_money,True,pt,casual,"essa tarifa tá errada, estornem agora",claude-generated,Wrongful fee plus demand to return it now
+AM10-pt-2,AM10,wrongful_fee,move_money,True,pt,short,"tarifa errada, devolver já",claude-generated,Wrongful fee plus demand to return it now
