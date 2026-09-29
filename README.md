@@ -66,5 +66,6 @@ Findings: [docs/contact-reason-analysis.md](docs/contact-reason-analysis.md) · 
 - [ ] Native Portuguese review of the phrase set
 - [x] Intent classifier vs keyword baseline: [docs/intent-model.md](docs/intent-model.md) (offline, synthetic data)
 - [x] Phase 1 chat page: intent API with Cohere (Bedrock, keyless via Vercel OIDC) and in-app fallback
+- [x] Phase 1 replies: Claude Haiku phrases code-chosen content in ES/PT, validated, with template fallback ([docs/reply-generation.md](docs/reply-generation.md))
 - [ ] Full system, end-to-end evaluation harness
 - [ ] Observability, security (prompt-injection defenses, RLS), structured human handoff

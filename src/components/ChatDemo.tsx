@@ -3,11 +3,12 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import type { IntentResult } from "@/lib/intent/classify";
+import type { ReplyResult } from "@/lib/reply/compose";
 import { INTENT_LABELS, MODEL_LABELS } from "@/lib/intent/labels";
 
 type Message =
   | { id: number; role: "user"; text: string }
-  | { id: number; role: "bot"; result: IntentResult }
+  | { id: number; role: "bot"; result: IntentResult; reply: ReplyResult }
   | { id: number; role: "error"; text: string };
 
 const EXAMPLES = [
@@ -44,7 +45,7 @@ export function ChatDemo() {
     setBusy(true);
     setMessages((m) => [...m, { id: nextId.current++, role: "user", text: clean }]);
     try {
-      const res = await fetch("/api/classify", {
+      const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text: clean, forceFallback: simulateOutage }),
@@ -57,7 +58,7 @@ export function ChatDemo() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? `Request failed (${res.status})`);
       const id = nextId.current++;
-      setMessages((m) => [...m, { id, role: "bot", result: data as IntentResult }]);
+      setMessages((m) => [...m, { id, role: "bot", result: data.intent as IntentResult, reply: data.reply as ReplyResult }]);
       setSelected(id);
     } catch (err) {
       setMessages((m) => [...m, { id: nextId.current++, role: "error", text: (err as Error).message }]);
@@ -74,7 +75,7 @@ export function ChatDemo() {
       <section className="card chat" aria-label="Conversation">
         <div className="card-head">
           <div>
-            <p className="label">Dispute assistant · Phase 1</p>
+            <p className="label">Dispute assistant · preview</p>
             <div className="sub">Write like a customer, in Spanish or Portuguese</div>
           </div>
           <label className="toggle" htmlFor="outage">
@@ -100,16 +101,18 @@ export function ChatDemo() {
               <div key={m.id} className="msg error">{m.text}</div>
             ) : (
               <div key={m.id} className={`msg bot${current?.id === m.id ? " active" : ""}`}>
-                <span>
-                  <strong>{INTENT_LABELS[m.result.intent]?.en}</strong> · {pct(m.result.confidence)} ·{" "}
-                  {m.result.decision === "act" ? "would act" : "would ask to clarify"}
-                  {m.result.model === "e5small" ? " · fallback" : ""}
+                <span className="reply-text">{m.reply.text}</span>
+                <span className="reply-meta">
+                  {INTENT_LABELS[m.result.intent]?.en} · {pct(m.result.confidence)} ·{" "}
+                  {m.result.decision === "act" ? "acting" : "asking to clarify"}
+                  {m.result.model === "e5small" ? " · fallback model" : ""}
+                  {m.reply.source === "template" ? " · template reply" : ""} ·{" "}
+                  <button className="link" onClick={() => setSelected(m.id)}>details</button>
                 </span>
-                <button className="link" onClick={() => setSelected(m.id)}>View details</button>
               </div>
             ),
           )}
-          {busy && <div className="typing">Classifying…</div>}
+          {busy && <div className="typing">Writing a reply…</div>}
         </div>
 
         <div className="composer">
@@ -149,19 +152,19 @@ export function ChatDemo() {
           <p className="label">Understanding</p>
           {current && <span className="trace">trace {current.result.traceId.slice(0, 8)}</span>}
         </div>
-        {current ? <Inspector result={current.result} /> : (
+        {current ? <Inspector result={current.result} reply={current.reply} /> : (
           <div className="placeholder">Send a message to see the intent, confidence and the model that answered.</div>
         )}
         <div className="note">
-          Phase 1 shows the raw classification. Replies written in the customer&apos;s language, account lookups and
-          human handoff come in the next steps.
+          Replies don&apos;t use account data yet: the assistant asks for details instead of looking them up.
+          Account lookups, confirmations and human handoff come in the next steps.
         </div>
       </aside>
     </main>
   );
 }
 
-function Inspector({ result }: { result: IntentResult }) {
+function Inspector({ result, reply }: { result: IntentResult; reply: ReplyResult }) {
   const names = INTENT_LABELS[result.intent];
   const model = MODEL_LABELS[result.model];
   const act = result.decision === "act";
@@ -225,6 +228,23 @@ function Inspector({ result }: { result: IntentResult }) {
             </li>
           ))}
         </ul>
+      </div>
+
+      <div className="section">
+        <p className="label">Reply</p>
+        <div className="pills">
+          <span className={`pill ${reply.source === "haiku" ? "primary" : "fallback"}`}>
+            <span className="dot" />{reply.source === "haiku" ? "Written by Claude Haiku" : "Template reply"}
+          </span>
+          <span className="pill ask"><span className="dot" />{reply.language === "pt" ? "Portuguese" : "Spanish"}</span>
+        </div>
+        <dl className="facts">
+          <div><dt>Time</dt><dd>{Math.round(reply.ms)} ms</dd></div>
+          <div><dt>Prompt version</dt><dd>{reply.promptVersion}</dd></div>
+          <div><dt>Tokens in / out</dt><dd>{reply.inputTokens} / {reply.outputTokens}</dd></div>
+          <div><dt>Cost</dt><dd>${reply.costUsd.toFixed(5)}</dd></div>
+          {reply.fallbackReason && <div style={{ gridColumn: "1 / -1" }}><dt>Why the template</dt><dd>{reply.fallbackReason}</dd></div>}
+        </dl>
       </div>
     </>
   );
