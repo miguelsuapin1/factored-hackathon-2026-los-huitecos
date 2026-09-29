@@ -122,7 +122,7 @@ def family_bootstrap(df_part, pred, rng):
     for _ in range(BOOTSTRAP):
         idx = np.concatenate([by_fam[f] for f in rng.choice(fams, len(fams), replace=True)])
         accs.append((pred[idx] == y[idx]).mean())
-        f1s.append(f1_score(y[idx], pred[idx], average="macro", labels=np.unique(y)))
+        f1s.append(f1_score(y[idx], pred[idx], average="macro", labels=np.unique(y[idx]), zero_division=0))
     return np.percentile(accs, [2.5, 97.5]), np.percentile(f1s, [2.5, 97.5])
 
 
@@ -283,7 +283,7 @@ def main():
                 f"model {model_hash}). Split seed {manifest['seed']}; test set `{manifest['test_sha256'][:16]}…`. "
                 f"Train {tr.sum()} phrases · validation {va.sum()} · test {te.sum()} "
                 f"({te_clear.sum()} clear + {(te & df.ambiguous.values).sum()} ambiguous)._\n\n")
-        f.write("## Test results (evaluated once)\n\n")
+        f.write("## Test results (frozen model; every test run is logged in reports/test_runs.jsonl)\n\n")
         f.write("| Model | Accuracy (95% CI) | Macro-F1 (95% CI) | Spanish | Portuguese | Threshold | Coverage | "
                 "Wrong actions | Needless questions | Ambiguous asked | Mean cost | ms / message |\n")
         f.write("|---|---|---|---|---|---|---|---|---|---|---|---|\n")
@@ -320,9 +320,8 @@ def main():
         f.write(prf.to_markdown() + "\n\n")
         f.write("Rows = true label, columns = predicted.\n\n" + cm.to_markdown() + "\n\n")
         f.write("## embed_lr on test: errors and ambiguous messages\n\n")
-        f.write(errs[["phrase_id", "lang", "style", "label", "alt_label", "pred", "conf", "text"]]
-                .sort_values(["ambiguous", "conf"] if "ambiguous" in errs else "conf")
-                .to_markdown(index=False) + "\n")
+        f.write(errs.sort_values(["ambiguous", "conf"])[["phrase_id", "lang", "style", "label", "alt_label", "pred",
+                                                           "conf", "text"]].to_markdown(index=False) + "\n")
     print(res[res.split == "test"][["model", "accuracy", "macro_f1", "coverage", "wrong_action_rate",
                                     "ambiguous_asked_rate", "mean_cost", "ms_per_message"]].round(3).to_string(index=False))
     print(f"thresholds: tfidf {results['tfidf']['threshold']}, embed_lr {results['embed_lr']['threshold']}; "

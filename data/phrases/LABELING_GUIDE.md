@@ -14,6 +14,7 @@ The intent classifier's training and evaluation data. It is **team-generated**: 
 | Written by | Claude (`claude-opus-5-5`) on 2026-09-28, prompted by Miguel |
 | Review | Automatic grammar check done (see Language review below). Still needs a native Brazilian Portuguese speaker for naturalness |
 | Status | Synthetic. No real customer messages. Safe to commit |
+| Batches | Batch 1 (88 families) written first. Batch 2 (70 families, `"batch": 2`) added to **train only** after validation error analysis; see [docs/intent-model.md](../../docs/intent-model.md) D7 |
 | Next | Human-written test messages (plan step 16) are added as separate families with `"source": "human"` |
 
 Because one author wrote every phrase, the style is more uniform than real traffic. Scores on this set are an upper bound; the human-written test messages are the honest measure.
@@ -36,7 +37,7 @@ A **family** is one scenario written 6 ways: 3 Spanish and 3 Portuguese. The pos
 |---|---|---|
 | `unrecognized_charge` | sees a charge, withdrawal or transfer they **didn't make or don't recognize at all** (unknown merchant, possible fraud, cloned or lost card) | "Hay una compra que yo no hice", "clonaram meu cartão" |
 | `wrongful_fee` | **recognizes** the charge or the bank fee but says it's **wrong**: duplicated, wrong amount, fee that shouldn't apply, charged after cancelling | "Me cobraron dos veces", "anuidade cobrada errado" |
-| `transaction_status` | asks what happened to a **specific transaction**: declined, pending, not arrived, refund timing, what "reversed" means | "¿Por qué rechazaron mi tarjeta?", "transferência não chegou" |
+| `transaction_status` | asks what happened to a **specific transaction or an existing claim**: declined, pending, not arrived, refund timing, what "reversed" means, "how is my claim going?" | "¿Por qué rechazaron mi tarjeta?", "transferência não chegou" |
 | `balance_check` | asks for **balances, amounts owed, limits or recent movements**, with no problem attached | "¿Cuánto debo en la tarjeta?", "saldo poupança" |
 | `move_money` | asks the assistant to **move money itself**: refund, reverse, transfer, pay, credit compensation. Always refused by policy | "Devuélvanme la plata ya", "transfere 5.000 pra minha mãe" |
 | `human_agent` | asks for a **person**: advisor, supervisor, call, phone number, escalation | "pasame con una persona", "quero falar com um atendente" |
