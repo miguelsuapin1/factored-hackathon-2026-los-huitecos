@@ -6,6 +6,12 @@ A bilingual (🇪🇸 Spanish / 🇧🇷 Portuguese) **banking customer-service 
 
 **Live:** https://latam-bank-service-sigma.vercel.app (auto-deploys from `main`)
 
+## Demo access
+The app opens on a sign-in page. Credentials are shared with the judges in the submission; they're read from
+environment variables (`DEMO_USERNAME`, `DEMO_PASSWORD`, `SESSION_SECRET`) and never committed. Sessions last
+8 hours (signed, HttpOnly cookie). This gate protects the demo and the Bedrock quota; per-customer test login is
+a separate Phase 2 step.
+
 ## Stack (provisional)
 | Layer | Choice |
 |---|---|

@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import type { IntentResult } from "@/lib/intent/classify";
 import { INTENT_LABELS, MODEL_LABELS } from "@/lib/intent/labels";
@@ -23,6 +24,7 @@ const EXAMPLES = [
 const pct = (v: number) => `${Math.round(v * 100)}%`;
 
 export function ChatDemo() {
+  const router = useRouter();
   const [messages, setMessages] = useState<Message[]>([]);
   const [draft, setDraft] = useState("");
   const [busy, setBusy] = useState(false);
@@ -47,6 +49,11 @@ export function ChatDemo() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text: clean, forceFallback: simulateOutage }),
       });
+      if (res.status === 401) {
+        // Session expired: back to sign-in, then return here.
+        router.replace("/?next=/app");
+        return;
+      }
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? `Request failed (${res.status})`);
       const id = nextId.current++;
