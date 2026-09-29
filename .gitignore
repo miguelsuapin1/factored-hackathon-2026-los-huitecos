@@ -51,3 +51,4 @@ __pycache__/
 
 # local analytical DBs (rebuilt from data/raw)
 /data/processed/*.duckdb
+/data/processed/phrase_*

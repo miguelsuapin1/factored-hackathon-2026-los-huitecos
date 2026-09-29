@@ -12,7 +12,7 @@ The intent classifier's training and evaluation data. It is **team-generated**: 
 | Field | Value |
 |---|---|
 | Written by | Claude (`claude-opus-5-5`) on 2026-09-28, prompted by Miguel |
-| Review | Not yet reviewed by a native speaker. Portuguese is Brazilian-style and needs a native check |
+| Review | Automatic grammar check done (see Language review below). Still needs a native Brazilian Portuguese speaker for naturalness |
 | Status | Synthetic. No real customer messages. Safe to commit |
 | Next | Human-written test messages (plan step 16) are added as separate families with `"source": "human"` |
 
@@ -55,3 +55,20 @@ A **family** is one scenario written 6 ways: 3 Spanish and 3 Portuguese. The pos
 Families marked `"ambiguous": true` (AM01–AM10) are messages where a careful human would **ask a follow-up question** instead of guessing ("Me cobraron algo raro"). They carry the most likely label plus an `alt_label`.
 
 They **never go into training**. They're only used in validation and test to check that the classifier's confidence is low on them, which is what makes the system ask instead of act.
+
+## Language review (2026-09-28)
+
+Automatic grammar and spelling check with [LanguageTool](https://languagetool.org) (public API, pt-BR and es) on the formal and casual variants. Short variants were skipped because their typos are deliberate.
+
+- **Portuguese:** 135 flags. 11 were real errors in formal sentences and were fixed (2 missing commas before "mas", "conta-corrente", 8× "pra/pro" → "para/para o"). The rest are intended casual register: lowercase starts, "pra", "tô", "pfv", "kkk", loanwords like "app", "status", "chargeback".
+- **Spanish:** 7 flags. 2 missing commas before "pero" were fixed. "reversado" and "reversen" are standard Latin American banking usage and were kept.
+- **Still needed:** a native Brazilian Portuguese speaker to judge naturalness, which a grammar checker can't do.
+
+## Split and leakage review
+
+`pipeline/split.py` assigns whole families to train / validation / test and seals the test set (`split_manifest.json` stores a SHA-256 of the test phrases). It flags any held-out phrase whose embedding cosine similarity to a training phrase from another family is ≥ 0.92, the median similarity between a sentence and its own translation. Results: [reports/split_leakage.md](../../reports/split_leakage.md).
+
+Manual review of the flags (2026-09-28):
+- **1 genuine near-copy:** "cargo desconocido en mi tarjeta" (test) vs "unknown charge en mi tarjeta" (train). The **training** phrase was reworded to "un charge que no es mio". The test set was not touched.
+- **26 remaining same-label flags** share keywords but describe different situations (e.g. "saldo do empréstimo" vs "saldo poupança"). With `multilingual-e5-small`, short phrases score high on shared words alone, so cosine similarity overstates leakage for them.
+- **37 different-label flags** are intended hard cases (e.g. "limite disponível" vs "aumento de limite", "ajuda" vs "ajuda pessoa") and belong in the error analysis, not in a fix.

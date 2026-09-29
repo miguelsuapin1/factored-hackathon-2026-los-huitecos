@@ -41,10 +41,20 @@ uv run python pipeline/bronze.py          # data/raw CSVs -> data/processed/bron
 (cd pipeline && uv run python dq_checks.py)   # -> reports/data_quality.md
 uv run python analysis/contact_reasons.py # -> reports/contact_reasons.md
 ```
+
+### Intent phrase set (classifier data)
+```bash
+uv run python pipeline/phrases.py   # validate data/phrases/families.jsonl -> phrases.csv
+node scripts/embed_phrases.mjs      # embed with the same model the app serves (src/lib/embedding-config.json)
+uv run python pipeline/split.py     # verify the sealed train/validation/test split -> reports/split_leakage.md
+```
+Labels and rules: [data/phrases/LABELING_GUIDE.md](data/phrases/LABELING_GUIDE.md)
 Findings: [docs/contact-reason-analysis.md](docs/contact-reason-analysis.md) · issue register: [docs/data-issues.md](docs/data-issues.md)
 
 ## What's missing (keep this honest)
 - [x] Dataset + final instructions (S3; architecture in docs/decisions.md D-001)
-- [ ] Use case choice (D-002)
+- [x] Use case: transaction-dispute intake (D-002)
+- [x] Intent phrase set (ES/PT, team-generated) + sealed train/validation/test split
+- [ ] Native Portuguese review of the phrase set
 - [ ] Baseline, system, evaluation harness
 - [ ] Observability, security (prompt-injection defenses, RLS), structured human handoff

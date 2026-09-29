@@ -16,6 +16,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 SRC = ROOT / "data" / "phrases" / "families.jsonl"
 OUT = ROOT / "data" / "phrases" / "phrases.csv"
+TEXTS = ROOT / "data" / "processed" / "phrase_texts.json"  # input for scripts/embed_phrases.mjs
 
 LABELS = {
     "unrecognized_charge": "UC",
@@ -108,6 +109,9 @@ def main() -> None:
         writer = csv.DictWriter(fh, fieldnames=list(rows[0]))
         writer.writeheader()
         writer.writerows(rows)
+    TEXTS.parent.mkdir(parents=True, exist_ok=True)
+    TEXTS.write_text(json.dumps([{"phrase_id": r["phrase_id"], "text": r["text"]} for r in rows],
+                                ensure_ascii=False), encoding="utf-8")
 
     clear = [f for f in families if not f.get("ambiguous")]
     print(f"wrote {OUT.relative_to(ROOT)}: {len(rows)} phrases in {len(families)} families "

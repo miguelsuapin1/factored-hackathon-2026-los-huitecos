@@ -1,0 +1,8 @@
+{
+  "model": "Xenova/multilingual-e5-small",
+  "dtype": "q8",
+  "prefix": "query: ",
+  "pooling": "mean",
+  "normalize": true,
+  "dimensions": 384
+}
