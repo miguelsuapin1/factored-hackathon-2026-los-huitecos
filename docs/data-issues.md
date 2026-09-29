@@ -66,4 +66,4 @@ Nulls appear in round proportions: exactly 10%, 15%, 20%, 30% or 50% per column 
 - **Escalation rate (~10%) and wait time (median 2.0 min) are identical for every contact reason**, so they can't be used to prioritize.
 - **Complaint outcomes are identical across subcategories** (SLA breach ~20%, median resolution 15–16 days, ~75% still open).
 - **Time-of-day demand is flat** (uniform over 24 h). Only the weekday pattern (Tue–Fri high, Sunday ≈ half) and the contact-reason mix carry signal.
-- `digital_events` (10M rows, 3.6 GB) is not downloaded or profiled yet.
+- `digital_events` is loaded in BigQuery (`bronze.digital_events`, 2026-09-29): **15,620,994 rows**, 56% *more* than the dictionary's 10M (every other fact table has 11–16% fewer). Not profiled yet.

@@ -48,6 +48,15 @@ uv run python pipeline/bronze.py          # data/raw CSVs -> data/processed/bron
 uv run python analysis/contact_reasons.py # -> reports/contact_reasons.md
 ```
 
+#### BigQuery bronze (D-003, shared copy of all 13 tables incl. digital_events)
+Raw CSVs are copied S3 → `gs://factored_gt_latam_bank_raw/raw/` by a one-off Storage Transfer job, then:
+```bash
+gcloud auth application-default login                    # once, with an account on the GCP project
+uv run python pipeline/bigquery/bronze_bq.py --print     # show the SQL (no GCP access needed)
+uv run python pipeline/bigquery/bronze_bq.py             # raw_ext (external) + bronze (native) datasets, us-east1
+uv run python pipeline/bigquery/bronze_bq.py --verify    # row counts vs the DuckDB bronze numbers
+```
+
 ### Intent phrase set (classifier data)
 ```bash
 uv run python pipeline/phrases.py   # validate data/phrases/families.jsonl -> phrases.csv
