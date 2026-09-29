@@ -1,6 +1,6 @@
 # Phase 1 walkthrough: what we built and why
 
-A guided tour of the key decisions behind GT Bank's dispute assistant, written so anyone on the team can explain them to the judges. Detailed logs live in [intent-model.md](intent-model.md) (decisions D1–D16), [reply-generation.md](reply-generation.md) (R1–R7), [data-issues.md](data-issues.md) and [contact-reason-analysis.md](contact-reason-analysis.md).
+A guided tour of the key decisions behind GT Bank's dispute assistant, written so anyone on the team can explain them to the judges. Everything we tried that failed or was replaced: [lessons-learned.md](lessons-learned.md). Detailed logs live in [intent-model.md](intent-model.md) (decisions D1–D16), [reply-generation.md](reply-generation.md) (R1–R7), [data-issues.md](data-issues.md) and [contact-reason-analysis.md](contact-reason-analysis.md).
 
 **Live:** https://latam-bank-service-sigma.vercel.app (demo sign-in required) · **Repo:** github.com/miguelsuapin1/latam-bank-service
 
