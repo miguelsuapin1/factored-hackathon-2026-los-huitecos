@@ -7,29 +7,41 @@ The component that reads a customer message and decides what they want. It is th
 | | |
 |---|---|
 | **What it does** | Classifies a message into 7 intents and gives a confidence. Below the threshold the system **asks a clarifying question instead of acting** |
-| **Model** | `multilingual-e5-small` sentence embeddings (384 numbers per message, not trained by us) → multinomial logistic ("softmax") regression (trained by us) |
+| **Primary model (v2)** | Cohere Embed Multilingual v3 on Amazon Bedrock (1024 numbers per message, not trained by us) → multinomial logistic ("softmax") regression (trained by us). Threshold 0.70 |
+| **Fallback (v1)** | multilingual-e5-small running inside the app (384 numbers) → softmax regression. Threshold 0.61. Used when Bedrock times out, throttles or fails (D16) |
 | **Intents** | unrecognized_charge · wrongful_fee · transaction_status · balance_check · move_money · human_agent · out_of_scope |
 | **Training data** | 720 team-generated phrases (Spanish + Portuguese), 120 scenario families. No real customer text exists in the organizer data |
-| **Test result** | 85.7% accuracy (95% CI 73.8–96.4%) on 84 held-out clear phrases; **0 wrong actions** at threshold 0.61 (keyword rules: 17.9%) |
-| **Cost** | ~2.2 ms per message on a laptop CPU; no API calls, no per-message cost |
-| **Artifact** | `src/lib/intent-model-e5small.json` (v1, now the fallback) and `src/lib/intent-model-cohere-mv3.json` (v2, primary): weights, bias, threshold, labels, embedding settings, test metrics |
+| **Test result (v2)** | 91.7% accuracy (95% CI 85.7–97.6%) on 84 held-out clear phrases; **0 wrong actions**; handles 64% of clear messages without asking (keyword rules: 82.1% accuracy, 17.9% wrong actions) |
+| **Cost** | v2: ~0.2 s per message (one Bedrock call), cents per million tokens; quota 20 messages/minute. v1: ~2 ms, no API |
+| **Artifacts** | `src/lib/intent-model-cohere-mv3.json` (v2) and `src/lib/intent-model-e5small.json` (v1): weights, bias, threshold, labels, embedding settings, test metrics |
 | **Status** | Offline evaluation on synthetic data. Not measured on real traffic |
 
-## Results (test set, frozen model `21f25214ab61`)
+## Results (test set: 84 clear + 30 ambiguous phrases)
 
-| | Keyword rules (baseline) | TF-IDF + softmax | **Embeddings + softmax (ours)** |
+| | Keyword rules (baseline) | TF-IDF + softmax | v1: e5-small + softmax | **v2: Cohere + softmax** |
+|---|---|---|---|---|
+| Accuracy (95% CI) | 82.1% (71.4–91.7) | 76.2% (59.5–91.7) | 85.7% (73.8–96.4) | **91.7% (85.7–97.6)** |
+| Macro-F1 (95% CI) | 0.819 (0.730–0.907) | 0.732 (0.610–0.931) | 0.856 (0.732–0.966) | **0.917 (0.842–0.978)** |
+| Spanish / Portuguese | 83.3% / 81.0% | 76.2% / 76.2% | 83.3% / 88.1% | **92.9% / 90.5%** |
+| **Wrong actions** (acted, and wrong) | 17.9% | 1.2% | 0.0% | **0.0%** |
+| Needless questions (asked on a clear message) | 0% (can't ask) | 60.7% | 57.1% | **35.7%** |
+| Ambiguous messages where it asked | 0% | 80.0% | 70.0% | **93.3%** |
+| Mean decision cost (lower is better) | 1.184 | 0.596 | 0.579 | **0.298** |
+| Model hash / frozen commit | - | - | `21f25214ab61` / `9a3c0b6` | `cdc00ad95d9a` / `51ee21d` |
+
+Full reports: [v1](../reports/intent_eval_e5small.md) · [v2](../reports/intent_eval_cohere-mv3.md).
+
+**Paired comparisons (family bootstrap on the same test phrases):**
+
+| Comparison | Difference | 95% CI | Verdict |
 |---|---|---|---|
-| Accuracy (95% CI) | 82.1% (71.4–91.7) | 76.2% (59.5–91.7) | **85.7% (73.8–96.4)** |
-| Macro-F1 (95% CI) | 0.819 (0.730–0.907) | 0.732 (0.610–0.931) | **0.856 (0.732–0.966)** |
-| Spanish / Portuguese | 83.3% / 81.0% | 76.2% / 76.2% | 83.3% / 88.1% |
-| **Wrong actions** (acted, and wrong) | 17.9% | 1.2% | **0.0%** |
-| Needless questions (asked on a clear message) | 0% (can't ask) | 60.7% | 57.1% |
-| Ambiguous messages where it asked | 0% | 80.0% | 70.0% |
-| Mean decision cost (lower is better) | 1.184 | 0.596 | **0.579** |
+| v1 accuracy − keyword rules | +3.5 pts | −11.9 to +19.0 | not significant |
+| v1 wrong actions: rules − v1 | 17.8 pts fewer | 8.3 to 28.6 | **significant** |
+| v2 accuracy − keyword rules | +9.6 pts | −2.4 to +21.4 | borderline (p ≈ 0.06) |
+| v2 accuracy − v1 | +6.0 pts | −3.6 to +16.7 | not significant on test (CV: +9.1, CI +5.1 to +13.2, significant) |
+| v2 coverage − v1 (messages handled without asking) | +21.5 pts | +7.1 to +38.1 | **significant** |
 
-Full report: [reports/intent_eval_e5small.md](../reports/intent_eval_e5small.md).
-
-**How to read it:**
+**How to read the v1 result** (kept for the record; v2 follows the same pattern with higher coverage):
 1. **Accuracy is not significantly better than the rules.** Paired family bootstrap: +3.5 points, 95% CI −11.9 to +19.0. With 84 test phrases in 14 families we can't claim a real difference.
 2. **Safety is significantly better.** Wrong actions drop by 17.8 points (95% CI 8.3–28.6). All 12 of the model's test errors had confidence below 0.61, so the system would have asked instead of acting. The rules have no confidence, so all 15 of theirs would have been acted on.
 3. **The cost is many clarifying questions:** 57% of clear messages. This is the main weakness (see Limitations).
@@ -107,9 +119,9 @@ Each entry: what we chose, what else we considered, and why.
 - **Chose:** resample whole families (not phrases) 2,000 times.
 - **Why:** the six phrases in a family are rephrasings of one scenario, so they're not independent. Resampling phrases would make intervals look far too narrow.
 
-### D13. Test runs are logged, and the code was frozen before the first one
+### D13. Test runs are logged, and the code was frozen before each model's test run
 - **Chose:** commit `9a3c0b6` froze code, data and settings before any test evaluation. `--test` must be passed explicitly, and every test run is appended to [reports/test_runs.jsonl](../reports/test_runs.jsonl).
-- **What the log shows:** 4 runs, all with the same model (`21f25214ab61`) and identical quality metrics. Runs 1–2 crashed while formatting the report (a sort bug) after metrics were computed; no results were displayed. Run 3 had a bug in the macro-F1 confidence interval (a label missing from a resample was scored as 0). Run 4 is the reported one. No model setting changed between runs.
+- **What the log shows:** v1: 4 runs, all with the same model (`21f25214ab61`) and identical quality metrics. Runs 1–2 crashed while formatting the report (a sort bug) after metrics were computed; no results were displayed. Run 3 had a bug in the macro-F1 confidence interval (a label missing from a resample was scored as 0). Run 4 is the reported one. No model setting changed between runs. v2: 1 run (`cdc00ad95d9a`), after commit `51ee21d` recorded the decision (D15).
 
 ### D14. Train in Python, serve in JavaScript, share one config
 - **Chose:** embeddings are computed with Transformers.js, the same library, model file and settings the Vercel app uses (`src/lib/embedding-config.json`). Python only trains the linear layer and exports its weights.

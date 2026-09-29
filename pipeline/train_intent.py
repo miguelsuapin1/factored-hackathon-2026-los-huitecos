@@ -12,8 +12,8 @@ Discipline
 - Confidence intervals resample whole families (phrases in a family aren't independent).
 
 Run without flags to see validation results only (nothing written, test untouched).
-Run with --test once to evaluate on test and write reports/intent_eval.md, reports/test_runs.jsonl and
-src/lib/intent-model.json (weights for the app).
+Run with --test once to evaluate on test and write reports/intent_eval_<embedding>.md, reports/test_runs.jsonl
+and src/lib/intent-model-<embedding>.json (weights for the app).
 """
 import argparse
 import hashlib

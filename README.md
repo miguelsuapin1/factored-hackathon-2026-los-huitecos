@@ -47,7 +47,8 @@ uv run python analysis/contact_reasons.py # -> reports/contact_reasons.md
 uv run python pipeline/phrases.py   # validate data/phrases/families.jsonl -> phrases.csv
 node scripts/embed_phrases.mjs      # embed with the same model the app serves (src/lib/embedding-config.json)
 uv run python pipeline/split.py     # verify the sealed train/validation/test split -> reports/split_leakage.md
-(cd pipeline && uv run python train_intent.py)   # validation only; add --test for the logged test run
+(cd pipeline && uv run python train_intent.py --embedding cohere-mv3)   # validation only; --test for the logged test run
+uv run python pipeline/embed_bedrock.py cohere-mv3   # Bedrock embeddings (AWS profile "bedrock")
 ```
 Labels and rules: [data/phrases/LABELING_GUIDE.md](data/phrases/LABELING_GUIDE.md)
 Findings: [docs/contact-reason-analysis.md](docs/contact-reason-analysis.md) · issue register: [docs/data-issues.md](docs/data-issues.md)
