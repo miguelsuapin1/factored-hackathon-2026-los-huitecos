@@ -10,6 +10,8 @@ Rules
   This is decided from the phrases alone, before any model is trained.
 - Sealing: the manifest stores a SHA-256 of the test phrases. Re-running verifies it; a changed test set
   fails unless --reseal is passed (and the reason goes in the commit message).
+- New families after sealing: --add-to-train puts them in train only and records when (validation/test
+  never change). Ambiguous families are refused, they never train.
 
 Run: node scripts/embed_phrases.mjs first (needs data/processed/phrase_embeddings.*).
 """
@@ -83,6 +85,8 @@ def test_hash(df: pd.DataFrame, split: pd.Series) -> str:
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--reseal", action="store_true", help="re-split and overwrite the sealed test set")
+    ap.add_argument("--add-to-train", action="store_true",
+                    help="assign families missing from the manifest to train (test set stays sealed)")
     args = ap.parse_args()
 
     df, X, meta = load()
@@ -92,12 +96,23 @@ def main():
     if MANIFEST.exists() and not args.reseal:
         manifest = json.loads(MANIFEST.read_text())
         missing = sorted(set(families.family) - set(manifest["families"]))
+        if missing and not args.add_to_train:
+            sys.exit(f"families not in the sealed manifest: {missing}. Use --add-to-train or --reseal.")
         if missing:
-            sys.exit(f"families not in the sealed manifest: {missing}. Assign them explicitly or use --reseal.")
+            ambiguous = set(families[families.ambiguous].family) & set(missing)
+            if ambiguous:
+                sys.exit(f"ambiguous families can't go to train: {sorted(ambiguous)}")
+            manifest["families"].update({f: "train" for f in missing})
+            manifest["families"] = dict(sorted(manifest["families"].items()))
+            manifest.setdefault("added_to_train", []).append(
+                {"date": datetime.now(timezone.utc).isoformat(timespec="seconds"), "families": missing})
         split = df.family.map(manifest["families"])
         if test_hash(df, split) != manifest["test_sha256"]:
             sys.exit("TEST SET CHANGED since it was sealed. Revert the edit or re-run with --reseal.")
         seed = manifest["seed"]
+        if missing:
+            MANIFEST.write_text(json.dumps(manifest, indent=2) + "\n")
+            print(f"added {len(missing)} families to train")
         print(f"manifest verified: test set unchanged (seed {seed})")
     else:
         best = None
