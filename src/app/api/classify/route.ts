@@ -1,12 +1,18 @@
+import { after } from "next/server";
 import { classifyMessage, IntentUnavailableError } from "@/lib/intent/classify";
 
 export const maxDuration = 30;
 
-// Warm the fallback model when the function boots, so an outage doesn't also pay its cold start. Imported
-// lazily: if it fails to load, only the fallback is affected and the error is logged.
-void import("@/lib/intent/embed-local")
-  .then((m) => m.loadLocalModel())
-  .catch((err) => console.error(JSON.stringify({ event: "fallback_model_load_failed", error: String(err) })));
+// Warm the fallback model so an outage doesn't also pay its cold start, but only AFTER the response is sent:
+// loading 118 MB of ONNX at boot competed for CPU with the first Bedrock call and made it time out.
+// Imported lazily: if it fails to load, only the fallback is affected and the error is logged.
+function warmFallback() {
+  after(() =>
+    import("@/lib/intent/embed-local")
+      .then((m) => m.loadLocalModel())
+      .catch((err) => console.error(JSON.stringify({ event: "fallback_model_load_failed", error: String(err) }))),
+  );
+}
 
 const MAX_CHARS = 500;
 
@@ -23,6 +29,7 @@ export async function POST(request: Request) {
     return Response.json({ error: `text is longer than ${MAX_CHARS} characters` }, { status: 413 });
   }
 
+  warmFallback();
   try {
     const result = await classifyMessage(text, { forceFallback: body.forceFallback === true });
     // Structured trace line (tracing proper is build step 6). The message text is not logged.

@@ -15,9 +15,20 @@ const client = new BedrockRuntimeClient({
   ...(process.env.AWS_ROLE_ARN ? { credentials: awsCredentialsProvider({ roleArn: process.env.AWS_ROLE_ARN }) } : {}),
 });
 
-// Fetch credentials when the function boots (on Vercel: the OIDC -> STS exchange), so the first request's
-// 1.5 s timeout covers only the model call. Failures here surface on the first real call instead.
-void client.config.credentials().catch(() => undefined);
+// Credentials (on Vercel: the OIDC -> STS exchange) are resolved before the 1.5 s model-call timer starts,
+// with their own budget, so a cold start's token exchange can't eat the model call's timeout.
+// Started at boot; the SDK caches the result until it nears expiry.
+const CREDENTIALS_TIMEOUT_MS = 5000;
+let credentialsReady: Promise<unknown> | null = null;
+
+function ensureCredentials() {
+  credentialsReady ??= client.config.credentials().catch((err) => {
+    credentialsReady = null; // retry on the next call
+    throw err;
+  });
+  return credentialsReady;
+}
+void ensureCredentials().catch(() => undefined);
 
 export class BedrockError extends Error {
   constructor(
@@ -33,6 +44,14 @@ export class BedrockError extends Error {
 
 export async function embedBedrock(text: string): Promise<Float32Array> {
   const body = JSON.stringify({ texts: [text], input_type: "classification", embedding_types: ["float"] });
+  try {
+    await Promise.race([
+      ensureCredentials(),
+      new Promise((_, reject) => setTimeout(() => reject(new Error("credentials timeout")), CREDENTIALS_TIMEOUT_MS)),
+    ]);
+  } catch (err) {
+    throw new BedrockError(`Bedrock credentials unavailable: ${String(err)}`, "auth");
+  }
   let raw: Uint8Array;
   try {
     const res = await client.send(
