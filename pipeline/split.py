@@ -36,9 +36,12 @@ SEARCH_SEEDS = range(200)
 FRACTIONS = (0.6, 0.2, 0.2)
 
 
-def load():
-    meta = json.loads((EMB.with_suffix(".json")).read_text())
-    X = np.fromfile(EMB.with_suffix(".f32"), dtype=np.float32).reshape(meta["rows"], meta["dims"])
+def load(tag: str | None = None):
+    """Phrases + embeddings. tag=None -> the served local model (scripts/embed_phrases.mjs default);
+    otherwise data/processed/phrase_embeddings_<tag>.*"""
+    emb = EMB if tag is None else EMB.with_name(f"phrase_embeddings_{tag}")
+    meta = json.loads((emb.with_suffix(".json")).read_text())
+    X = np.fromfile(emb.with_suffix(".f32"), dtype=np.float32).reshape(meta["rows"], meta["dims"])
     df = pd.read_csv(PHRASES, keep_default_na=False).set_index("phrase_id").loc[meta["ids"]].reset_index()
     df["ambiguous"] = df["ambiguous"].astype(str) == "True"
     return df, X, meta

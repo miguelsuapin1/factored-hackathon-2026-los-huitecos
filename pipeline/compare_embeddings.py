@@ -30,6 +30,10 @@ CANDIDATES = {  # tag -> (model, quantized size MB, fits Vercel's 250 MB functio
     "pmini": ("Xenova/paraphrase-multilingual-MiniLM-L12-v2", 118, True),
     "distiluse": ("Xenova/distiluse-base-multilingual-cased-v2", 135, True),
     "labse": ("Xenova/LaBSE", 472, False),
+    # Served from AWS Bedrock: no size limit, but a network call per message (see latency columns)
+    "titan1024": ("bedrock/amazon.titan-embed-text-v2:0 @1024", None, True),
+    "titan512": ("bedrock/amazon.titan-embed-text-v2:0 @512", None, True),
+    "cohere-mv3": ("bedrock/cohere.embed-multilingual-v3", None, True),
 }
 C_GRID = [0.3, 1, 3, 10, 30, 100, 300]
 SEED = 2026
@@ -75,6 +79,9 @@ def main():
 
     by_lang = {}
     for tag, (model, size, fits) in CANDIDATES.items():
+        if not (PROC / f"phrase_embeddings_{tag}.json").exists():
+            print(f"skipping {tag}: not embedded yet")
+            continue
         X, meta = load_emb(tag, dev.phrase_id)
 
         def emb_fp(C, X=X):
@@ -83,7 +90,9 @@ def main():
         best = max(results, key=lambda r: r["macro_f1"])
         by_lang[tag] = {lang: round(float((best["pred"][dev.lang.values == lang] == y[dev.lang.values == lang]).mean()), 3)
                         for lang in ["es", "pt"]}
-        rows.append({"candidate": f"{model.split('/')[1]} ({meta['dims']}d, {size} MB{'' if fits else ', too big for Vercel'})",
+        where = (f"{size} MB{'' if fits else ', too big for Vercel'}" if size
+                 else f"Bedrock API, p50 {meta['latency_ms']['p50']:.0f} ms/message")
+        rows.append({"candidate": f"{model.split('/', 1)[1]} ({meta['dims']}d, {where})",
                      **{k: v for k, v in best.items() if k != "pred"}, "es": by_lang[tag]["es"], "pt": by_lang[tag]["pt"]})
 
     res = pd.DataFrame(rows)

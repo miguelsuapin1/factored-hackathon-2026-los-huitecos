@@ -33,9 +33,11 @@ import keyword_baseline
 from split import MANIFEST, load, test_hash
 
 ROOT = Path(__file__).resolve().parent.parent
-REPORT = ROOT / "reports" / "intent_eval.md"
 RUNS = ROOT / "reports" / "test_runs.jsonl"
-EXPORT = ROOT / "src" / "lib" / "intent-model.json"
+# --embedding picks the embedding model; each gets its own report and exported weights.
+#   e5small     local multilingual-e5-small (runs inside the app; the fallback)
+#   cohere-mv3  Bedrock cohere.embed-multilingual-v3 (the primary, see docs/intent-model.md D15)
+EMBEDDINGS = {"e5small": None, "cohere-mv3": "cohere-mv3", "titan1024": "titan1024", "labse": "labse"}
 
 C_GRID = [0.1, 0.3, 1, 3, 10, 30, 100, 300]
 THRESHOLDS = np.round(np.arange(0.10, 0.96, 0.01), 2)
@@ -48,8 +50,8 @@ SEED = 2026
 
 
 # ---------- data ----------
-def get_data():
-    df, X, meta = load()
+def get_data(embedding="e5small"):
+    df, X, meta = load(EMBEDDINGS[embedding])
     manifest = json.loads(MANIFEST.read_text())
     split = df.family.map(manifest["families"])
     if test_hash(df, split) != manifest["test_sha256"]:
@@ -153,8 +155,11 @@ def git_commit():
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--test", action="store_true", help="evaluate on the sealed test set (logged)")
+    ap.add_argument("--embedding", default="e5small", choices=list(EMBEDDINGS))
     args = ap.parse_args()
-    df, X, meta, manifest = get_data()
+    REPORT = ROOT / "reports" / f"intent_eval_{args.embedding}.md"
+    EXPORT = ROOT / "src" / "lib" / f"intent-model-{args.embedding}.json"
+    df, X, meta, manifest = get_data(args.embedding)
     tr = (df.split == "train").values
     va = (df.split == "validation").values
     te = (df.split == "test").values
@@ -193,7 +198,8 @@ def main():
     for i in np.where(te)[0]:
         m_emb.predict_proba(X[i:i + 1])
     emb_clf_ms = (time.perf_counter() - t0) * 1000 / te.sum()
-    embed_ms = meta["embed_ms"] / meta["rows"]  # batched embedding cost from scripts/embed_phrases.mjs
+    # per-message embedding cost: measured single-call latency for API models, batched average for local ones
+    embed_ms = meta.get("single_message_ms") or meta["embed_ms"] / meta["rows"]
     p_emb = m_emb.predict_proba(X)
     results["embed_lr"] = {"proba": p_emb, "classes": m_emb.classes_, "ms": emb_clf_ms + embed_ms,
                            "clf_ms": emb_clf_ms, "embed_ms": embed_ms, "C": C_emb, "c_scores": emb_scores}
@@ -255,7 +261,7 @@ def main():
         "version": 1,
         "created": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "git_commit": git_commit(),
-        "model": "multinomial logistic regression over multilingual-e5-small embeddings",
+        "model": f"multinomial logistic regression over {meta['config']['model']} embeddings",
         "embedding": meta["config"],
         "labels": r["classes"].tolist(),
         "weights": np.round(m_emb.coef_, 6).tolist(),
@@ -273,6 +279,7 @@ def main():
 
     with RUNS.open("a") as f:
         f.write(json.dumps({"ts": export["created"], "git_commit": export["git_commit"], "model_hash": model_hash,
+                            "embedding": args.embedding,
                             "test_sha256": manifest["test_sha256"][:16], "results": test_log}, default=float) + "\n")
 
     # report
@@ -299,7 +306,8 @@ def main():
                 "ambiguous asked is the share of ambiguous messages where the model asked instead of acting. "
                 "Mean cost uses weights wrong action = 5, acting on ambiguous = 2, needless question = 1. "
                 "The keyword baseline has no confidence, so it always acts. "
-                f"embed_lr time = {results['embed_lr']['embed_ms']:.2f} ms embedding (batched, Node) + "
+                f"embed_lr time = {results['embed_lr']['embed_ms']:.2f} ms embedding "
+                f"({'single Bedrock call from Guatemala' if meta.get('single_message_ms') else 'batched, local Node'}) + "
                 f"{results['embed_lr']['clf_ms']:.3f} ms classifier._\n\n")
         f.write("## Accuracy by style (test, clear messages)\n\n")
         styles = pd.DataFrame({rw.model: rw.by_style for _, rw in res[res.split == "test"].iterrows()}).T

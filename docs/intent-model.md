@@ -12,7 +12,7 @@ The component that reads a customer message and decides what they want. It is th
 | **Training data** | 720 team-generated phrases (Spanish + Portuguese), 120 scenario families. No real customer text exists in the organizer data |
 | **Test result** | 85.7% accuracy (95% CI 73.8–96.4%) on 84 held-out clear phrases; **0 wrong actions** at threshold 0.61 (keyword rules: 17.9%) |
 | **Cost** | ~2.2 ms per message on a laptop CPU; no API calls, no per-message cost |
-| **Artifact** | `src/lib/intent-model.json`: weights, bias, threshold, labels, embedding settings, test metrics |
+| **Artifact** | `src/lib/intent-model-e5small.json` (v1, now the fallback) and `src/lib/intent-model-cohere-mv3.json` (v2, primary): weights, bias, threshold, labels, embedding settings, test metrics |
 | **Status** | Offline evaluation on synthetic data. Not measured on real traffic |
 
 ## Results (test set, frozen model `21f25214ab61`)
@@ -27,7 +27,7 @@ The component that reads a customer message and decides what they want. It is th
 | Ambiguous messages where it asked | 0% | 80.0% | 70.0% |
 | Mean decision cost (lower is better) | 1.184 | 0.596 | **0.579** |
 
-Full report: [reports/intent_eval.md](../reports/intent_eval.md).
+Full report: [reports/intent_eval_e5small.md](../reports/intent_eval_e5small.md).
 
 **How to read it:**
 1. **Accuracy is not significantly better than the rules.** Paired family bootstrap: +3.5 points, 95% CI −11.9 to +19.0. With 84 test phrases in 14 families we can't claim a real difference.
@@ -114,6 +114,26 @@ Each entry: what we chose, what else we considered, and why.
 ### D14. Train in Python, serve in JavaScript, share one config
 - **Chose:** embeddings are computed with Transformers.js, the same library, model file and settings the Vercel app uses (`src/lib/embedding-config.json`). Python only trains the linear layer and exports its weights.
 - **Why:** if training and serving computed embeddings differently (another library, precision or prefix), the weights would silently stop matching. Verified: the exported JSON reproduces the test accuracy on its own.
+
+### D15. v2: Cohere multilingual embeddings from Amazon Bedrock as the primary model (decided 2026-09-29, before its test run)
+- **Why revisit:** v1 (e5-small) was chosen partly because it fits inside a Vercel function (250 MB). Serving the embedding model from an API removes that limit, so we compared API models on the same grouped cross-validation (test untouched):
+
+  | Model | CV accuracy | vs e5-small (paired, 95% CI) | Single-message latency | Quota |
+  |---|---|---|---|---|
+  | multilingual-e5-small (v1) | 75.5% | - | ~2 ms, in-app | none |
+  | LaBSE (local, 472 MB) | 79.9% | +4.3 (+0.7 to +8.0) | ~5 ms + a server we'd host | our server |
+  | Titan Text Embeddings V2 @1024 (Bedrock) | 80.1% | +4.6 (+0.6 to +8.6) | 0.5–1 s | 60 requests/min |
+  | **Cohere Embed Multilingual v3 (Bedrock)** | **84.6%** | **+9.1 (+5.1 to +13.2)** | **~0.2–0.5 s** | **20 requests/min** |
+
+  Cohere also beats LaBSE: +4.7 points (95% CI +0.9 to +8.6).
+- **Chose:** Cohere embeddings (`input_type: classification`) + the same softmax regression. Validation: 92.9% accuracy, threshold 0.70, 0 wrong actions, needless questions down from 52% to 36%.
+- **Costs accepted:** ~0.2–0.5 s per message (the Haiku reply takes longer anyway); a hard quota of **20 requests/minute** on this account, a documented capacity limit (production would need provisioned throughput); a dependency on AWS. Every Bedrock call costs cents per million tokens, paid from the account's credits.
+- **Test discipline:** decided from cross-validation and validation only, committed before running the test. The test set is being reused once (v1 was evaluated on it); both v1 and v2 results are reported. The strongest evidence remains the future human-written test set.
+
+### D16. e5-small stays as the automatic fallback (not LaBSE)
+- **Chose:** if the Bedrock call times out, is throttled or fails after one bounded retry, classify with the v1 e5-small model running inside the app. The trace records which model answered.
+- **Why not LaBSE:** it's more accurate than e5 (+4.3), but it would need its own server. A fallback's job is to work when the primary doesn't; e5 needs no network, while a LaBSE server on AWS would likely fail together with Bedrock. Kept as a stretch goal.
+- **Consequence:** during an outage the system is less accurate but still safe (v1 had 0 wrong actions on test); it asks for clarification more often.
 
 ## Errors worth knowing (test)
 
