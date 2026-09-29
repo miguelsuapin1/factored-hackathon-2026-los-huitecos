@@ -9,6 +9,10 @@ const eslintConfig = defineConfig([
   globalIgnores([
     // Default ignores of eslint-config-next:
     ".next/**",
+    // Python env, data and bundled models are not JS source
+    ".venv/**",
+    "data/**",
+    "models/**",
     "out/**",
     "build/**",
     "next-env.d.ts",

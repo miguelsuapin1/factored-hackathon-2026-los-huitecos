@@ -159,6 +159,7 @@ Each entry: what we chose, what else we considered, and why.
 - **Small test set** (84 clear + 30 ambiguous phrases). Intervals are wide (±11 points).
 - **Many clarifying questions** (57% of clear messages). Improvable with more training scenarios, conversation context (the next turn often resolves it), and entity extraction. It's also a direct consequence of the cost weights.
 - **Portuguese not reviewed by a native speaker.**
+- **Small train/serve difference in the fallback (e5-small).** Training embedded the phrases in one batch; the app embeds one message at a time. The 8-bit quantized model calibrates activations per batch, so confidences differ by up to 0.03 (labels matched on all 14 checked phrases). Fix for the next retrain: embed phrases one at a time. Cohere is computed server-side per text and matched within 0.01.
 - **Only the message is used.** No account context yet (for example, whether the customer actually has a pending transaction).
 
 ## Reproduce

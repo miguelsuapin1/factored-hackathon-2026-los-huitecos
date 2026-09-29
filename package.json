@@ -3,14 +3,18 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "prebuild": "node scripts/fetch-model.mjs",
+    "predev": "node scripts/fetch-model.mjs",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"
   },
   "dependencies": {
+    "@aws-sdk/client-bedrock-runtime": "^3.1142.0",
     "@huggingface/transformers": "^4.3.0",
     "@supabase/supabase-js": "^2.117.2",
+    "@vercel/oidc-aws-credentials-provider": "^3.3.9",
     "next": "16.3.6",
     "react": "19.2.8",
     "react-dom": "19.2.8"
