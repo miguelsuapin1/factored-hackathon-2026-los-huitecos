@@ -59,5 +59,6 @@ Findings: [docs/contact-reason-analysis.md](docs/contact-reason-analysis.md) · 
 - [x] Intent phrase set (ES/PT, team-generated) + sealed train/validation/test split
 - [ ] Native Portuguese review of the phrase set
 - [x] Intent classifier vs keyword baseline: [docs/intent-model.md](docs/intent-model.md) (offline, synthetic data)
+- [x] Phase 1 chat page: intent API with Cohere (Bedrock, keyless via Vercel OIDC) and in-app fallback
 - [ ] Full system, end-to-end evaluation harness
 - [ ] Observability, security (prompt-injection defenses, RLS), structured human handoff

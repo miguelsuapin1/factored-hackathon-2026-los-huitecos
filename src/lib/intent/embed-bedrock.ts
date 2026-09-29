@@ -15,6 +15,10 @@ const client = new BedrockRuntimeClient({
   ...(process.env.AWS_ROLE_ARN ? { credentials: awsCredentialsProvider({ roleArn: process.env.AWS_ROLE_ARN }) } : {}),
 });
 
+// Fetch credentials when the function boots (on Vercel: the OIDC -> STS exchange), so the first request's
+// 1.5 s timeout covers only the model call. Failures here surface on the first real call instead.
+void client.config.credentials().catch(() => undefined);
+
 export class BedrockError extends Error {
   constructor(
     message: string,
