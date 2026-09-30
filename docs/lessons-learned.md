@@ -66,7 +66,7 @@ Everything we tried and replaced, dropped or had to fix, in one place. Failures 
 | S6 | Cohere models on day one | Blocked for a few hours by new-account verification | Retried after it cleared |
 | S7 | Data Dictionary credentials | The first PDF version had none on page 1 | The organizers published an updated version |
 
-## Data pipeline (silver/gold, 2026-09-30)
+## Data pipeline (silver/gold; Carlos, 2026-09-30)
 
 | # | What we tried | Result | What replaced it / lesson | Evidence |
 |---|---|---|---|---|

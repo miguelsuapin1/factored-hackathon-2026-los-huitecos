@@ -60,7 +60,7 @@ uv run python pipeline/split.py               # verify the sealed split
 - Vercel team `miguelsuapin-1909s-projects` (team_WtIAxy18QvOOQWBoFrcnidFW), project `latam-bank-service` (prj_gGZ6kb85SYj3GESHcr2pj3wqenvT). **The local `vercel` CLI is logged into a different account (publink): use the Vercel connector, not the CLI.**
 - Vercel env: `AWS_ROLE_ARN` (OIDC role `latam-bank-vercel`, keyless, can only invoke Cohere embed), `BEDROCK_REGION`, `DEMO_*`, `SESSION_SECRET`, `ANTHROPIC_API_KEY` (sensitive).
 - AWS account 082229155656 (Free plan, credits). Local profiles: `factored` (organizer's read-only S3 keys), `bedrock` (IAM user latam-bank-bedrock, embeddings only). IAM user `miguel` is read-only; IAM changes need root (Miguel does them).
-- GCP project `project-d49391de-51c4-49bf-aae` (Carlos): bucket `gs://factored_gt_latam_bank_raw/raw/` (S3 copy), BigQuery datasets `raw_ext` + `bronze` in us-east1 (D-003). Build: `uv run python pipeline/bigquery/bronze_bq.py`.
+- GCP project `project-d49391de-51c4-49bf-aae` (Carlos): bucket `gs://factored_gt_latam_bank_raw/raw/` (S3 copy), BigQuery datasets in us-east1: `raw_ext` + `bronze` (D-003, `pipeline/bigquery/bronze_bq.py`), then `staging`, `silver`, `silver_quarantine`, `ref`, `ops`, `gold`, `gold_serving` (D-005, `pipeline/dbt`). Progress log: docs/phase-2-data-log.md.
 - Supabase project `paguvqqelfwadcolocaq` (org "hackathon", sa-east-1), empty so far. Schema changes go in supabase/migrations/.
 
 ## Gotchas we already hit

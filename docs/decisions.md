@@ -25,7 +25,7 @@ Only the workflow-relevant slice goes into Supabase (the free tier is 500 MB).
 **Status:** accepted 2026-09-28 by the team. Chosen: **transaction-dispute intake** (unrecognized charges + wrongful fees; 40% of complaints; the complaint bucket has the worst first-contact resolution at 43.6% and 23% of agent hours). Alternative: account & payment inquiries (35% of contacts, but already 91.5% first-contact resolution). Evidence: [contact-reason-analysis.md](contact-reason-analysis.md).
 
 ## D-003: BigQuery as the shared warehouse for bronze → silver → gold (2026-09-29)
-**Status:** proposed by Carlos, bronze layer built; team to confirm. Supersedes the "ETL" row of D-001 only; S3 stays the source of truth and Supabase stays the serving DB.
+**Status:** proposed, bronze layer built; team to confirm (Carlos, 2026-09-29). Supersedes the "ETL" row of D-001 only; S3 stays the source of truth and Supabase stays the serving DB.
 
 **Context**
 - Everyone's laptop needed its own 1.7–5.3 GB copy plus a DuckDB file, and `digital_events` (3.6 GB CSV, 15.6M rows) was never loaded.
@@ -62,7 +62,7 @@ GCP project `project-d49391de-51c4-49bf-aae`, location `us-east1` (dataset and b
 **Why:** our training set is 948 team-generated phrases by one author (Claude); Banking77 adds real phrasing variety and many out-of-scope banking questions. Risks we'll measure, not assume: it's English while our customers write Spanish and Portuguese, and 13K sentences could swamp our 948 (we'll rebalance). **Result (2026-09-30): tried and rejected; the live model doesn't use it** ([intent-model.md D17](intent-model.md), [reports/banking77_experiment.md](../reports/banking77_experiment.md)).
 
 ## D-005: dbt for silver and gold, same models on BigQuery and DuckDB (2026-09-30)
-**Status:** proposed by Carlos, silver + gold built on the full population; team to confirm.
+**Status:** proposed, silver + gold built on the full population; team to confirm (Carlos, 2026-09-30).
 
 **Options considered:** (A) dbt, (B) numbered SQL files + a Python runner (like `bronze_bq.py`), (C) Python dataframes + Pandera/Great Expectations, (Dataform) Google's in-console dbt. Chosen A.
 
