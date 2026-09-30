@@ -6,9 +6,23 @@ import type { IntentResult } from "@/lib/intent/classify";
 import type { ReplyResult } from "@/lib/reply/compose";
 import { INTENT_LABELS, MODEL_LABELS } from "@/lib/intent/labels";
 
+// The `conversation` block of /api/chat (docs/contracts.md K1).
+type Conversation = {
+  state: string;
+  turn: number;
+  workingIntent: string | null;
+  resolvedBy: string;
+  move: string;
+  details: { amount: number | null; expectedAmount: number | null; currency: string | null; date: string | null; merchant: string | null };
+  missing: string[];
+  status: string;
+  restartReason: string | null;
+  extraction: { source: string; dropped: string[]; error: string | null; ms: number };
+};
+
 type Message =
   | { id: number; role: "user"; text: string }
-  | { id: number; role: "bot"; result: IntentResult; reply: ReplyResult }
+  | { id: number; role: "bot"; result: IntentResult; reply: ReplyResult; conversation: Conversation }
   | { id: number; role: "error"; text: string };
 
 const EXAMPLES = [
@@ -32,6 +46,7 @@ export function ChatDemo() {
   const [simulateOutage, setSimulateOutage] = useState(false);
   const [selected, setSelected] = useState<number | null>(null);
   const nextId = useRef(1);
+  const stateToken = useRef<string | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -48,7 +63,7 @@ export function ChatDemo() {
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: clean, forceFallback: simulateOutage }),
+        body: JSON.stringify({ text: clean, forceFallback: simulateOutage, state: stateToken.current }),
       });
       if (res.status === 401) {
         // Session expired: back to sign-in, then return here.
@@ -58,13 +73,21 @@ export function ChatDemo() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? `Request failed (${res.status})`);
       const id = nextId.current++;
-      setMessages((m) => [...m, { id, role: "bot", result: data.intent as IntentResult, reply: data.reply as ReplyResult }]);
+      const conversation = data.conversation as Conversation;
+      stateToken.current = conversation.state;
+      setMessages((m) => [...m, { id, role: "bot", result: data.intent as IntentResult, reply: data.reply as ReplyResult, conversation }]);
       setSelected(id);
     } catch (err) {
       setMessages((m) => [...m, { id: nextId.current++, role: "error", text: (err as Error).message }]);
     } finally {
       setBusy(false);
     }
+  }
+
+  function reset() {
+    stateToken.current = null;
+    setMessages([]);
+    setSelected(null);
   }
 
   const botMessages = messages.filter((m): m is Extract<Message, { role: "bot" }> => m.role === "bot");
@@ -78,6 +101,7 @@ export function ChatDemo() {
             <p className="label">Dispute assistant · preview</p>
             <div className="sub">Write like a customer, in Spanish or Portuguese</div>
           </div>
+          <button className="link" onClick={reset} disabled={busy || messages.length === 0}>New conversation</button>
           <label className="toggle" htmlFor="outage">
             <input id="outage" type="checkbox" checked={simulateOutage} onChange={(e) => setSimulateOutage(e.target.checked)} />
             Simulate AWS outage
@@ -89,8 +113,9 @@ export function ChatDemo() {
             <div className="empty">
               <h2>What does the customer want?</h2>
               <p className="sub">
-                Each message is classified into one of 7 intents. When the model isn&apos;t confident enough, the system
-                asks a clarifying question instead of acting. Try an example below.
+                Each message is classified into one of 7 intents, and the assistant remembers the conversation: the
+                topic, the amount, date and merchant you mentioned, and what it asked you. It confirms the details
+                before doing anything. Try an example below.
               </p>
             </div>
           )}
@@ -103,8 +128,9 @@ export function ChatDemo() {
               <div key={m.id} className={`msg bot${current?.id === m.id ? " active" : ""}`}>
                 <span className="reply-text">{m.reply.text}</span>
                 <span className="reply-meta">
-                  {INTENT_LABELS[m.result.intent]?.en} · {pct(m.result.confidence)} ·{" "}
-                  {m.result.decision === "act" ? "acting" : "asking to clarify"}
+                  {m.conversation.workingIntent ? INTENT_LABELS[m.conversation.workingIntent]?.en : "Topic not set"} ·{" "}
+                  {MOVE_LABELS[m.conversation.move] ?? m.conversation.move}
+                  {m.conversation.workingIntent !== m.result.intent ? ` · model alone: ${INTENT_LABELS[m.result.intent]?.en} ${pct(m.result.confidence)}` : ` · ${pct(m.result.confidence)}`}
                   {m.result.model === "e5small" ? " · fallback model" : ""}
                   {m.reply.source === "template" ? " · template reply" : ""} ·{" "}
                   <button className="link" onClick={() => setSelected(m.id)}>details</button>
@@ -152,26 +178,77 @@ export function ChatDemo() {
           <p className="label">Understanding</p>
           {current && <span className="trace">trace {current.result.traceId.slice(0, 8)}</span>}
         </div>
-        {current ? <Inspector result={current.result} reply={current.reply} /> : (
+        {current ? <Inspector result={current.result} reply={current.reply} conversation={current.conversation} /> : (
           <div className="placeholder">Send a message to see the intent, confidence and the model that answered.</div>
         )}
         <div className="note">
-          Replies don&apos;t use account data yet: the assistant asks for details instead of looking them up.
-          Account lookups, confirmations and human handoff come in the next steps.
+          Replies don&apos;t use account data yet: the assistant collects and confirms the details, but doesn&apos;t
+          look up the transaction. Account lookups, policy checks and human handoff come in the next steps.
         </div>
       </aside>
     </main>
   );
 }
 
-function Inspector({ result, reply }: { result: IntentResult; reply: ReplyResult }) {
+const MOVE_LABELS: Record<string, string> = {
+  ask_clarify: "asking to clarify",
+  ask_details: "asking for missing details",
+  confirm: "asking to confirm",
+  ask_correction: "asking what to correct",
+  confirmed: "details confirmed",
+  answer: "answering",
+  handoff: "offering an agent",
+};
+
+const RESOLVED_LABELS: Record<string, string> = {
+  model: "the intent model",
+  clarification: "the answer to the clarifying question",
+  offer: "the option chosen from the ones offered",
+  kept_topic: "the ongoing topic (low-confidence follow-up)",
+  new_topic: "a confident change of topic",
+  confirmation: "the confirmation step",
+};
+
+function ConversationPanel({ c }: { c: Conversation }) {
+  const d = c.details;
+  const rows: [string, string | null][] = [
+    ["Amount", d.amount !== null ? `${d.amount}${d.currency ? ` ${d.currency}` : ""}` : null],
+    ["Should have been", d.expectedAmount !== null ? String(d.expectedAmount) : null],
+    ["Date", d.date],
+    ["Merchant", d.merchant],
+  ];
+  return (
+    <div className="section">
+      <p className="label">Conversation · turn {c.turn}</p>
+      <p className="explain">
+        Topic: <b>{c.workingIntent ? INTENT_LABELS[c.workingIntent]?.en : "not set yet"}</b>, decided by{" "}
+        {RESOLVED_LABELS[c.resolvedBy] ?? c.resolvedBy}. Next move: <b>{MOVE_LABELS[c.move] ?? c.move}</b>.
+      </p>
+      <dl className="facts">
+        {rows.map(([k, v]) => (
+          <div key={k}><dt>{k}</dt><dd>{v ?? (c.missing.includes(k.toLowerCase()) ? "missing" : "—")}</dd></div>
+        ))}
+        <div><dt>Extraction</dt><dd>{c.extraction.source} · {c.extraction.ms} ms</dd></div>
+        <div><dt>Status</dt><dd>{c.status}</dd></div>
+        {c.extraction.dropped.length > 0 && (
+          <div style={{ gridColumn: "1 / -1" }}><dt>Dropped (not found in the message)</dt><dd>{c.extraction.dropped.join(", ")}</dd></div>
+        )}
+        {c.restartReason && <div style={{ gridColumn: "1 / -1" }}><dt>Conversation restarted</dt><dd>{c.restartReason}</dd></div>}
+      </dl>
+    </div>
+  );
+}
+
+function Inspector({ result, reply, conversation }: { result: IntentResult; reply: ReplyResult; conversation: Conversation }) {
   const names = INTENT_LABELS[result.intent];
   const model = MODEL_LABELS[result.model];
   const act = result.decision === "act";
   const top = result.scores.slice(0, 4);
   return (
     <>
+      <ConversationPanel c={conversation} />
       <div className="section">
+        <p className="label">This message on its own (intent model)</p>
         <div>
           <h2 className="intent-name">{names?.en}</h2>
           <div className="intent-es">{names?.es} · {names?.pt}</div>

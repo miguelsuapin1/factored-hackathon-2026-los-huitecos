@@ -1,23 +1,34 @@
-// One customer turn (Phase 1): understand (intent) -> respond (Haiku phrasing a code-chosen instruction).
+// One customer turn: understand (intent + details, in parallel) -> decide the next move from the conversation state
+// (code) -> respond (Haiku phrasing a code-chosen instruction). API contract: docs/contracts.md K1.
 import { after } from "next/server";
+import { cookies } from "next/headers";
+import { SESSION_COOKIE, verifySession } from "@/lib/auth/session";
+import { advance, readYesNo } from "@/lib/conversation/dialogue";
+import { extractDetails } from "@/lib/conversation/extract";
+import { numbersIn } from "@/lib/conversation/numbers";
+import { restoreState, sealState } from "@/lib/conversation/token";
 import { classifyMessage, IntentUnavailableError } from "@/lib/intent/classify";
 import { composeReply } from "@/lib/reply/compose";
+import { guessLanguage, planReply } from "@/lib/reply/templates";
 
 export const maxDuration = 30;
 const MAX_CHARS = 500;
 
 export async function POST(request: Request) {
-  let body: { text?: unknown; forceFallback?: unknown };
+  let body: { text?: unknown; forceFallback?: unknown; state?: unknown };
   try {
     body = await request.json();
   } catch {
-    return Response.json({ error: "Send JSON: { \"text\": \"...\" }" }, { status: 400 });
+    return Response.json({ error: "Send JSON: { \"text\": \"...\", \"state\": \"<optional>\" }" }, { status: 400 });
   }
   const text = typeof body.text === "string" ? body.text.trim() : "";
   if (!text) return Response.json({ error: "text is required" }, { status: 400 });
   if (text.length > MAX_CHARS) {
     return Response.json({ error: `text is longer than ${MAX_CHARS} characters` }, { status: 413 });
   }
+  // src/proxy.ts already rejected requests without a valid session; this reads who it is.
+  const session = await verifySession((await cookies()).get(SESSION_COOKIE)?.value).catch(() => null);
+  if (!session) return Response.json({ error: "Your session expired or you're not signed in." }, { status: 401 });
 
   // Warm the fallback intent model after the response (see api/classify/route.ts for why).
   after(() =>
@@ -27,19 +38,76 @@ export async function POST(request: Request) {
   );
 
   try {
-    const intent = await classifyMessage(text, { forceFallback: body.forceFallback === true });
-    const reply = await composeReply(text, intent);
-    // Structured trace line (build step 6 turns this into proper tracing). The message text is not logged.
+    const { state: prev, restartReason } = await restoreState(body.state, session);
+    // A plain "yes" to a confirmation carries no details: skip the extraction call.
+    const skipExtract = prev.pending?.kind === "confirm" && readYesNo(text) === "yes";
+    const [intent, extraction] = await Promise.all([
+      classifyMessage(text, { forceFallback: body.forceFallback === true }),
+      extractDetails(text, { skip: skipExtract }),
+    ]);
+
+    const outcome = advance(prev, { text, intent, details: extraction.details });
+    const { state } = outcome;
+    const d = state.details;
+    const plan = planReply(
+      {
+        move: outcome.move,
+        intent: state.workingIntent ?? intent.intent,
+        clarifyOptions: outcome.clarifyOptions,
+        clarifyAttempts: state.pending?.kind === "clarify" ? state.pending.attempts : 0,
+        details: d,
+        missing: outcome.missing.filter((m): m is "amount" | "date" => m === "amount" || m === "date"),
+      },
+      prev.lang ?? guessLanguage(text),
+    );
+    const dateParts = d.date ? d.date.split("-").map(Number) : [];
+    const reply = await composeReply({
+      customerText: text,
+      plan,
+      allowedNumbers: [
+        ...state.customerTexts.flatMap(numbersIn),
+        ...[d.amount, d.expectedAmount].filter((v): v is number => v !== null),
+        ...dateParts,
+      ],
+      languageHint: prev.lang,
+    });
+    state.lang = reply.language;
+    const token = await sealState(state);
+
+    const conversation = {
+      state: token,
+      conversationId: state.id,
+      turn: state.turn,
+      workingIntent: state.workingIntent,
+      resolvedBy: outcome.resolvedBy,
+      move: outcome.move,
+      details: d,
+      missing: outcome.missing,
+      pending: state.pending,
+      status: state.status,
+      restartReason,
+      extraction: {
+        source: extraction.source, dropped: extraction.dropped, error: extraction.error, ms: Math.round(extraction.ms),
+        promptVersion: extraction.promptVersion, costUsd: extraction.costUsd,
+      },
+    };
+    // Structured trace line (docs/contracts.md K4). Message texts and detail values are not logged.
     console.log(JSON.stringify({
       event: "turn", traceId: intent.traceId, chars: text.length,
       intent: { model: intent.model, label: intent.intent, confidence: Number(intent.confidence.toFixed(4)),
         decision: intent.decision, fallbackReason: intent.fallbackReason,
         attempts: intent.attempts.map((a) => ({ ...a, ms: Math.round(a.ms) })), ms: Math.round(intent.totalMs) },
+      conversation: { conversationId: state.id, turn: state.turn, resolvedBy: outcome.resolvedBy, move: outcome.move,
+        workingIntent: state.workingIntent, pendingBefore: outcome.pendingBefore?.kind ?? null, status: state.status,
+        restartReason, detailsKnown: Object.entries(d).filter(([, v]) => v !== null).map(([k]) => k),
+        extract: { source: extraction.source, dropped: extraction.dropped, error: extraction.error,
+          ms: Math.round(extraction.ms), inputTokens: extraction.inputTokens, outputTokens: extraction.outputTokens,
+          costUsd: extraction.costUsd } },
       reply: { source: reply.source, language: reply.language, fallbackReason: reply.fallbackReason,
         promptVersion: reply.promptVersion, ms: Math.round(reply.ms), inputTokens: reply.inputTokens,
         outputTokens: reply.outputTokens, costUsd: reply.costUsd },
     }));
-    return Response.json({ intent, reply });
+    return Response.json({ intent, reply, conversation });
   } catch (err) {
     const attempts = err instanceof IntentUnavailableError ? err.attempts : undefined;
     console.error(JSON.stringify({ event: "turn_failed", error: String(err), attempts }));

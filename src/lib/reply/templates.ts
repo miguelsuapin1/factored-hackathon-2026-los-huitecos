@@ -108,3 +108,119 @@ export function guessLanguage(text: string): Lang {
   const es = text.match(ES_MARKERS)?.length ?? 0;
   return pt > es ? "pt" : "es";
 }
+
+// ---- Multi-turn moves (build step 11, docs/conversation.md C7–C8) ----
+
+type DetailsView = {
+  amount: number | null;
+  expectedAmount: number | null;
+  currency: string | null;
+  date: string | null;
+  merchant: string | null;
+};
+
+const MONTHS: Record<Lang, string[]> = {
+  es: ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"],
+  pt: ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"],
+};
+
+const money = (v: number, currency: string | null) => `${Number.isInteger(v) ? v : v.toFixed(2)}${currency ? ` ${currency}` : ""}`;
+const day = (iso: string, lang: Lang) => {
+  const [, m, d] = iso.split("-").map(Number);
+  return `${d} de ${MONTHS[lang][m - 1]}`;
+};
+
+/** The known details as short phrases in the customer's language (given to Haiku pre-formatted, and used by templates). */
+function knownParts(d: DetailsView, lang: Lang) {
+  const es = lang === "es";
+  const parts: string[] = [];
+  if (d.amount !== null) parts.push(`${es ? "cargo de" : "cobrança de"} ${money(d.amount, d.currency)}`);
+  if (d.expectedAmount !== null) parts.push(`${es ? "debía ser" : "deveria ser"} ${money(d.expectedAmount, d.currency)}`);
+  if (d.date !== null) parts.push(`${es ? "del" : "de"} ${day(d.date, lang)}`);
+  if (d.merchant !== null) parts.push(`${es ? "en" : "em"} ${d.merchant}`);
+  return parts;
+}
+
+const MISSING_TEXT: Record<Lang, Record<"amount" | "date", string>> = {
+  es: { amount: "el monto del cargo", date: "la fecha aproximada del cargo" },
+  pt: { amount: "o valor da cobrança", date: "a data aproximada da cobrança" },
+};
+const MISSING_EN = { amount: "the amount of the charge", date: "the date of the charge (approximate is fine)" };
+
+const join = (items: string[], lang: Lang) =>
+  items.length <= 1 ? items.join("") : `${items.slice(0, -1).join(", ")} ${lang === "es" ? "y" : "e"} ${items.at(-1)}`;
+
+export type ReplyPlanInput = {
+  move: "ask_clarify" | "ask_details" | "confirm" | "ask_correction" | "confirmed" | "answer" | "handoff";
+  intent: IntentLabel; // the working intent (or the model's top intent when there is none)
+  clarifyOptions: [IntentLabel, IntentLabel] | null;
+  clarifyAttempts: number;
+  details: DetailsView;
+  missing: ("amount" | "date")[];
+};
+
+export type ReplyPlan = { instruction: string; templates: Record<Lang, string> };
+
+/** Code decides what each move's reply must say (R1): an instruction for Haiku plus the fixed ES/PT fallback. */
+export function planReply(p: ReplyPlanInput, lang: Lang): ReplyPlan {
+  const known = knownParts(p.details, lang);
+  const knownText = known.length ? known.join(", ") : "nothing yet";
+  const both = (f: (l: Lang) => string) => ({ es: f("es"), pt: f("pt") });
+
+  switch (p.move) {
+    case "ask_clarify": {
+      const [a, b] = p.clarifyOptions ?? [p.intent, "out_of_scope"];
+      const again = p.clarifyAttempts > 0 ? "The customer's last answer didn't make it clear yet. " : "";
+      return {
+        instruction: again + clarifyGuidance(a, b),
+        templates: both((l) => templateReply(l, a, "ask", b)),
+      };
+    }
+    case "ask_details":
+      return {
+        instruction: `The customer is disputing ${OPTION_TEXT[p.intent]}. Already known: ${knownText}. Briefly acknowledge what's known (you may restate those details exactly as written here), then ask ONLY for: ${p.missing.map((m) => MISSING_EN[m]).join(" and ")}. Do not ask again for anything already known. Do not promise a refund.`,
+        templates: both((l) => {
+          const k = knownParts(p.details, l);
+          const ask = join(p.missing.map((m) => MISSING_TEXT[l][m]), l);
+          return l === "es"
+            ? `${k.length ? `Anotado: ${k.join(", ")}. ` : ""}¿Me indicas ${ask}?`
+            : `${k.length ? `Anotado: ${k.join(", ")}. ` : ""}Pode me informar ${ask}?`;
+        }),
+      };
+    case "confirm":
+      return {
+        instruction: `Restate these details of ${OPTION_TEXT[p.intent]} exactly as written here and ask the customer to confirm with yes or no before the charge is reviewed: ${knownText}. Do not say a claim was opened or that anything was resolved.`,
+        templates: both((l) =>
+          l === "es"
+            ? `Para confirmar: ${knownParts(p.details, l).join(", ")}. ¿Es correcto? (sí / no)`
+            : `Para confirmar: ${knownParts(p.details, l).join(", ")}. Está correto? (sim / não)`,
+        ),
+      };
+    case "ask_correction":
+      return {
+        instruction: `The customer said these details are not right: ${knownText}. Ask which one is wrong (amount, date or merchant) and the correct value.`,
+        templates: both((l) =>
+          l === "es" ? "Entendido. ¿Qué dato no es correcto: el monto, la fecha o el comercio? ¿Cuál es el correcto?"
+            : "Entendi. Qual dado não está correto: o valor, a data ou o estabelecimento? Qual é o correto?",
+        ),
+      };
+    case "confirmed":
+      return {
+        instruction: `Thank the customer: the details are confirmed (${knownText}) and the charge will now be checked against their account. Do not say a claim was opened or a refund issued, and give no timeframe.`,
+        templates: both((l) =>
+          l === "es" ? "Gracias, datos confirmados. Ahora revisaremos ese cargo en tu cuenta."
+            : "Obrigado, dados confirmados. Agora vamos verificar essa cobrança na sua conta.",
+        ),
+      };
+    case "handoff":
+      return {
+        instruction: "After two questions it's still not clear what the customer needs. Say you'll pass the conversation to an agent who can help, and ask them to describe the issue briefly in their own words. Do not promise any outcome.",
+        templates: both((l) =>
+          l === "es" ? "Para ayudarte mejor, te paso con un asesor. ¿Me cuentas en una frase qué ocurrió?"
+            : "Para te ajudar melhor, vou te passar para um atendente. Pode me contar em uma frase o que aconteceu?",
+        ),
+      };
+    case "answer":
+      return { instruction: GUIDANCE[p.intent], templates: both((l) => TEMPLATES[l][p.intent]) };
+  }
+}
