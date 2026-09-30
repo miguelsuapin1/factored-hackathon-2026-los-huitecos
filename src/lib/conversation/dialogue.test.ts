@@ -27,31 +27,42 @@ function run(turns: { text: string; intent: TurnInput["intent"]; details?: Parti
   });
 }
 
-describe("TC-01: clarification answered, then details already given", () => {
+describe("TC-01 (C15 flow): no up-front question between two charge intents; words set and update the kind", () => {
   const [t1, t2, t3] = run([
     { text: "No reconozco un cargo de 350 pesos en mi tarjeta", intent: intent({ unrecognized_charge: 0.58, wrongful_fee: 0.3 }), details: { amount: 350 } },
     { text: "Error en el monto, debería ser de 250 pesos", intent: intent({ move_money: 0.54, wrongful_fee: 0.25, unrecognized_charge: 0.05 }), details: { expectedAmount: 250 } },
     { text: "Fue el 10 de junio", intent: intent({ out_of_scope: 0.5, wrongful_fee: 0.2 }), details: { date: "2026-06-10" } },
   ]);
 
-  it("turn 1 asks between the two most likely intents", () => {
-    assert.equal(t1.move, "ask_clarify");
-    assert.deepEqual(t1.clarifyOptions, ["unrecognized_charge", "wrongful_fee"]);
+  it("turn 1 doesn't ask 'A or B?': 'no reconozco' → unrecognized_charge, and only the date is asked", () => {
+    assert.equal(t1.move, "ask_details");
+    assert.equal(t1.state.workingIntent, "unrecognized_charge");
+    assert.equal(t1.resolvedBy, "words");
+    assert.deepEqual(t1.missing, ["date"]);
   });
-  it("turn 2 is read as the answer to turn 1 (wrongful_fee), not as move_money", () => {
+  it("turn 2 ('error en el monto, debería ser 250') switches to wrongful_fee and remembers both amounts", () => {
     assert.equal(t2.state.workingIntent, "wrongful_fee");
-    assert.equal(t2.resolvedBy, "clarification");
-  });
-  it("turn 2 remembers the 350 from turn 1 and asks only for the date", () => {
     assert.equal(t2.move, "ask_details");
-    assert.deepEqual(t2.missing, ["date"]);
     assert.equal(t2.state.details.amount, 350);
     assert.equal(t2.state.details.expectedAmount, 250);
   });
-  it("turn 3, a low-confidence detail, keeps the topic and moves to confirmation", () => {
-    assert.equal(t3.resolvedBy, "kept_topic");
+  it("turn 3, the date, moves to confirmation (one turn shorter than before)", () => {
     assert.equal(t3.move, "confirm");
-    assert.equal(t3.state.pending?.kind, "confirm");
+  });
+});
+
+describe("C15: charge-only ambiguity", () => {
+  it("dispute vs status with no telling words → status first (read-only), marked as guessed", () => {
+    const [t1] = run([{ text: "tengo una duda con un cargo de 45", intent: intent({ transaction_status: 0.5, unrecognized_charge: 0.3 }), details: { amount: 45 } }]);
+    assert.deepEqual([t1.state.workingIntent, t1.state.intentGuessed], ["transaction_status", true]);
+  });
+  it("two disputes with no telling words → the model's top one, marked as guessed", () => {
+    const [t1] = run([{ text: "Me cobraron algo raro", intent: intent({ unrecognized_charge: 0.45, wrongful_fee: 0.4 }) }]);
+    assert.deepEqual([t1.move, t1.state.workingIntent, t1.state.intentGuessed], ["ask_details", "unrecognized_charge", true]);
+  });
+  it("a refund vs dispute ambiguity still asks (not both charge questions)", () => {
+    const [t1] = run([{ text: "quiero mi dinero del cargo", intent: intent({ move_money: 0.5, unrecognized_charge: 0.3 }) }]);
+    assert.equal(t1.move, "ask_clarify");
   });
 });
 
@@ -130,15 +141,15 @@ describe("confirmation (C8)", () => {
 describe("clarification limits (C5)", () => {
   it("two unresolved answers to 'A or B?' offer a human", () => {
     const vague = { text: "no sé", intent: intent({ out_of_scope: 0.4, unrecognized_charge: 0.2, wrongful_fee: 0.2 }) };
-    const [t1, t2, t3] = run([{ text: "Me cobraron algo raro", intent: intent({ unrecognized_charge: 0.45, wrongful_fee: 0.4 }) }, vague, vague]);
+    const [t1, t2, t3] = run([{ text: "Me cobraron algo raro", intent: intent({ unrecognized_charge: 0.45, move_money: 0.4 }) }, vague, vague]);
     assert.equal(t1.move, "ask_clarify");
     assert.equal(t2.move, "ask_clarify");
     assert.equal(t3.move, "handoff");
   });
   it("C11: a bare 'sí' to 'A or B?' doesn't pick one, even if the scores lean one way (seen live)", () => {
     const [, t2] = run([
-      { text: "No reconozco un cargo de 120 dólares", intent: intent({ unrecognized_charge: 0.5, transaction_status: 0.3 }) },
-      { text: "sí", intent: intent({ transaction_status: 0.41, out_of_scope: 0.3, unrecognized_charge: 0.05 }) },
+      { text: "quiero que revisen o me devuelvan un cargo de 120 dólares", intent: intent({ unrecognized_charge: 0.5, move_money: 0.3 }) },
+      { text: "sí", intent: intent({ move_money: 0.41, out_of_scope: 0.3, unrecognized_charge: 0.05 }) },
     ]);
     assert.equal(t2.move, "ask_clarify");
     assert.equal(t2.state.workingIntent, null);
@@ -152,7 +163,7 @@ describe("clarification limits (C5)", () => {
   });
   it("a confident safety intent overrides a pending clarification", () => {
     const [, t2] = run([
-      { text: "Me cobraron algo raro", intent: intent({ unrecognized_charge: 0.45, wrongful_fee: 0.4 }) },
+      { text: "Me cobraron algo raro", intent: intent({ unrecognized_charge: 0.45, move_money: 0.4 }) },
       { text: "Devuélvanme la plata ya", intent: intent({ move_money: 0.95 }) },
     ]);
     assert.equal(t2.state.workingIntent, "move_money");

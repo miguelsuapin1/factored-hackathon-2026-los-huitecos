@@ -179,6 +179,7 @@ export type ReplyPlanInput = {
   caseRef: string | null; // set only when the case was written and read back (step 13, V1)
   warnSensitive: boolean; // H4: the customer typed a PIN, CVV or password (already masked)
   options: MatchView[] | null; // PL-10: the two charges listed for the customer to pick
+  intentGuessed?: boolean; // C15: the dispute kind wasn't stated: word it neutrally
   pickAttempts: number;
 };
 
@@ -233,7 +234,10 @@ export function planReply(p: ReplyPlanInput, lang: Lang): ReplyPlan {
   };
 }
 
-function planMove(p: ReplyPlanInput, lang: Lang): ReplyPlan {
+function planMove(input: ReplyPlanInput, lang: Lang): ReplyPlan {
+  // C15: a guessed dispute kind is described neutrally ("a charge"), never as "one they don't recognize".
+  const p = input;
+  const about = (i: IntentLabel) => (input.intentGuessed && (i === "unrecognized_charge" || i === "wrongful_fee") ? "a charge they are asking about" : OPTION_TEXT[i]);
   const known = knownParts(p.details, lang);
   const knownText = known.length ? known.join(", ") : "nothing yet";
   const both = (f: (l: Lang) => string) => ({ es: f("es"), pt: f("pt") });
@@ -252,7 +256,7 @@ function planMove(p: ReplyPlanInput, lang: Lang): ReplyPlan {
     case "lookup_status": // always turned into a status answer by resolve.ts; falls back to asking for details
     case "ask_details":
       return {
-        instruction: `The customer is disputing ${OPTION_TEXT[p.intent]}. Already known: ${knownText}. Briefly acknowledge what's known (you may restate those details exactly as written here), then ask ONLY for: ${p.missing.map((m) => MISSING_EN[m]).join(" and ")}. Do not ask again for anything already known. Do not promise a refund.`,
+        instruction: `The customer is asking about ${about(p.intent)}. Already known: ${knownText}. Briefly acknowledge what's known (you may restate those details exactly as written here), then ask ONLY for: ${p.missing.map((m) => MISSING_EN[m]).join(" and ")}. Do not ask again for anything already known. Do not promise a refund.`,
         templates: both((l) => {
           const k = knownParts(p.details, l);
           const ask = join(p.missing.map((m) => MISSING_TEXT[l][m]), l);
@@ -264,7 +268,7 @@ function planMove(p: ReplyPlanInput, lang: Lang): ReplyPlan {
     case "confirm":
       if (p.match) {
         return {
-          instruction: `In the customer's account you found this charge: ${matched}. Restate it exactly as written here and ask the customer to confirm with yes or no that this is the charge they mean. Do not say a claim was opened or that anything was resolved.`,
+          instruction: `In the customer's account you found this charge: ${matched}. Restate it exactly as written here and ask the customer to confirm with yes or no that this is the charge they mean${input.intentGuessed ? " (don't describe it as unrecognized or as wrong)" : ""}. Do not say a claim was opened or that anything was resolved.`,
           templates: both((l) =>
             l === "es"
               ? `Encontré ${matchText(p.match!, l)}. ¿Es este el cargo al que te refieres? (sí / no)`
@@ -273,7 +277,7 @@ function planMove(p: ReplyPlanInput, lang: Lang): ReplyPlan {
         };
       }
       return {
-        instruction: `Restate these details of ${OPTION_TEXT[p.intent]} exactly as written here and ask the customer to confirm with yes or no before the charge is reviewed: ${knownText}. Do not say a claim was opened or that anything was resolved.`,
+        instruction: `Restate these details of ${about(p.intent)} exactly as written here and ask the customer to confirm with yes or no before the charge is reviewed: ${knownText}. Do not say a claim was opened or that anything was resolved.`,
         templates: both((l) =>
           l === "es"
             ? `Para confirmar: ${knownParts(p.details, l).join(", ")}. ¿Es correcto? (sí / no)`

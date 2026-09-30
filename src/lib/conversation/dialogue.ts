@@ -36,7 +36,7 @@ export type Move =
   | "open_review" // PL-7: the dispute goes to review (a verified case, step 13)
   | "record_failed"; // V2: the case couldn't be written and verified: say so, nothing is claimed
 
-export type ResolvedBy = "model" | "clarification" | "offer" | "kept_topic" | "new_topic" | "confirmation";
+export type ResolvedBy = "model" | "clarification" | "offer" | "kept_topic" | "new_topic" | "confirmation" | "words";
 
 export type TurnInput = {
   text: string;
@@ -93,6 +93,32 @@ export function readPick(text: string, options: MatchView[], merchant?: string |
   if (LATEST.test(t) || FIRST.test(t)) return 0;
   if (OLDER.test(t) || SECOND.test(t)) return options.length > 1 ? 1 : null;
   return null;
+}
+
+/** C15: words that say which kind of charge question it is. */
+const UNREC_WORDS = /\b(no (lo |la )?reconozco|desconozco|no fui yo|no (lo |la )?hice|no autorice|fraude|clonar\w*|me robaron|nao reconhec\w*|nao reconheco|nao fiz|nao fui eu|desconhec\w*|clonad\w*)\b/;
+const WRONG_WORDS = /\b(dos veces|duplicad\w*|doble|de mas|incorrect\w*|mal cobrad\w*|equivocad\w*|error en el monto|deberia (ser|haber sido)|duas vezes|a mais|errad\w*|deveria ser|comision\w*|anuidade|tarifa)\b/;
+const STATUS_WORDS = /\b(que paso|el estado|estatus|rechaz\w*|pendiente|no (ha )?llegad\w*|que aconteceu|status|recusad\w*|pendente|estornad\w*|revertid\w*|que houve)\b/;
+
+/** C15: which dispute the words point to, if they point clearly to one. */
+function disputeKindFromWords(text: string, details: Partial<Details>): IntentLabel | null {
+  const t = normalize(text);
+  const unrec = UNREC_WORDS.test(t);
+  const wrong = WRONG_WORDS.test(t) || (details.expectedAmount !== null && details.expectedAmount !== undefined);
+  if (wrong && !unrec) return "wrongful_fee";
+  if (unrec && !wrong) return "unrecognized_charge";
+  return null;
+}
+
+/** C15: the flow for a charge question the model couldn't classify: the customer's words first; otherwise, between
+ * two disputes the model's top one (guessed), and between a dispute and status, status (read-only; PL-9 offers a
+ * review for an approved charge). */
+export function chargeKind(options: [IntentLabel, IntentLabel], text: string, details: Partial<Details>): { intent: IntentLabel; guessed: boolean } {
+  const byWords = disputeKindFromWords(text, details);
+  if (byWords) return { intent: byWords, guessed: false };
+  if (STATUS_WORDS.test(normalize(text))) return { intent: "transaction_status", guessed: false };
+  if (options.includes("transaction_status")) return { intent: "transaction_status", guessed: true };
+  return { intent: options[0], guessed: true };
 }
 
 /** S3: accepting the offer of a person. */
@@ -309,6 +335,7 @@ export function advance(prev: ConversationState, input: TurnInput): TurnOutcome 
       state.checks = [];
       state.when = { ...NO_WHEN };
       state.merchantAsked = false;
+      state.intentGuessed = false;
     }
     if (intent.intent === "human_agent") {
       // H1/H2: if we already know what it's about, hand off now with that context; otherwise ask for one line.
@@ -333,12 +360,29 @@ export function advance(prev: ConversationState, input: TurnInput): TurnOutcome 
   }
 
   // 4. Not confident, but we're already on a charge: it's probably a detail ("fue el martes"). Keep the topic (C6).
+  // C15: the customer's words may still settle which kind of dispute it is ("Error en el monto, debería ser 250").
   if (prev.workingIntent && CHARGE_INTENTS.includes(prev.workingIntent)) {
+    if (DISPUTES.includes(prev.workingIntent)) {
+      const said = disputeKindFromWords(input.text, input.details);
+      if (said && said !== prev.workingIntent) {
+        state.workingIntent = said;
+        state.intentGuessed = false;
+      } else if (said) state.intentGuessed = false;
+    }
     return disputeMove(state, done, "kept_topic");
   }
 
-  // 5. Not confident and no topic yet: ask between the two most likely intents (R2).
+  // 5. Not confident and no topic yet. C15: if both likely intents are about a charge (dispute or status), the
+  // question "¿no lo reconoces o es incorrecto?" changes nothing we do next (same details, same lookup), so don't
+  // ask: take the kind from the customer's words, else start read-only (status) or with the model's top dispute.
   const options: [IntentLabel, IntentLabel] = [intent.scores[0].label, intent.scores[1].label];
+  if (CHARGE_INTENTS.includes(options[0]) && CHARGE_INTENTS.includes(options[1])) {
+    const { intent: chosen, guessed } = chargeKind(options, input.text, merged.details);
+    state.workingIntent = chosen;
+    state.intentGuessed = guessed;
+    state.pending = null;
+    return disputeMove(state, done, guessed ? "model" : "words");
+  }
   state.pending = { kind: "clarify", options, attempts: 0 };
   return done("ask_clarify", "model", options);
 }

@@ -318,3 +318,15 @@ describe("C13: amount + merchant is enough to search, without a date", () => {
   });
 });
 
+describe("C15: a guessed dispute kind reaches the agent as an open question", () => {
+  it("'Me cobraron 350 algo raro' (no telling words) → review case asks the agent to check the kind", async () => {
+    const store = memoryStore();
+    await run([
+      { text: "Me cobraron algo raro de 350 el 10 de junio", intent: intent("unrecognized_charge", 0.45), details: { amount: 350, date: "2026-06-10" } },
+      yes,
+    ], mockLookup, store);
+    assert.equal(store.rows[0].kind, "review");
+    assert.ok(store.rows[0].openQuestions.some((q) => q.startsWith("Dispute kind not stated")));
+  });
+});
+

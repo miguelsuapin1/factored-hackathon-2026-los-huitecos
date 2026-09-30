@@ -64,6 +64,10 @@ export function buildCase(ctx: CaseContext): CaseInput {
 
   const openQuestions: string[] = [];
   if (ctx.reason) openQuestions.push(OPEN_QUESTIONS[ctx.reason]);
+  // C15: the customer never said whether they don't recognize it or think it's wrong; the agent should ask.
+  if (s.intentGuessed && (s.workingIntent === "unrecognized_charge" || s.workingIntent === "wrongful_fee")) {
+    openQuestions.push("Dispute kind not stated by the customer (recorded as the model's best guess): ask whether they don't recognize the charge at all or recognize it but think it's wrong. If not recognized, consider blocking the card.");
+  }
   if (r?.status === "Declined") openQuestions.push("Customer wants to know why this charge was declined; our response codes can't explain it (data issue E7): check the authorization log.");
   if (d.expectedAmount !== null) openQuestions.push(`Customer says the amount should have been ${money(d.expectedAmount, d.currency ?? r?.currency ?? null)}: check the merchant's price or applicable fees.`);
 

@@ -49,7 +49,7 @@ const CONVS = [
   ["es-status-dontknow-pick", ["status_answer"], ["¿Qué pasó con mi compra de 350 dólares?", "no me acuerdo", "la de Super Ahorro"]],
   ["es-lastmonth-then-latest", ["open_review"], ["No reconozco un cargo de 350 dólares del mes pasado", "el más reciente", "sí"]],
   ["pt-lastweek-first", ["status_answer", "pick"], ["O que aconteceu com minha compra de 25 dólares?", "foi na semana passada", "a primeira"]],
-  ["es-subscription-person", ["handoff", "ask_details", "ask_narrow"], ["¿Qué pasó con un cobro de 89,90 dólares?", "ni idea", "no sé", "Cable TV"]],
+  ["es-subscription-person", ["handoff"], ["¿Qué pasó con un cobro de 89,90 dólares?", "ni idea", "Cable TV"]],
 ];
 
 async function login() {
