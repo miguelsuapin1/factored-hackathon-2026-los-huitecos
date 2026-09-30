@@ -99,6 +99,10 @@ export function advance(prev: ConversationState, input: TurnInput): TurnOutcome 
     customerTexts: [...prev.customerTexts, input.text].slice(-MAX_TEXTS),
   };
   const confidentSafety = intent.decision === "act" && SAFETY.includes(intent.intent);
+  // C12: a bare "sí" / "ok" / "no" (≤ 2 words, no new details) is a reply inside the conversation, never a confident
+  // new topic. The intent model scores a lone "sí" as out_of_scope 71%, just above its 70% threshold (found by the
+  // robustness sweep, 2026-09-30): without this, "sí" to "¿me dices el comercio?" dropped the dispute.
+  const bareAck = readYesNo(input.text) !== null && normalize(input.text).split(/\s+/).length <= 2 && !merged.changed;
   const done = (move: Move, resolvedBy: ResolvedBy, clarifyOptions: [IntentLabel, IntentLabel] | null = null): TurnOutcome => ({
     state, move, resolvedBy, clarifyOptions, pendingBefore, missing: missingFor(state),
   });
@@ -173,11 +177,12 @@ export function advance(prev: ConversationState, input: TurnInput): TurnOutcome 
   if (prev.pending?.kind === "clarify" && !confidentSafety) {
     const [a, b] = prev.pending.options;
     // C11: a bare "sí"/"no" doesn't choose between two options (seen live with the fallback model): ask again.
-    const bareYesNo = readYesNo(input.text) !== null && normalize(input.text).split(/\s+/).length <= 2 && !merged.changed;
     const p = (label: IntentLabel) => intent.scores.find((s) => s.label === label)?.probability ?? 0;
     const total = p(a) + p(b);
-    const winner = p(a) >= p(b) ? a : b;
-    if (!bareYesNo && total > 0 && p(winner) / total >= CLARIFY_SHARE) {
+    // C12: "revisen el cargo" picks the dispute option when one is offered (code-read, as in C10).
+    const asksReview = REVIEW.test(normalize(input.text)) ? [a, b].find((o) => DISPUTES.includes(o)) : undefined;
+    const winner = asksReview ?? (p(a) >= p(b) ? a : b);
+    if (!bareAck && total > 0 && (asksReview || p(winner) / total >= CLARIFY_SHARE)) {
       state.workingIntent = winner;
       state.pending = null;
       return CHARGE_INTENTS.includes(winner) ? disputeMove(state, done, "clarification") : done("answer", "clarification");
@@ -193,8 +198,10 @@ export function advance(prev: ConversationState, input: TurnInput): TurnOutcome 
     return done("ask_clarify", "clarification", [a, b]);
   }
 
-  // 3. Confident: follow the model; a different intent than before is a new topic (C6).
-  if (intent.decision === "act") {
+  // 3. Confident: follow the model; a different intent than before is a new topic (C6). Never on a bare "sí"/"ok"
+  // while a charge is being discussed (C12).
+  const ackInTopic = bareAck && prev.workingIntent !== null && CHARGE_INTENTS.includes(prev.workingIntent);
+  if (intent.decision === "act" && !ackInTopic) {
     const resolvedBy: ResolvedBy = prev.workingIntent && prev.workingIntent !== intent.intent ? "new_topic" : "model";
     if (resolvedBy === "new_topic") state.status = "open";
     // A new dispute after a confirmed one is a new case: start from this message's details only.

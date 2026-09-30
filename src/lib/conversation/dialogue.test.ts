@@ -199,3 +199,39 @@ describe("asking for a person (H1–H3)", () => {
     assert.notEqual(t2.state.status, "handoff");
   });
 });
+
+describe("C12: bare acknowledgements stay in the conversation (found by the robustness sweep)", () => {
+  const okAct = intent({ out_of_scope: 0.71 }); // the live score of a lone "sí"
+  it("'sí' after being asked for details keeps the dispute and asks again", () => {
+    const [, t2] = run([
+      { text: "Me cobraron algo raro", intent: intent({ wrongful_fee: 0.73 }) },
+      { text: "sí", intent: okAct },
+    ]);
+    assert.equal(t2.state.workingIntent, "wrongful_fee");
+    assert.equal(t2.move, "ask_details");
+  });
+  it("'ok gracias' after a finished dispute gives a status update, not the greeting", () => {
+    const [, , t3] = run([
+      { text: "No reconozco un cargo de 120 dólares del 3 de junio", intent: intent({ unrecognized_charge: 0.9 }), details: { amount: 120, date: "2026-06-03" } },
+      { text: "sí", intent: okAct },
+      { text: "ok gracias", intent: intent({ out_of_scope: 0.87 }) },
+    ]);
+    assert.equal(t3.move, "status_update");
+  });
+  it("a real new topic still switches ('¿a qué hora abre la sucursal?')", () => {
+    const [, t2] = run([
+      { text: "Me cobraron algo raro", intent: intent({ wrongful_fee: 0.73 }) },
+      { text: "¿a qué hora abre la sucursal?", intent: intent({ out_of_scope: 0.9 }) },
+    ]);
+    assert.equal(t2.state.workingIntent, "out_of_scope");
+  });
+  it("'revisen el cargo' picks the dispute option of 'A or B?' even when scores lean the other way", () => {
+    const [, t2] = run([
+      { text: "Devuélvanme el dinero del cargo de 350", intent: intent({ move_money: 0.5, unrecognized_charge: 0.3 }), details: { amount: 350 } },
+      { text: "ok, revisen el cargo", intent: intent({ out_of_scope: 0.32, move_money: 0.3, unrecognized_charge: 0.1 }) },
+    ]);
+    assert.equal(t2.state.workingIntent, "unrecognized_charge");
+    assert.equal(t2.move, "ask_details");
+  });
+});
+

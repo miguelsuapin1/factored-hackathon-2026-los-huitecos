@@ -74,6 +74,11 @@ Each entry says who decided it, so the team knows who to ask.
 - **Chose:** if the answer to a two-option question is only a yes or no (at most two words, read by code as in C8) and adds no details, the question is asked again (counting toward the two-attempt limit of C5).
 - **Why:** seen live in production with the fallback model: "No reconozco un cargo de 120 dólares…" → "A or B?" → "sí" was resolved as `transaction_status` by C5's rescoring. Nothing was acted on (the next move only asked for details), but a "yes" chooses neither option. "Sí, no lo reconozco para nada" still resolves: it's more than a bare yes.
 
+### C12. A bare "sí"/"ok" never changes the topic; "revisen el cargo" picks the dispute option (Miguel, 2026-09-30)
+- **Found by the smoke sweep** (`scripts/smoke_sweep.mjs`, 30 conversations): the intent model scores a lone "sí" as `out_of_scope` 71%, just above its 70% threshold, so "sí" in reply to "¿me dices el comercio?" dropped the dispute and answered with the generic greeting (3 of 30 conversations); "ok gracias" after a registered review did the same.
+- **Chose:** a yes/no/ok of at most two words with no new details, while a charge is being discussed, is handled inside the conversation (ask again for what's missing, or a status update if it's finished), never as a confident new topic. And when "A or B?" offers a dispute option and the answer asks for a review ("ok, revisen el cargo"), code picks the dispute (as C10), instead of the scores that leaned to `move_money`.
+- **After the fix:** those 4 conversations behave as expected; a real new topic ("¿a qué hora abre la sucursal?") still switches (unit test).
+
 ## What we verified (2026-09-29, local, Cohere + Haiku live)
 
 | Scenario | Result |
