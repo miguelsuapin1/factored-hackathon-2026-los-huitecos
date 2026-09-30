@@ -79,9 +79,16 @@ Failures and fixes: [lessons-learned.md](lessons-learned.md) X1–X5.
   - `public.cases` untouched: 144 rows, same structure.
 - Loader fix on the way: a `.env.local` saved by Windows editors (BOM / UTF-16) wasn't read; fixed in f2e6ac2.
 
+### 2026-10-01: official dbt build in BigQuery (Carlos)
+- `uv run dbt build --profiles-dir . --target bq` from Carlos's laptop, with his own Google login: 5 seeds, 26 views,
+  27 tables, 118 data tests and 3 unit tests; PASS=179, WARN=0, ERROR=0, in 104 s. Every check now runs as dbt's own
+  test, not the condensed SQL used for the first build (X1 closed).
+- The rebuilt `gold_serving` matches what's loaded in Supabase: same counts, and the same IDs for customers,
+  transactions and products (MD5 of the sorted IDs is identical in BigQuery and Supabase). The fixed seed keeps the
+  slice reproducible.
+
 ## Next (step 7 finish, then 8 and 10)
-1. Run the canonical `dbt build --target bq` once with a Google login (the first build ran through
-   `compile_offline.py` + a BigQuery connector; X1).
+1. ~~Official `dbt build --target bq`~~ done 2026-10-01, 179/179.
 2. ~~Load the slice into Supabase~~ done 2026-10-01.
 3. Step 8: per-customer test login + row-level security on the loaded tables.
 4. Step 10: the Supabase `TransactionLookup` (K2) replacing `src/lib/lookup/mock.ts`, filtering dates on

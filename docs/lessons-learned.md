@@ -70,7 +70,7 @@ Everything we tried and replaced, dropped or had to fix, in one place. Failures 
 
 | # | What we tried | Result | What replaced it / lesson | Evidence |
 |---|---|---|---|---|
-| X1 | Running `dbt build` from the assistant session | dbt needs Google credentials; the session only had a BigQuery connector | `compile_offline.py` (anonymous auth, `--no-introspect --no-populate-cache`) + `plan_sql.py` → statements executed through the connector. The canonical path stays `dbt build` | 🔎 pipeline/dbt/README.md |
+| X1 | Running `dbt build` from the assistant session | dbt needs Google credentials; the session only had a BigQuery connector | `compile_offline.py` (anonymous auth, `--no-introspect --no-populate-cache`) + `plan_sql.py` → statements executed through the connector. The canonical path stays `dbt build`; confirmed 2026-10-01 (Carlos): 179/179 pass, same slice | 🔎 pipeline/dbt/README.md |
 | X2 | Installing the latest dbt-core (1.12) | Install fails: it downloads a parser binary from GitHub at build time (TLS error behind the proxy) | Pinned dbt-core/dbt-bigquery/dbt-duckdb < 1.12 | 🔎 pyproject.toml |
 | X3 | Treating `customer_id` as required for every table | 3,745,446 digital events (24%) went to quarantine; they are anonymous sessions, not bad rows | Only keys are required for digital events; anonymous rows kept and flagged (A7). **Profile a table before writing its rules** | 📊 reports/silver_quality.md |
 | X4 | Filling missing transcript durations from the linked interaction (E6 plan) | 0 of 24,029 could be filled: the interaction lacks it too | Flag only. Check a fill rule's coverage before promising it | 📝 query in D-005 session |
