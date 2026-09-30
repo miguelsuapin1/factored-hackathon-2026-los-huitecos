@@ -8,7 +8,7 @@ import { numbersIn } from "./numbers";
 import type { Details } from "./state";
 
 export const EXTRACT_MODEL = "claude-haiku-4-5";
-export const EXTRACT_PROMPT_VERSION = "extract-v2";
+export const EXTRACT_PROMPT_VERSION = "extract-v3";
 const TIMEOUT_MS = 5000;
 const MAX_DAYS_BACK = 180;
 const PRICE_PER_MTOK = { input: 1, output: 5 }; // Claude Haiku 4.5, USD
@@ -34,10 +34,11 @@ function system(today: string) {
   return `You extract the details of a bank charge a customer is asking about, from ONE customer message in Spanish or
 Portuguese. Today is ${weekday} ${today}. Return only what the customer states; use null for anything they don't state.
 
-- amount: the amount that was charged or appears on their statement, as a number with a dot for decimals
-  ("1.250,00" -> 1250, "12,50" -> 12.5). Not an amount they say it should have been, and not an amount they
-  demand back or want refunded or transferred.
-- expectedAmount: the amount they say the charge should have been, if they say so.
+- amount: the amount of the transaction they're asking about (a purchase, charge, withdrawal or transfer), even if
+  it was declined, is pending or was reversed, as a number with a dot for decimals ("1.250,00" -> 1250,
+  "12,50" -> 12.5). Not an amount they demand back or want refunded or transferred.
+- expectedAmount: ONLY when they contrast two amounts: what they were charged vs what it should have been
+  ("me cobraron 350 y debía ser 250" -> amount 350, expectedAmount 250). Otherwise null.
 - date: the day of the charge as YYYY-MM-DD. Resolve relative days against today ("ayer", "ontem", "el martes" = the
   most recent Tuesday before today). If they give only a vague period ("la semana pasada", "este mês"), use null.
 - dateText: the exact words from the message that gave the date, or null.

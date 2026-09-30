@@ -146,8 +146,9 @@ export async function resolveTurn(outcome: TurnOutcome, ctx: ResolveContext): Pr
         s.match = view(d.match);
         s.status = "closed";
         // PL-9: approved means it was charged normally; offer a review in case it isn't theirs (S2).
+        // PL-5: declined; we don't have a reliable reason (data issue E7), so offer a person who can check (S3).
         trace.rule = d.kind === "confirm_match" ? "PL-9" : d.rule;
-        s.pending = d.kind === "confirm_match" ? { kind: "offer_dispute" } : null;
+        s.pending = d.kind === "confirm_match" ? { kind: "offer_dispute" } : d.rule === "PL-5" ? { kind: "offer_agent" } : null;
         s.checks = checks();
         return { move: "status_answer", trace };
       }

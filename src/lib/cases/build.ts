@@ -32,7 +32,10 @@ const OPEN_QUESTIONS: Record<HandoffReason, string> = {
 const money = (v: number, c: string | null) => `${v}${c ? ` ${c}` : ""}`;
 
 export function buildCase(ctx: CaseContext): CaseInput {
-  const { state: s, record: r } = ctx;
+  const { state: s } = ctx;
+  // The fresh record the decision used or, for a hand-off that didn't re-read it (S3, H2), the matched charge we showed.
+  const r: Pick<TransactionMatch, "transactionId" | "amount" | "currency" | "merchant" | "date" | "status"> & Partial<TransactionMatch> | null =
+    ctx.record ?? (s.match ? { ...s.match } : null);
   const d = s.details;
   const stated: Record<string, unknown> = Object.fromEntries(Object.entries(d).filter(([, v]) => v !== null));
   if (s.summary) stated.summary = s.summary; // the customer's own words, already masked (H4)
@@ -50,17 +53,18 @@ export function buildCase(ctx: CaseContext): CaseInput {
       fact: `Transaction ${r.transactionId}: ${money(r.amount, r.currency)} at ${r.merchant ?? "unknown merchant"}, ${r.date}, status ${r.status}, channel ${r.channel ?? "unknown"}`,
       source: `lookup:${ctx.lookupSource}`,
     });
-    if (r.fraudScore !== null) {
+    if (r.fraudScore !== undefined && r.fraudScore !== null) {
       verifiedFacts.push({
         fact: `Fraud score ${r.fraudScore} (hand-off cutoff ${ctx.fraudCutoff}; not shown to the customer)`,
         source: `lookup:${ctx.lookupSource}`,
       });
     }
-    verifiedFacts.push({ fact: "Customer confirmed this is the charge they mean", source: "conversation" });
+    if (ctx.record) verifiedFacts.push({ fact: "Customer confirmed this is the charge they mean", source: "conversation" });
   }
 
   const openQuestions: string[] = [];
   if (ctx.reason) openQuestions.push(OPEN_QUESTIONS[ctx.reason]);
+  if (r?.status === "Declined") openQuestions.push("Customer wants to know why this charge was declined; our response codes can't explain it (data issue E7): check the authorization log.");
   if (d.expectedAmount !== null) openQuestions.push(`Customer says the amount should have been ${money(d.expectedAmount, d.currency ?? r?.currency ?? null)}: check the merchant's price or applicable fees.`);
 
   return {

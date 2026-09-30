@@ -20,6 +20,7 @@ export type Pending =
   | { kind: "details" }
   | { kind: "summary" } // the customer asked for a person; we asked for a one-line summary (H1)
   | { kind: "offer_dispute" } // S2: we explained an approved charge and offered to open a review
+  | { kind: "offer_agent" } // S3: we explained a declined charge and offered an agent to check the reason
   | { kind: "confirm" }
   | null;
 

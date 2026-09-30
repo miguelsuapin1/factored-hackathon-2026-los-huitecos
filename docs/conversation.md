@@ -36,6 +36,8 @@ Each entry says who decided it, so the team knows who to ask.
   - **currency:** only if the customer named it. Never assumed ([data issue A5](data-issues.md): Mexican customers transact in USD).
 - **Why:** the same principle as the reply number check (R4). The model reads; code decides what's believed. A dropped value only means we ask for it; it never breaks the turn. Every drop is recorded in the trace.
 
+**Update (extract-v3, Miguel, 2026-09-30):** `amount` is now "the amount of the transaction they're asking about, even if declined or pending"; `expectedAmount` only when the customer contrasts two amounts. Before, "Por que recusaram minha compra de 560…" put 560 in `expectedAmount` (a declined purchase was never "charged"), and the assistant asked for the amount again (lesson P16).
+
 ### C4. A demo clock for relative dates (Miguel, 2026-09-29)
 - **Chose:** "yesterday", "el martes", "semana passada" are resolved against `DEMO_TODAY` (default **2026-06-17**, the last day in the organizer's transactions), not the real date.
 - **Why:** the data ends in June 2026. Against today's date, no relative date would ever match a transaction. **Person 2:** the gold slice must include the weeks before 2026-06-17 for the demo customers.
@@ -71,6 +73,11 @@ Each entry says who decided it, so the team knows who to ask.
 ### C11. A bare "sí"/"no" doesn't answer "A or B?" (Miguel, 2026-09-30)
 - **Chose:** if the answer to a two-option question is only a yes or no (at most two words, read by code as in C8) and adds no details, the question is asked again (counting toward the two-attempt limit of C5).
 - **Why:** seen live in production with the fallback model: "No reconozco un cargo de 120 dólares…" → "A or B?" → "sí" was resolved as `transaction_status` by C5's rescoring. Nothing was acted on (the next move only asked for details), but a "yes" chooses neither option. "Sí, no lo reconozco para nada" still resolves: it's more than a bare yes.
+
+### C12. A bare "sí"/"ok" never changes the topic; "revisen el cargo" picks the dispute option (Miguel, 2026-09-30)
+- **Found by the smoke sweep** (`scripts/smoke_sweep.mjs`, 30 conversations): the intent model scores a lone "sí" as `out_of_scope` 71%, just above its 70% threshold, so "sí" in reply to "¿me dices el comercio?" dropped the dispute and answered with the generic greeting (3 of 30 conversations); "ok gracias" after a registered review did the same.
+- **Chose:** a yes/no/ok of at most two words with no new details, while a charge is being discussed, is handled inside the conversation (ask again for what's missing, or a status update if it's finished), never as a confident new topic. And when "A or B?" offers a dispute option and the answer asks for a review ("ok, revisen el cargo"), code picks the dispute (as C10), instead of the scores that leaned to `move_money`.
+- **After the fix:** those 4 conversations behave as expected; a real new topic ("¿a qué hora abre la sucursal?") still switches (unit test).
 
 ## What we verified (2026-09-29, local, Cohere + Haiku live)
 

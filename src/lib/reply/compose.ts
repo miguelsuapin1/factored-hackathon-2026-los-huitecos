@@ -9,7 +9,7 @@ import { timingPromise, unbackedOffer } from "./checks";
 import { guessLanguage, type Lang, type ReplyPlan } from "./templates";
 
 export const REPLY_MODEL = "claude-haiku-4-5";
-export const PROMPT_VERSION = "reply-v6";
+export const PROMPT_VERSION = "reply-v7";
 const TIMEOUT_MS = 6000;
 const MAX_REPLY_CHARS = 600;
 const PRICE_PER_MTOK = { input: 1, output: 5 }; // Claude Haiku 4.5, USD

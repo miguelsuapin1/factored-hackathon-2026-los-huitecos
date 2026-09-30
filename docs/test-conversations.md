@@ -61,4 +61,16 @@ Against the stand-in lookup's synthetic demo customer (`src/lib/lookup/mock.ts`)
 |---|---|---|---|
 | TC-12 | "¿Por qué me rechazaron una compra de 560 dólares el 14 de junio?" | Declined, nothing charged, no reason guessed, no invented offer; no case | PL-5, R9 |
 | TC-13 | "O que aconteceu com minha compra de 45 dólares de ontem?" | Pending, can still change; no case | PL-3 |
+| TC-15 | "¿Por qué me rechazaron una compra de 560 dólares el 14 de junio?" → "sí, por favor" | Declined explained, agent offered → verified hand-off case with the declined transaction | PL-5 → S3 |
+| TC-16 | "Por que recusaram minha compra de 560 dólares do dia 14 de junho?" → "não precisa" | 560 read as the purchase amount (not asked again), declined explained → polite close, no case | PL-5, extract-v3 |
 | TC-14 | "¿Me dicen el estado de mi compra de 350 dólares del 10 de junio?" → "no fui yo" → "sí" | Approved + review offered → dispute with the same charge → confirm → verified review | PL-9 → S2 → PL-7 |
+
+## Smoke sweep (Miguel, 2026-09-30): not an evaluation
+
+`node scripts/smoke_sweep.mjs [url] [normal|fallback]` replays 30 short conversations written by Claude (ES, PT, one in English; typos, slang, caps and emoji, card numbers and a PIN, a CURP, injection, relative and slashed dates, future/old dates, refunds, duplicates, status questions, asking for a person) and flags errors, unexpected final moves, template fallbacks, slow turns and leaked digits. **Use it before merging;** judges' numbers come from Person 3's human-written tests.
+
+First runs (local, 2026-09-30), 58 turns each, **~24 turns/min** (Cohere + two Haiku calls per turn):
+- **Before C12:** 7 flagged; 4 were real bugs (a lone "sí" resetting the conversation; "revisen el cargo" read as a refund), fixed in C12.
+- **After C12, normal:** 5 flagged, none a bug: 3 cautious intent-model answers (PT "Não fiz essa compra…" 58%, "…foi estornada?" 42%, all caps + emoji 54%: it asks, which is safe but costs a turn), 1 timing promise caught by R8, and one where the customer's "duplicate" was two different merchants and PL-2 correctly handed off.
+- **After C12, outage (e5 fallback forced):** 10 flagged, all the same pattern: more clarifying questions and hand-offs after two unresolved clarifications. **Degraded, but safe.**
+- **Zero wrong actions in 116 turns:** every review opened, in both runs, was in a conversation whose expected outcome was a review. No card/ID digits in any reply. Latency p50 2.2 s, p95 3.4 s, max 8.5 s (one slow Haiku reply per run).
