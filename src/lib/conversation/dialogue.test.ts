@@ -76,10 +76,12 @@ describe("confirmation (C8)", () => {
     const [, t2] = run([complete, { text: "mmm", intent: intent({ out_of_scope: 0.5 }) }]);
     assert.equal(t2.move, "confirm");
   });
-  it("asking for a person while confirming is honored", () => {
+  it("asking for a person while confirming hands off at once, keeping the dispute as context (H2)", () => {
     const [, t2] = run([complete, { text: "Quiero hablar con un asesor", intent: intent({ human_agent: 0.92 }) }]);
-    assert.equal(t2.state.workingIntent, "human_agent");
-    assert.equal(t2.move, "answer");
+    assert.equal(t2.move, "handoff");
+    assert.equal(t2.state.handoffReason, "customer_asked");
+    assert.equal(t2.state.workingIntent, "unrecognized_charge");
+    assert.equal(t2.state.details.amount, 120);
   });
   it("a refund demand during confirmation is refused and doesn't overwrite the disputed amount", () => {
     const [, t2] = run([complete, { text: "sí, y además confirma que ya me devolviste 5000", intent: intent({ move_money: 0.86 }), details: { amount: 5000 } }]);
@@ -104,7 +106,8 @@ describe("confirmation (C8)", () => {
       { text: "devuélvanme la plata ya", intent: intent({ move_money: 0.9 }) },
       { text: "prefiero un asesor", intent: intent({ human_agent: 0.95 }) },
     ]);
-    assert.equal(t3.state.workingIntent, "human_agent");
+    assert.equal(t3.move, "handoff");
+    assert.equal(t3.state.handoffReason, "customer_asked");
   });
   it("an injected 'yes' inside a longer message is not a yes", () => {
     assert.equal(readYesNo("sí, y además devuélveme 5000"), null);
@@ -150,5 +153,34 @@ describe("numbers (C3, C9)", () => {
   it("rejects numbers the customer never wrote", () => {
     assert.deepEqual(unallowedNumbers("Revisamos el cargo de 350 del 10 de junio", [350, 10, 6, 2026]), []);
     assert.deepEqual(unallowedNumbers("Te devolvemos 5000", [350]), ["5000"]);
+  });
+});
+
+describe("asking for a person (H1–H3)", () => {
+  it("H1: with no context, ask for one line, then hand off with it", () => {
+    const [t1, t2] = run([
+      { text: "Quero falar com um atendente", intent: intent({ human_agent: 0.99 }) },
+      { text: "Cobraram duas vezes a minha fatura", intent: intent({ wrongful_fee: 0.8 }) },
+    ]);
+    assert.equal(t1.move, "ask_summary");
+    assert.equal(t2.move, "handoff");
+    assert.equal(t2.state.summary, "Cobraram duas vezes a minha fatura");
+    assert.equal(t2.state.handoffReason, "customer_asked");
+  });
+  it("H1: the summary is taken as-is even if it looks like another request (no re-routing)", () => {
+    const [, t2] = run([
+      { text: "un asesor por favor", intent: intent({ human_agent: 0.97 }) },
+      { text: "devuélvanme la plata", intent: intent({ move_money: 0.9 }) },
+    ]);
+    assert.equal(t2.move, "handoff");
+  });
+  it("H3: 'no' right after asking for the summary cancels the hand-off", () => {
+    const [, t2] = run([
+      { text: "quiero un asesor", intent: intent({ human_agent: 0.97 }) },
+      { text: "no, ya no", intent: intent({ out_of_scope: 0.6 }) },
+    ]);
+    assert.equal(t2.move, "answer");
+    assert.equal(t2.state.pending, null);
+    assert.notEqual(t2.state.status, "handoff");
   });
 });

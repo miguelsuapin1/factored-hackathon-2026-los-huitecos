@@ -7,6 +7,7 @@ import { SESSION_COOKIE, verifySession } from "@/lib/auth/session";
 import { advance, readYesNo } from "@/lib/conversation/dialogue";
 import { extractDetails } from "@/lib/conversation/extract";
 import { numbersIn } from "@/lib/conversation/numbers";
+import { maskSensitive } from "@/lib/privacy/mask";
 import { resolveTurn } from "@/lib/conversation/resolve";
 import { supabaseStore } from "@/lib/cases/supabase-store";
 import { EXTRACT_PROMPT_VERSION } from "@/lib/conversation/extract";
@@ -26,11 +27,13 @@ export async function POST(request: Request) {
   } catch {
     return Response.json({ error: "Send JSON: { \"text\": \"...\", \"state\": \"<optional>\" }" }, { status: 400 });
   }
-  const text = typeof body.text === "string" ? body.text.trim() : "";
-  if (!text) return Response.json({ error: "text is required" }, { status: 400 });
-  if (text.length > MAX_CHARS) {
+  const raw = typeof body.text === "string" ? body.text.trim() : "";
+  if (!raw) return Response.json({ error: "text is required" }, { status: 400 });
+  if (raw.length > MAX_CHARS) {
     return Response.json({ error: `text is longer than ${MAX_CHARS} characters` }, { status: 413 });
   }
+  // H4: mask card numbers, PINs, CVVs and emails before the text goes anywhere (models, state, cases).
+  const { text, masked } = maskSensitive(raw);
   // src/proxy.ts already rejected requests without a valid session; this reads who it is.
   const session = await verifySession((await cookies()).get(SESSION_COOKIE)?.value).catch(() => null);
   if (!session) return Response.json({ error: "Your session expired or you're not signed in." }, { status: 401 });
@@ -79,6 +82,7 @@ export async function POST(request: Request) {
         handoffReason: state.handoffReason,
         status: state.status,
         caseRef: state.caseRef,
+        warnSensitive: masked.includes("secret"),
       },
       language,
     );
@@ -114,6 +118,7 @@ export async function POST(request: Request) {
       pending: state.pending,
       status: state.status,
       restartReason,
+      masked, // which kinds of sensitive data were masked in this message (H4)
       extraction: {
         source: extraction.source, dropped: extraction.dropped, error: extraction.error, ms: Math.round(extraction.ms),
         promptVersion: extraction.promptVersion, costUsd: extraction.costUsd,
@@ -121,7 +126,7 @@ export async function POST(request: Request) {
     };
     // Structured trace line (docs/contracts.md K4). Message texts and detail values are not logged.
     console.log(JSON.stringify({
-      event: "turn", traceId: intent.traceId, chars: text.length,
+      event: "turn", traceId: intent.traceId, chars: text.length, masked,
       intent: { model: intent.model, label: intent.intent, confidence: Number(intent.confidence.toFixed(4)),
         decision: intent.decision, fallbackReason: intent.fallbackReason,
         attempts: intent.attempts.map((a) => ({ ...a, ms: Math.round(a.ms) })), ms: Math.round(intent.totalMs) },

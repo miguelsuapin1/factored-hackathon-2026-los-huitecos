@@ -47,5 +47,5 @@ customer: "sí"
 ## Limits
 
 - **One shared table** for local, preview and production (filter on `prompt_versions->>environment`). The region question (sa-east-1 vs us-east-1) is still Person 2's; the migration recreates the table anywhere.
-- **Asking for a person directly** (intent `human_agent`) doesn't create a case yet: the assistant asks for a one-line summary first. Step 14 adds that case.
+- ~~Asking for a person directly doesn't create a case yet.~~ Step 14 ([handoff.md](handoff.md)) creates it.
 - **Nobody works the cases yet:** the agent console is step 20 (Person 2). Case `status` starts at `open`.

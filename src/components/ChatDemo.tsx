@@ -17,6 +17,7 @@ type Conversation = {
   missing: string[];
   status: string;
   restartReason: string | null;
+  masked: string[];
   match: { amount: number; currency: string; merchant: string | null; date: string; status: string } | null;
   policy: { rule: string | null; decision: string | null; lookup: { source: string; count: number | null } | null };
   handoffReason: string | null;
@@ -196,6 +197,7 @@ export function ChatDemo() {
 
 const MOVE_LABELS: Record<string, string> = {
   ask_clarify: "asking to clarify",
+  ask_summary: "asking for a one-line summary for the agent",
   ask_details: "asking for missing details",
   confirm: "asking to confirm",
   ask_correction: "asking what to correct",
@@ -268,6 +270,9 @@ function ConversationPanel({ c }: { c: Conversation }) {
         )}
         {c.extraction.dropped.length > 0 && (
           <div style={{ gridColumn: "1 / -1" }}><dt>Dropped (not found in the message)</dt><dd>{c.extraction.dropped.join(", ")}</dd></div>
+        )}
+        {c.masked.length > 0 && (
+          <div style={{ gridColumn: "1 / -1" }}><dt>Masked before processing</dt><dd>{c.masked.join(", ")} (never sent to the models or stored)</dd></div>
         )}
         {c.restartReason && <div style={{ gridColumn: "1 / -1" }}><dt>Conversation restarted</dt><dd>{c.restartReason}</dd></div>}
       </dl>
