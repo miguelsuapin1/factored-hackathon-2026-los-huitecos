@@ -2,6 +2,8 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import type { IntentLabel } from "@/lib/intent/model";
+import { memoryStore } from "@/lib/cases/memory-store";
+import type { CaseStore } from "@/lib/cases/types";
 import { DEMO_CUSTOMER_ID, mockLookup } from "@/lib/lookup/mock";
 import type { TransactionLookup } from "@/lib/lookup/types";
 import { advance, type TurnInput } from "./dialogue";
@@ -15,14 +17,18 @@ function intent(top: IntentLabel, p: number): TurnInput["intent"] {
 }
 const me = { customerId: DEMO_CUSTOMER_ID };
 
-async function run(turns: { text: string; intent: TurnInput["intent"]; details?: Partial<Details> }[], lookup: TransactionLookup = mockLookup) {
+async function run(
+  turns: { text: string; intent: TurnInput["intent"]; details?: Partial<Details> }[],
+  lookup: TransactionLookup = mockLookup,
+  store: CaseStore = memoryStore(),
+) {
   let state: ConversationState = newState("c1", "demo", 0);
   const moves = [];
   for (const t of turns) {
     const out = advance(state, { text: t.text, intent: t.intent, details: t.details ?? {} });
-    const r = await resolveTurn(out, me, lookup);
+    const r = await resolveTurn(out, { session: me, lookup, store, language: "es", promptVersions: { reply: "test" } });
     state = out.state;
-    moves.push({ move: r.move, rule: r.trace.rule, state: structuredClone(state) });
+    moves.push({ move: r.move, rule: r.trace.rule, case: r.trace.case, state: structuredClone(state) });
   }
   return moves;
 }
@@ -91,3 +97,60 @@ describe("dispute outcomes (docs/policy.md)", () => {
     assert.equal(t3.move, "status_update");
   });
 });
+
+describe("verification (step 13, docs/verification.md)", () => {
+  it("V1: a review exists only after write + identical read-back; the reference is kept in the state", async () => {
+    const store = memoryStore();
+    const [, t2] = await run([dispute(350, "2026-06-09"), yes], mockLookup, store);
+    assert.equal(t2.move, "open_review");
+    assert.equal(t2.case?.verified, true);
+    assert.match(t2.state.caseRef ?? "", /^GT-[2-9A-Z]{8}$/);
+    assert.equal(store.rows.length, 1);
+    assert.equal(store.rows[0].rule, "PL-7");
+    assert.equal(store.rows[0].transactionId, "TRX-DEMO0000000000001");
+    // The case file tells the whole story, across turns (not only the final "yes").
+    assert.deepEqual(store.rows[0].checksDone, [
+      "turn 1: topic unrecognized_charge (by model)",
+      "turn 1: lookup (mock): 1 match(es)",
+      "turn 2: customer confirmed the matched charge",
+      "turn 2: re-read TRX-DEMO0000000000001: Approved",
+      "turn 2: policy PL-7",
+    ]);
+  });
+  it("hand-offs get a case too, with the reason and an open question for the agent", async () => {
+    const store = memoryStore();
+    await run([dispute(120, "2026-06-03"), yes], mockLookup, store);
+    assert.equal(store.rows[0].kind, "handoff");
+    assert.equal(store.rows[0].reason, "high_risk");
+    assert.ok(store.rows[0].openQuestions[0].startsWith("Possible fraud"));
+    assert.ok(store.rows[0].verifiedFacts.some((f) => f.fact.startsWith("Fraud score 41.7")));
+  });
+  it("V2: if the store fails, nothing is claimed and a later 'sí' can retry", async () => {
+    const [, t2] = await run([dispute(350, "2026-06-09"), yes], mockLookup, memoryStore({ failCreate: true }));
+    assert.equal(t2.move, "record_failed");
+    assert.equal(t2.state.caseRef, null);
+    assert.equal(t2.state.status, "open");
+    assert.equal(t2.state.pending?.kind, "confirm");
+  });
+  it("V2: a write that silently doesn't persist is caught by the read-back", async () => {
+    const [, t2] = await run([dispute(350, "2026-06-09"), yes], mockLookup, memoryStore({ loseWrites: true }));
+    assert.equal(t2.move, "record_failed");
+    assert.equal(t2.case?.error, "read-back mismatch: case not found on read-back");
+  });
+  it("V2: a read-back that differs from what was written is not trusted", async () => {
+    const store = memoryStore({ corrupt: (r) => ({ ...r, customerId: "CLI-SOMEONE-ELSE" }) });
+    const [, t2] = await run([dispute(350, "2026-06-09"), yes], mockLookup, store);
+    assert.equal(t2.move, "record_failed");
+    assert.match(t2.case?.error ?? "", /customerId differs/);
+  });
+  it("V3: retrying the confirmation after a failure never creates a second case", async () => {
+    const store = memoryStore();
+    // Same conversation, same charge, same kind → same idempotency key.
+    const [, t2] = await run([dispute(350, "2026-06-09"), yes], mockLookup, store);
+    const again = await store.create({ ...store.rows[0] });
+    assert.equal(again.id, store.rows[0].id);
+    assert.equal(store.rows.length, 1);
+    assert.equal(t2.state.caseId, store.rows[0].id);
+  });
+});
+

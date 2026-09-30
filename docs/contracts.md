@@ -6,7 +6,7 @@ The interfaces where one person's work plugs into another's. Agree here first, t
 |---|---|---|---|
 | K1 | `POST /api/chat` v2 (multi-turn) | Miguel → Person 3 (eval harness, steps 17–18) | implemented on `miguel/step-9-11-memory` (Miguel, 2026-09-29) |
 | K2 | Transaction lookup | Person 2 (step 10) → Miguel (steps 12–13) | types in `src/lib/lookup/types.ts`; stand-in used by step 12 (Miguel, 2026-09-30); Person 2 to confirm |
-| K3 | Handoff case file | Miguel (step 14) → Person 2 (agent console, step 20) | draft |
+| K3 | Case file (reviews and hand-offs) | Miguel (steps 13–14) → Person 2 (agent console, step 20) | table `public.cases` live (Miguel, 2026-09-30); see docs/verification.md |
 | K4 | Trace line | everyone → Person 3 (eval report) | Phase 1 shape + conversation fields |
 
 ## K1. `POST /api/chat` v2
@@ -82,7 +82,7 @@ Relative dates are resolved against the demo clock (`DEMO_TODAY`, default 2026-0
 
 ## K3. Handoff case file (step 14 → agent console, step 20)
 
-Stored in a Supabase table `cases` (migration owned by Miguel, reviewed by Person 2). No raw transcript: verified facts and open questions only (the brief's "structured handoff").
+Stored in the Supabase table `public.cases` ([migration](../supabase/migrations/20260930050000_cases.sql), owned by Miguel, reviewed by Person 2). No raw transcript: verified facts and open questions only (the brief's "structured handoff"). **Now live (2026-09-30):** columns are the snake_case of the fields below plus `reference` (shown to the customer), `kind` (`review` | `handoff`), `rule`, `status`, `idempotency_key`, `prompt_versions` (includes `environment`). Server-only: the console must read it through a server route with the secret key, never from the browser. The draft below is kept for reference; the table is authoritative.
 
 ```jsonc
 {

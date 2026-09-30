@@ -20,6 +20,7 @@ type Conversation = {
   match: { amount: number; currency: string; merchant: string | null; date: string; status: string } | null;
   policy: { rule: string | null; decision: string | null; lookup: { source: string; count: number | null } | null };
   handoffReason: string | null;
+  case: { reference: string | null; verified: boolean; kind: string } | null;
   extraction: { source: string; dropped: string[]; error: string | null; ms: number };
 };
 
@@ -205,7 +206,8 @@ const MOVE_LABELS: Record<string, string> = {
   no_match: "no matching charge, asking to check",
   ask_narrow: "several matches, asking which one",
   explain_status: "explaining the charge's status",
-  open_review: "sending to review",
+  open_review: "review registered",
+  record_failed: "couldn't register: nothing claimed",
 };
 
 const RULE_LABELS: Record<string, string> = {
@@ -253,6 +255,12 @@ function ConversationPanel({ c }: { c: Conversation }) {
           <div style={{ gridColumn: "1 / -1" }}>
             <dt>Matched charge ({c.policy.lookup?.source ?? "lookup"})</dt>
             <dd>{c.match.amount} {c.match.currency} · {c.match.merchant ?? "—"} · {c.match.date} · {c.match.status}</dd>
+          </div>
+        )}
+        {c.case && (
+          <div style={{ gridColumn: "1 / -1" }}>
+            <dt>Case ({c.case.kind})</dt>
+            <dd>{c.case.verified ? `${c.case.reference} · written and read back` : "not verified: the customer was told nothing was registered"}</dd>
           </div>
         )}
         {c.policy.rule && (
