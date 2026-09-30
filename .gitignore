@@ -55,3 +55,7 @@ __pycache__/
 
 # local fallback model, fetched at build time (scripts/fetch-model.mjs)
 /models/
+
+# external datasets (fetched by scripts/download_*.sh; Banking77 is training-only, D-004)
+/data/external/
+/data/processed/banking77_*
