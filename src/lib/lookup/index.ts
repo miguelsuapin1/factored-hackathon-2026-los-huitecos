@@ -6,7 +6,8 @@ import type { CustomerSession, TransactionLookup } from "./types";
 export const lookup: TransactionLookup = mockLookup;
 
 /** Step 8 replaces this: today every demo sign-in is the one synthetic demo customer. */
-export function customerFor(_user: string): CustomerSession {
+export function customerFor(user: string): CustomerSession {
+  void user; // step 8: map the signed-in user to their own customer id
   return { customerId: DEMO_CUSTOMER_ID };
 }
 

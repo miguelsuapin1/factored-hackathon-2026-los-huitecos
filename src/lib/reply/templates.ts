@@ -109,7 +109,7 @@ export function guessLanguage(text: string): Lang {
   return pt > es ? "pt" : "es";
 }
 
-// ---- Multi-turn moves (build step 11, docs/conversation.md C7–C8) ----
+// ---- Multi-turn moves (steps 11–12, docs/conversation.md C7–C8, docs/policy.md) ----
 
 type DetailsView = {
   amount: number | null;
@@ -118,6 +118,10 @@ type DetailsView = {
   date: string | null;
   merchant: string | null;
 };
+
+type MatchView = { date: string; amount: number; currency: string; merchant: string | null };
+
+type HandoffReason = "repeated_clarification" | "no_match" | "ambiguous" | "high_risk" | "record_unavailable" | "tool_failure";
 
 const MONTHS: Record<Lang, string[]> = {
   es: ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"],
@@ -141,6 +145,13 @@ function knownParts(d: DetailsView, lang: Lang) {
   return parts;
 }
 
+/** The matched transaction as the record shows it (its own currency and merchant, never the customer's wording). */
+function matchText(m: MatchView, lang: Lang) {
+  const es = lang === "es";
+  const where = m.merchant ? ` ${es ? "en" : "em"} ${m.merchant}` : "";
+  return `${es ? "un cargo de" : "uma cobrança de"} ${money(m.amount, m.currency)}${where}, ${es ? "el" : "em"} ${day(m.date, lang)}`;
+}
+
 const MISSING_TEXT: Record<Lang, Record<"amount" | "date", string>> = {
   es: { amount: "el monto del cargo", date: "la fecha aproximada del cargo" },
   pt: { amount: "o valor da cobrança", date: "a data aproximada da cobrança" },
@@ -151,21 +162,57 @@ const join = (items: string[], lang: Lang) =>
   items.length <= 1 ? items.join("") : `${items.slice(0, -1).join(", ")} ${lang === "es" ? "y" : "e"} ${items.at(-1)}`;
 
 export type ReplyPlanInput = {
-  move: "ask_clarify" | "ask_details" | "confirm" | "ask_correction" | "confirmed" | "answer" | "handoff";
+  move:
+    | "ask_clarify" | "ask_details" | "confirm" | "ask_correction" | "confirmed" | "status_update" | "answer" | "handoff"
+    | "no_match" | "ask_narrow" | "explain_status" | "open_review";
   intent: IntentLabel; // the working intent (or the model's top intent when there is none)
   clarifyOptions: [IntentLabel, IntentLabel] | null;
   clarifyAttempts: number;
   details: DetailsView;
   missing: ("amount" | "date")[];
+  match: MatchView | null;
+  explainRule: "PL-3" | "PL-4" | "PL-5" | null;
+  handoffReason: HandoffReason | null;
+  status: "open" | "confirmed" | "review" | "handoff" | "closed";
 };
 
 export type ReplyPlan = { instruction: string; templates: Record<Lang, string> };
+
+const HANDOFF_EN: Record<HandoffReason, string> = {
+  repeated_clarification: "After two questions it's still not clear what the customer needs. Say you'll pass the conversation to an agent who can help, and ask them to describe the issue briefly in their own words.",
+  no_match: "You couldn't find a charge matching the details the customer gave, even after they checked them. Say an agent will continue with the details already collected, so they don't need to repeat them.",
+  ambiguous: "Several charges match and it's still not clear which one the customer means. Say an agent will continue with the details already collected, so they don't need to repeat them.",
+  high_risk: "Say that a specialist agent will take over this case, with the details already confirmed, so they don't need to repeat them. Do not mention fraud, scores, risk or why.",
+  record_unavailable: "Say the charge can't be checked automatically right now, so an agent will continue with the details already confirmed.",
+  tool_failure: "Say the account's movements can't be checked right now, so an agent will continue with the details already collected.",
+};
+
+const HANDOFF_LOCAL: Record<Lang, Record<HandoffReason, string>> = {
+  es: {
+    repeated_clarification: "Para ayudarte mejor, te paso con un asesor. ¿Me cuentas en una frase qué ocurrió?",
+    no_match: "No logré ubicar ese cargo con los datos que me diste. Un asesor continuará con tu caso usando esos datos, así no tienes que repetirlos.",
+    ambiguous: "Hay más de un cargo que coincide. Un asesor continuará con tu caso usando los datos que ya me diste.",
+    high_risk: "Un asesor especializado continuará con tu caso, con los datos que ya confirmaste; no necesitas repetirlos.",
+    record_unavailable: "No puedo revisar ese cargo automáticamente en este momento. Un asesor continuará con los datos que ya confirmaste.",
+    tool_failure: "No puedo consultar tus movimientos en este momento. Un asesor continuará con los datos que ya me diste.",
+  },
+  pt: {
+    repeated_clarification: "Para te ajudar melhor, vou te passar para um atendente. Pode me contar em uma frase o que aconteceu?",
+    no_match: "Não consegui localizar essa cobrança com os dados informados. Um atendente vai continuar com o seu caso usando esses dados, sem que você precise repeti-los.",
+    ambiguous: "Há mais de uma cobrança que corresponde. Um atendente vai continuar com o seu caso usando os dados que você já informou.",
+    high_risk: "Um atendente especializado vai continuar com o seu caso, com os dados que você já confirmou; não precisa repeti-los.",
+    record_unavailable: "Não consigo verificar essa cobrança automaticamente agora. Um atendente vai continuar com os dados que você já confirmou.",
+    tool_failure: "Não consigo consultar suas movimentações agora. Um atendente vai continuar com os dados que você já informou.",
+  },
+};
 
 /** Code decides what each move's reply must say (R1): an instruction for Haiku plus the fixed ES/PT fallback. */
 export function planReply(p: ReplyPlanInput, lang: Lang): ReplyPlan {
   const known = knownParts(p.details, lang);
   const knownText = known.length ? known.join(", ") : "nothing yet";
   const both = (f: (l: Lang) => string) => ({ es: f("es"), pt: f("pt") });
+  const matched = p.match ? matchText(p.match, lang) : null;
+  const noRefund = "Do not promise a refund, and give no timeframe.";
 
   switch (p.move) {
     case "ask_clarify": {
@@ -188,6 +235,16 @@ export function planReply(p: ReplyPlanInput, lang: Lang): ReplyPlan {
         }),
       };
     case "confirm":
+      if (p.match) {
+        return {
+          instruction: `In the customer's account you found this charge: ${matched}. Restate it exactly as written here and ask the customer to confirm with yes or no that this is the charge they mean. Do not say a claim was opened or that anything was resolved.`,
+          templates: both((l) =>
+            l === "es"
+              ? `Encontré ${matchText(p.match!, l)}. ¿Es este el cargo al que te refieres? (sí / no)`
+              : `Encontrei ${matchText(p.match!, l)}. É essa a cobrança que você quer contestar? (sim / não)`,
+          ),
+        };
+      }
       return {
         instruction: `Restate these details of ${OPTION_TEXT[p.intent]} exactly as written here and ask the customer to confirm with yes or no before the charge is reviewed: ${knownText}. Do not say a claim was opened or that anything was resolved.`,
         templates: both((l) =>
@@ -198,28 +255,80 @@ export function planReply(p: ReplyPlanInput, lang: Lang): ReplyPlan {
       };
     case "ask_correction":
       return {
-        instruction: `The customer said these details are not right: ${knownText}. Ask which one is wrong (amount, date or merchant) and the correct value.`,
+        instruction: `The customer said this is not the right charge or the details are wrong (${knownText}). Ask which detail is wrong (amount, date or merchant) and the correct value.`,
         templates: both((l) =>
           l === "es" ? "Entendido. ¿Qué dato no es correcto: el monto, la fecha o el comercio? ¿Cuál es el correcto?"
             : "Entendi. Qual dado não está correto: o valor, a data ou o estabelecimento? Qual é o correto?",
         ),
       };
+    case "no_match":
+      return {
+        instruction: `No charge matching these details was found in the customer's account around that date: ${knownText}. Ask them to check the amount and the date, and to tell you the merchant name if they know it. Do not suggest they are wrong or that the charge doesn't exist.`,
+        templates: both((l) =>
+          l === "es" ? "No encontré un cargo con esos datos cerca de esa fecha. ¿Puedes revisar el monto y la fecha, y decirme el comercio si lo conoces?"
+            : "Não encontrei uma cobrança com esses dados perto dessa data. Pode conferir o valor e a data, e me dizer o estabelecimento se souber?",
+        ),
+      };
+    case "ask_narrow":
+      return {
+        instruction: `More than one charge in the customer's account matches ${knownText}. Ask for the merchant name or the exact date so you can tell which one they mean. Do not list the charges.`,
+        templates: both((l) =>
+          l === "es" ? "Hay más de un cargo que coincide. ¿Me dices el nombre del comercio o la fecha exacta para identificarlo?"
+            : "Há mais de uma cobrança que corresponde. Pode me dizer o nome do estabelecimento ou a data exata para identificá-la?",
+        ),
+      };
+    case "explain_status": {
+      const rule = p.explainRule ?? "PL-3";
+      const en = {
+        "PL-3": "is still pending: it hasn't been finalized. Explain that a pending charge can still change or be cancelled, so it can't be disputed yet; if it's still there once it's finalized, they can write again. Don't promise it will disappear.",
+        "PL-4": "appears as reversed: the amount was returned to their account. Say so, and that no dispute is needed. Do not say when it shows in the balance.",
+        "PL-5": "was declined, so it wasn't charged to their account. Say so, and that no dispute is needed. Do not give a reason for the decline.",
+      }[rule];
+      return {
+        instruction: `In the customer's account, ${matched} ${en}`,
+        templates: both((l) => {
+          const t = matchText(p.match!, l);
+          const text = {
+            es: { "PL-3": `Encontré ${t}, pero aún está pendiente: no se ha completado y todavía puede cambiar o anularse, así que no se puede reclamar por ahora. Si sigue ahí cuando se complete, escríbenos de nuevo.`, "PL-4": `Encontré ${t}, y aparece como revertido: el monto se devolvió a tu cuenta, así que no hace falta abrir un reclamo.`, "PL-5": `Encontré ${t}, pero fue rechazado, así que no se cobró a tu cuenta. No hace falta abrir un reclamo.` },
+            pt: { "PL-3": `Encontrei ${t}, mas ela ainda está pendente: não foi concluída e ainda pode mudar ou ser cancelada, então não dá para contestar por enquanto. Se continuar quando for concluída, fale com a gente de novo.`, "PL-4": `Encontrei ${t}, e ela aparece como estornada: o valor voltou para a sua conta, então não é preciso abrir uma contestação.`, "PL-5": `Encontrei ${t}, mas ela foi recusada, então não foi cobrada na sua conta. Não é preciso abrir uma contestação.` },
+          };
+          return text[l][rule];
+        }),
+      };
+    }
+    case "open_review":
+      return {
+        instruction: `Tell the customer that their dispute of ${matched} will go to the disputes team for review, and that they'll be told the result. Use the future tense: do not say it has been sent, registered or opened. ${noRefund}`,
+        templates: both((l) =>
+          l === "es" ? `Gracias. Tu reclamo por ${matchText(p.match!, l)} pasará ahora a revisión del equipo de reclamos, y te informaremos el resultado.`
+            : `Obrigado. Sua contestação de ${matchText(p.match!, l)} vai agora para análise da equipe de contestações, e você será informado do resultado.`,
+        ),
+      };
     case "confirmed":
       return {
-        instruction: `Thank the customer: the details are confirmed (${knownText}) and the charge will now be checked against their account. Do not say a claim was opened or a refund issued, and give no timeframe.`,
+        instruction: `Thank the customer: the details are confirmed (${knownText}) and the charge will now be checked against their account. ${noRefund}`,
         templates: both((l) =>
           l === "es" ? "Gracias, datos confirmados. Ahora revisaremos ese cargo en tu cuenta."
             : "Obrigado, dados confirmados. Agora vamos verificar essa cobrança na sua conta.",
         ),
       };
-    case "handoff":
+    case "status_update": {
+      const where = { review: "is already with the disputes team for review", handoff: "has already been passed to an agent", closed: "was already answered", confirmed: "is being checked", open: "is open" }[p.status];
       return {
-        instruction: "After two questions it's still not clear what the customer needs. Say you'll pass the conversation to an agent who can help, and ask them to describe the issue briefly in their own words. Do not promise any outcome.",
+        instruction: `The customer's case about this charge ${where}. Say so briefly and ask if there's anything else you can help with. ${noRefund}`,
         templates: both((l) =>
-          l === "es" ? "Para ayudarte mejor, te paso con un asesor. ¿Me cuentas en una frase qué ocurrió?"
-            : "Para te ajudar melhor, vou te passar para um atendente. Pode me contar em uma frase o que aconteceu?",
+          l === "es" ? "Tu caso sobre ese cargo ya está en curso. ¿Hay algo más en lo que te pueda ayudar?"
+            : "O seu caso sobre essa cobrança já está em andamento. Posso ajudar com mais alguma coisa?",
         ),
       };
+    }
+    case "handoff": {
+      const reason = p.handoffReason ?? "repeated_clarification";
+      return {
+        instruction: `${HANDOFF_EN[reason]} Do not promise any outcome or say how soon the agent will reply ("right away", "shortly", "in minutes").`,
+        templates: both((l) => HANDOFF_LOCAL[l][reason]),
+      };
+    }
     case "answer":
       return { instruction: GUIDANCE[p.intent], templates: both((l) => TEMPLATES[l][p.intent]) };
   }

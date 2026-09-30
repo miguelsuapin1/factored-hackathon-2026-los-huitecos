@@ -33,8 +33,10 @@ export const FIXTURES: Row[] = [
 
 const fold = (s: string) => s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").trim();
 
-function strip({ customerId: _c, ...r }: Row, score: number): TransactionMatch {
-  return { ...r, score };
+function strip(r: Row, score: number): TransactionMatch {
+  const { customerId, ...rest } = r;
+  void customerId; // never leaves the lookup
+  return { ...rest, score };
 }
 
 export const mockLookup: TransactionLookup = {

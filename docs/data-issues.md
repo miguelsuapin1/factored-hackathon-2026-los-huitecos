@@ -55,6 +55,8 @@ Severity: 🔴 affects the service's correctness or privacy · 🟠 affects anal
 | E4 🟠 | 17,664 non-approved transactions (Declined/Pending/Reversed) with null `response_code`; 203K approved with null code | Treat a null code as `unknown`. The service must say "reason unavailable" instead of guessing |
 | E5 🟠 | NPS scores only go from 2 to 7 (no Promoters exist); CSAT never reaches 5; 3,274 NPS rows lack `nps_category` | Recompute `nps_category` from the score. Report satisfaction as relative (by reason), not absolute |
 | E6 🟡 | `call_transcripts.duration_seconds` null in 14% of rows despite NOT NULL | Take the value from `call_center_interactions.duration_seconds` if available, otherwise flag |
+| E7 🟠 | **Pending and Reversed transactions carry decline response codes** (05, 14, 51, 54; e.g. 21,191 Pending with `05`), spread evenly like the Declined ones (Miguel, 2026-09-30) | Response codes can't explain a transaction's outcome. The service reads `transaction_status` only and never states a decline reason (docs/policy.md PL-5) |
+| E8 🟠 | **Complaint amounts carry no signal** (Miguel, 2026-09-30): `claimed_amount` is uniform 0–5,000 in every currency (5,000 COP ≈ 1 USD, yet same distribution as USD); `priority` doesn't depend on it (average ~2,530 at every level); `compensation_granted` (an amount, on 6.9% of complaints, median 253) is unrelated to it (correlation 0.03) and to priority (~7% at every level) | No amount-based policy rule can be justified from this data (docs/policy.md). Don't compare claimed amounts across currencies |
 
 ## F. Injected nulls (the "~5% nulls" claim)
 

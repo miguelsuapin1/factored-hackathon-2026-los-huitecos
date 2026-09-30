@@ -17,6 +17,9 @@ type Conversation = {
   missing: string[];
   status: string;
   restartReason: string | null;
+  match: { amount: number; currency: string; merchant: string | null; date: string; status: string } | null;
+  policy: { rule: string | null; decision: string | null; lookup: { source: string; count: number | null } | null };
+  handoffReason: string | null;
   extraction: { source: string; dropped: string[]; error: string | null; ms: number };
 };
 
@@ -182,8 +185,8 @@ export function ChatDemo() {
           <div className="placeholder">Send a message to see the intent, confidence and the model that answered.</div>
         )}
         <div className="note">
-          Replies don&apos;t use account data yet: the assistant collects and confirms the details, but doesn&apos;t
-          look up the transaction. Account lookups, policy checks and human handoff come in the next steps.
+          Transactions come from a synthetic demo customer until the real lookup is connected. No money is ever moved:
+          a dispute goes to review or to a person, by rule.
         </div>
       </aside>
     </main>
@@ -196,8 +199,24 @@ const MOVE_LABELS: Record<string, string> = {
   confirm: "asking to confirm",
   ask_correction: "asking what to correct",
   confirmed: "details confirmed",
+  status_update: "case already in progress",
   answer: "answering",
-  handoff: "offering an agent",
+  handoff: "passing to an agent",
+  no_match: "no matching charge, asking to check",
+  ask_narrow: "several matches, asking which one",
+  explain_status: "explaining the charge's status",
+  open_review: "sending to review",
+};
+
+const RULE_LABELS: Record<string, string> = {
+  "PL-1": "no matching charge",
+  "PL-2": "several matching charges",
+  "PL-3": "charge still pending: no dispute",
+  "PL-4": "charge already reversed: no dispute",
+  "PL-5": "charge was declined: no dispute",
+  "PL-6": "high fraud score: a person takes it",
+  "PL-7": "low risk: goes to review",
+  "PL-8": "record unavailable: a person takes it",
 };
 
 const RESOLVED_LABELS: Record<string, string> = {
@@ -229,7 +248,16 @@ function ConversationPanel({ c }: { c: Conversation }) {
           <div key={k}><dt>{k}</dt><dd>{v ?? (c.missing.includes(k.toLowerCase()) ? "missing" : "—")}</dd></div>
         ))}
         <div><dt>Extraction</dt><dd>{c.extraction.source} · {c.extraction.ms} ms</dd></div>
-        <div><dt>Status</dt><dd>{c.status}</dd></div>
+        <div><dt>Status</dt><dd>{c.status}{c.handoffReason ? ` · ${c.handoffReason}` : ""}</dd></div>
+        {c.match && (
+          <div style={{ gridColumn: "1 / -1" }}>
+            <dt>Matched charge ({c.policy.lookup?.source ?? "lookup"})</dt>
+            <dd>{c.match.amount} {c.match.currency} · {c.match.merchant ?? "—"} · {c.match.date} · {c.match.status}</dd>
+          </div>
+        )}
+        {c.policy.rule && (
+          <div style={{ gridColumn: "1 / -1" }}><dt>Policy rule</dt><dd>{c.policy.rule}: {RULE_LABELS[c.policy.rule] ?? c.policy.decision}</dd></div>
+        )}
         {c.extraction.dropped.length > 0 && (
           <div style={{ gridColumn: "1 / -1" }}><dt>Dropped (not found in the message)</dt><dd>{c.extraction.dropped.join(", ")}</dd></div>
         )}

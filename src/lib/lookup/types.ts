@@ -21,7 +21,7 @@ export type TransactionMatch = {
   currency: string; // the record's own currency, never converted for display (data issue A5)
   merchant: string | null;
   status: TransactionStatus;
-  responseCode: string | null; // not interpreted: Pending/Reversed rows carry decline codes (data issue E5)
+  responseCode: string | null; // not interpreted: Pending/Reversed rows carry decline codes (data issue E7)
   channel: string | null;
   country: string | null; // ISO: MX, CO, AR
   fraudScore: number | null; // policy engine only (PL-6); never shown to the customer, never stored in the state

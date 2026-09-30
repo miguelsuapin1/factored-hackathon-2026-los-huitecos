@@ -2,7 +2,7 @@
 // decide what the conversation is about and the assistant's next move. Plain code, no model calls, so every rule is
 // testable (dialogue.test.ts) and explainable. Rules and their reasons: docs/conversation.md C5–C8.
 import type { IntentLabel, Scores } from "@/lib/intent/model";
-import { EMPTY_DETAILS, MAX_TEXTS, type ConversationState, type Details } from "./state";
+import { EMPTY_DETAILS, FINISHED, MAX_TEXTS, type ConversationState, type Details } from "./state";
 
 export const DISPUTES: IntentLabel[] = ["unrecognized_charge", "wrongful_fee"];
 const SAFETY: IntentLabel[] = ["move_money", "human_agent"];
@@ -18,9 +18,15 @@ export type Move =
   | "ask_details" // ask only for what's missing
   | "confirm" // restate details, ask yes/no
   | "ask_correction" // customer said no: which detail is wrong?
-  | "confirmed" // yes: details confirmed, will be checked (steps 12–14 act on it)
+  | "confirmed" // yes: the policy engine decides next (resolve.ts turns it into open_review or handoff)
+  | "status_update" // the dispute is already finished (under review, with an agent, closed): say so
   | "answer" // non-dispute intent: the Phase 1 per-intent guidance
-  | "handoff"; // offer a human after repeated unresolved clarifications
+  | "handoff" // a person takes over (repeated clarifications here; policy reasons in resolve.ts)
+  // Set by resolve.ts after the lookup and policy engine (step 12, docs/policy.md):
+  | "no_match" // PL-1: nothing matches, ask to check the details
+  | "ask_narrow" // PL-2: several match, ask for the merchant or exact date
+  | "explain_status" // PL-3/4/5: pending, reversed or declined: explain, no dispute
+  | "open_review"; // PL-7: the dispute goes to review
 
 export type ResolvedBy = "model" | "clarification" | "offer" | "kept_topic" | "new_topic" | "confirmation";
 
@@ -130,6 +136,7 @@ export function advance(prev: ConversationState, input: TurnInput): TurnOutcome 
     if (attempts >= MAX_CLARIFY) {
       state.pending = null;
       state.status = "handoff";
+      state.handoffReason = "repeated_clarification";
       return done("handoff", "clarification");
     }
     state.pending = { kind: "clarify", options: [a, b], attempts };
@@ -141,9 +148,12 @@ export function advance(prev: ConversationState, input: TurnInput): TurnOutcome 
     const resolvedBy: ResolvedBy = prev.workingIntent && prev.workingIntent !== intent.intent ? "new_topic" : "model";
     if (resolvedBy === "new_topic") state.status = "open";
     // A new dispute after a confirmed one is a new case: start from this message's details only.
-    if (prev.status === "confirmed" && DISPUTES.includes(intent.intent)) {
+    if (FINISHED.includes(prev.status) && DISPUTES.includes(intent.intent)) {
       state.details = { ...EMPTY_DETAILS, ...stripNulls(input.details) };
       state.status = "open";
+      state.match = null;
+      state.lookupRetries = 0;
+      state.handoffReason = null;
     }
     state.workingIntent = intent.intent;
     state.pending = null;
@@ -191,9 +201,9 @@ function disputeMove(
     state.pending = { kind: "details" };
     return done("ask_details", resolvedBy);
   }
-  if (state.status === "confirmed" && resolvedBy === "kept_topic") {
+  if (FINISHED.includes(state.status) && resolvedBy === "kept_topic") {
     state.pending = null;
-    return done("confirmed", resolvedBy);
+    return done("status_update", resolvedBy);
   }
   state.status = "open";
   state.pending = { kind: "confirm" };
