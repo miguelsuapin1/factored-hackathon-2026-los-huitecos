@@ -1,0 +1,44 @@
+domain,raw_value,code,label_en
+reason_category,Transaccional,transactional,Transactions & payments
+reason_category,Producto,product,Product information
+reason_category,Queja,complaint,Complaints
+reason_category,Técnico,technical,Technical
+reason_category,Comercial,commercial,Sales
+reason_category,Retención,retention,Retention
+sentiment,Muy Positivo,very_positive,Very positive
+sentiment,Positivo,positive,Positive
+sentiment,Neutral,neutral,Neutral
+sentiment,Negativo,negative,Negative
+sentiment,Muy Negativo,very_negative,Very negative
+interaction_channel,Phone,phone,Phone
+interaction_channel,Email,email,Email
+interaction_channel,App,app,App
+interaction_channel,WhatsApp,whatsapp,WhatsApp
+interaction_channel,Web Chat,web_chat,Web chat
+interaction_channel,Web,web_video,Web (video call)
+document_type,DNI,DNI,National ID (DNI)
+document_type,CC,CC,Cédula de ciudadanía
+document_type,CE,CE,Cédula de extranjería
+document_type,Pasaporte,PASSPORT,Passport
+document_type,CURP,CURP,CURP
+product_type,Cuenta Ahorro,savings_account,Savings account
+product_type,Cuenta Corriente,checking_account,Checking account
+product_type,Tarjeta Crédito,credit_card,Credit card
+product_type,Tarjeta Débito,debit_card,Debit card
+product_type,Préstamo Personal,personal_loan,Personal loan
+product_type,Préstamo Hipotecario,mortgage,Mortgage
+product_type,Inversión,investment,Investment
+product_type,Seguro,insurance,Insurance
+complaint_subcategory,Cargo no reconocido,unrecognized_charge,Unrecognized charge
+complaint_subcategory,Cobro indebido,wrongful_fee,Wrongful fee
+complaint_subcategory,Problema con app,app_problem,App problem
+complaint_subcategory,Atención en sucursal,branch_service,Branch service
+complaint_subcategory,Calidad de servicio,service_quality,Service quality
+agent_specialty,Fraudes,fraud,Fraud
+agent_specialty,Cobranza,collections,Collections
+agent_specialty,Retención,retention,Retention
+agent_specialty,Soporte Técnico,tech_support,Technical support
+agent_specialty,Créditos,credit,Credit
+agent_specialty,Inversiones,investments,Investments
+agent_specialty,Ventas,sales,Sales
+agent_specialty,Quejas y Reclamos,complaints,Complaints and claims

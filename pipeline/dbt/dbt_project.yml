@@ -1,0 +1,53 @@
+# LATAM Bank service: bronze → silver → gold (docs/decisions.md D-003, D-005).
+# Build:  cd pipeline/dbt && uv run dbt build --target bq
+name: latam_bank
+version: "1.0.0"
+config-version: 2
+profile: latam_bank
+
+model-paths: ["models"]
+seed-paths: ["seeds"]
+test-paths: ["tests"]
+macro-paths: ["macros"]
+analysis-paths: ["analyses"]
+target-path: "target"
+clean-targets: ["target", "dbt_packages"]
+
+vars:
+  # The organizer data ends 2026-06-17; the demo clock (docs/conversation.md C4) is the same day.
+  demo_today: "2026-06-17"
+  # Serving slice (gold/serving): how many stratified customers, and the random seed that picks them.
+  cohort_size: 2000
+  cohort_seed: "latam-bank-2026"
+  serving_months: 12
+  # docs/policy.md PL-6
+  fraud_cutoff: 30
+
+models:
+  latam_bank:
+    +persist_docs: {relation: true, columns: true}
+    staging:
+      +materialized: view
+      +schema: staging
+    intermediate:
+      +materialized: view
+      +schema: staging
+    silver:
+      +materialized: table
+      +schema: silver
+    quarantine:
+      +materialized: table
+    gold:
+      +materialized: table
+      analytics:
+        +schema: gold
+      serving:
+        +schema: gold_serving
+
+seeds:
+  latam_bank:
+    +schema: ref
+
+data_tests:
+  latam_bank:
+    +store_failures: false

@@ -49,6 +49,8 @@ uv run python pipeline/phrases.py             # validate phrase families -> phra
 node scripts/embed_phrases.mjs                # e5-small embeddings (same settings the app serves)
 uv run python pipeline/embed_bedrock.py cohere-mv3   # Cohere embeddings (AWS profile "bedrock"; quota 20 req/min)
 uv run python pipeline/split.py               # verify the sealed split
+(cd pipeline/dbt && uv run dbt build --profiles-dir . --target bq)   # silver + gold in BigQuery (gcloud login)
+(cd pipeline/dbt && uv run python fixtures/build_fixture_bronze.py && DBT_DUCKDB_PATH=../../data/processed/fixture.duckdb uv run dbt build --profiles-dir . --target duckdb --vars '{fixtures: true}')  # offline
 (cd pipeline && uv run python compare_embeddings.py) # model selection by grouped CV (test untouched)
 (cd pipeline && uv run python train_intent.py --embedding cohere-mv3)  # validation only; --test is logged
 ```

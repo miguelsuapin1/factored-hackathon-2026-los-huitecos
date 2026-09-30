@@ -78,6 +78,8 @@ async function getTransaction(session: CustomerSession, transactionId: string): 
 
 **Now in code (Miguel, 2026-09-30):** the types are [src/lib/lookup/types.ts](../src/lib/lookup/types.ts); the stand-in with synthetic fixtures is `src/lib/lookup/mock.ts`. **Person 2:** implement `TransactionLookup` against Supabase and export it from `src/lib/lookup/index.ts`; the unit tests in `src/lib/policy/policy.test.ts` show the expected behaviour (scoping, ±1% amount, date window, merchant and currency narrow only when something still matches). There is deliberately **no `is_fraud` field** (docs/policy.md PL-6).
 
+**Data for K2 (Carlos, 2026-09-30):** BigQuery `gold_serving.serving_transactions` (+ `serving_customers`, `serving_products`) is the slice to load into Supabase: one row per transaction with exactly the K2 fields (`transaction_ts` UTC, `transaction_date_local` = the customer's calendar day, `amount`, `currency`, `merchant_name`, `transaction_status`, `response_code`, `channel`, `transaction_country` ISO, `fraud_score`), no `is_fraud`, and `data_source` (`organizer` | `team_synthetic`). Miguel's mock charges (`CLI-DEMO00000001`, `CLI-OTHER0000000001`) are included unchanged, so the test conversations keep working when the mock is replaced. **Filter dates on `transaction_date_local`.** Contents and size: [reports/serving_slice.md](../reports/serving_slice.md).
+
 Relative dates are resolved against the demo clock (`DEMO_TODAY`, default 2026-06-17; see [conversation.md](conversation.md) C4), so the gold slice must cover the weeks before it. Until K2 is live, Miguel uses a mock returning fixed fixtures with this shape.
 
 ## K3. Handoff case file (step 14 → agent console, step 20)

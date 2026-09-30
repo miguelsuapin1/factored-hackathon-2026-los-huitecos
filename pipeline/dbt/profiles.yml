@@ -1,0 +1,19 @@
+# No secrets here. BigQuery uses your own Google login:
+#   gcloud auth application-default login
+# DuckDB builds the same models offline from the raw CSVs in data/raw (docs/decisions.md D-005).
+latam_bank:
+  target: bq
+  outputs:
+    bq:
+      type: bigquery
+      method: oauth
+      project: "{{ env_var('GCP_PROJECT', 'project-d49391de-51c4-49bf-aae') }}"
+      dataset: dbt
+      location: "{{ env_var('BQ_LOCATION', 'us-east1') }}"
+      threads: 8
+      job_execution_timeout_seconds: 900
+      priority: interactive
+    duckdb:
+      type: duckdb
+      path: "{{ env_var('DBT_DUCKDB_PATH', '../../data/processed/warehouse.duckdb') }}"
+      threads: 4

@@ -2,6 +2,8 @@
 
 Every issue found in the organizer dataset (LATAM Bank v1.0.0, S3 `data/` prefix, downloaded 2026-09-25), with the evidence, why it matters, and the rule the silver layer applies. Counts are reproducible: run `pipeline/bronze.py`, then `pipeline/dq_checks.py`, which regenerates [reports/data_quality.md](../reports/data_quality.md).
 
+**Status (2026-09-30):** every rule below is implemented in the dbt silver layer (`pipeline/dbt`), counted per run in [reports/silver_quality.md](../reports/silver_quality.md) under its id.
+
 **Principle:** bronze keeps raw data untouched (all VARCHAR, plus `filename` and `_loaded_at` lineage). Silver fixes types, vocabulary and keys, and **flags** anything it can't fix; it never silently drops a row. Every rule is a named check with a count in the pipeline run log.
 
 Severity: 🔴 affects the service's correctness or privacy · 🟠 affects analysis or evaluation validity · 🟡 cosmetic/normalization.
@@ -15,6 +17,8 @@ Severity: 🔴 affects the service's correctness or privacy · 🟠 affects anal
 | A3 🟠 | Schema evolution | All files of each table have identical headers | Same as A1 | `read_csv(union_by_name=true)` plus a column contract that fails on unknown columns; shown with a fixture |
 | A4 🟡 | Row counts (e.g. 800K interactions, 80K complaints) | 11–16% fewer rows in every fact table; dimensions exact. Exchange rates: 13,164 rows vs "3,000" (1,097 days × 12 currency pairs, which is correct) | Totals quoted from the dictionary would be wrong | Always quote observed counts from our reports |
 | A5 🔴 | "All transactions include local currency and USD conversion" | **No MXN anywhere.** All 2.2M transactions of Mexican customers are in USD, and all products are USD/COP/ARS. `amount_usd` is null for 99,477 non-USD transactions | Balances and amounts shown to Mexican customers would be in the wrong currency | Treat `currency` as the source of truth (never assume the local currency). Fill `amount_usd` from `daily_exchange_rates` on the transaction date and flag `amount_usd_derived=true`. Report as a data limitation |
+| A6 🟡 | (found 2026-09-30) The delivered `amount_usd` is **not** computed from `daily_exchange_rates`: it uses fixed rates (ARS 1/350, COP 1/4,000) while the daily table moves ±2–4% | Derived and delivered USD values can differ by a few percent | Keep delivered values; derive missing ones from the daily rate on the transaction's UTC date and flag them (`amount_usd_derived`, `fx_rate_used`). Never sum USD across the two methods for precise figures |
+| A7 🟠 | (found 2026-09-30) **24% of `digital_events` (3,745,446) have no `customer_id`**, including ~584K logins and ~584K logouts. The dictionary doesn't mention anonymous events. Also 15.6M rows vs the promised 10M | Per-customer digital analysis covers 76% of events | Kept in silver with `anonymous_event = true` (an early rule wrongly quarantined them, lessons-learned X3) |
 
 ## B. Text data is templated (it can't train or evaluate language understanding)
 
@@ -54,7 +58,7 @@ Severity: 🔴 affects the service's correctness or privacy · 🟠 affects anal
 | E3 🟡 | 1,065 complaints with `currency` set but `claimed_amount` null | Null the orphan currency |
 | E4 🟠 | 17,664 non-approved transactions (Declined/Pending/Reversed) with null `response_code`; 203K approved with null code | Treat a null code as `unknown`. The service must say "reason unavailable" instead of guessing |
 | E5 🟠 | NPS scores only go from 2 to 7 (no Promoters exist); CSAT never reaches 5; 3,274 NPS rows lack `nps_category` | Recompute `nps_category` from the score. Report satisfaction as relative (by reason), not absolute |
-| E6 🟡 | `call_transcripts.duration_seconds` null in 14% of rows despite NOT NULL | Take the value from `call_center_interactions.duration_seconds` if available, otherwise flag |
+| E6 🟡 | `call_transcripts.duration_seconds` null in 14% of rows despite NOT NULL | Take the value from `call_center_interactions.duration_seconds` if available, otherwise flag (2026-09-30: the linked interaction is missing it too in all 24,029 rows, so nothing can be filled; flagged `E6_duration_missing`) |
 | E7 🟠 | **Pending and Reversed transactions carry decline response codes** (05, 14, 51, 54; e.g. 21,191 Pending with `05`), spread evenly like the Declined ones (Miguel, 2026-09-30) | Response codes can't explain a transaction's outcome. The service reads `transaction_status` only and never states a decline reason (docs/policy.md PL-5) |
 | E8 🟠 | **Complaint amounts carry no signal** (Miguel, 2026-09-30): `claimed_amount` is uniform 0–5,000 in every currency (5,000 COP ≈ 1 USD, yet same distribution as USD); `priority` doesn't depend on it (average ~2,530 at every level); `compensation_granted` (an amount, on 6.9% of complaints, median 253) is unrelated to it (correlation 0.03) and to priority (~7% at every level) | No amount-based policy rule can be justified from this data (docs/policy.md). Don't compare claimed amounts across currencies |
 
@@ -63,6 +67,8 @@ Severity: 🔴 affects the service's correctness or privacy · 🟠 affects anal
 Nulls appear in round proportions: exactly 10%, 15%, 20%, 30% or 50% per column (e.g. `credit_score` 15.0%, `estimated_monthly_income` 20.0%, `landline_phone` 50.0%, `wait_time_seconds` 30.0%). They're random, not tied to meaning. Handling: keep them as null (no imputation for service facts; the assistant says "not available"), and report the null rate per column in every pipeline run. Full table: [reports/data_quality.md](../reports/data_quality.md#null--blank-values).
 
 ## G. Things the data can't tell us (limitations to report)
+
+- **No repeated or near-identical charges** (2026-09-30): 0 customers have two approved charges with the same merchant and amount within 3 days, and only 2 have three or more charges within ±1% in a month. The duplicate-charge and ambiguous-match demo paths therefore use the team's labelled synthetic demo charges (`seeds/demo_fixture_transactions.csv`, from Miguel's mock), marked `data_source = 'team_synthetic'` in the serving slice.
 
 - **No real signal by segment, country or accent.** FCR, escalation and sentiment are identical (±0.2 pp) across all groups. Our fairness breakdowns will be measured on our own evaluation set, not inherited from this data.
 - **Escalation rate (~10%) and wait time (median 2.0 min) are identical for every contact reason**, so they can't be used to prioritize.

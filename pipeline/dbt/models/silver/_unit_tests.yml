@@ -1,0 +1,77 @@
+version: 2
+
+# dbt unit tests: tiny hand-written inputs for the rules that are easy to get subtly wrong. They run with
+# `dbt test --select test_type:unit` (DuckDB target in CI, see pipeline/dbt/README.md). Team-written, synthetic.
+
+unit_tests:
+  - name: usd_is_derived_from_the_daily_rate_and_flagged
+    description: "A5: a COP amount without amount_usd uses that day's COP→USD rate; USD rows keep amount; delivered values are untouched."
+    model: silver_transactions
+    given:
+      - input: ref('int_transactions_checked')
+        rows:
+          - {transaction_id: T1, customer_id: C1, product_id: P1, transaction_date: "2026-03-10 15:00:00", process_date: "2026-03-10", amount: 1000000, currency: COP, amount_usd: null, transaction_country: Colombia, transaction_status: Approved, response_code: "00", _reject_reasons: []}
+          - {transaction_id: T2, customer_id: C1, product_id: P1, transaction_date: "2026-03-10 16:00:00", process_date: "2026-03-10", amount: 50, currency: USD, amount_usd: null, transaction_country: Colombia, transaction_status: Approved, response_code: "00", _reject_reasons: []}
+          - {transaction_id: T3, customer_id: C1, product_id: P1, transaction_date: "2026-03-10 17:00:00", process_date: "2026-03-10", amount: 4000, currency: COP, amount_usd: 1.0, transaction_country: Colombia, transaction_status: Approved, response_code: "00", _reject_reasons: []}
+      - input: ref('silver_customers')
+        rows:
+          - {customer_id: C1, country: CO, timezone: America/Bogota}
+      - input: ref('map_countries')
+        rows:
+          - {raw_value: Colombia, iso2: CO, timezone: America/Bogota, is_home_market: true}
+      - input: ref('silver_fx_rates')
+        rows:
+          - {date: "2026-03-09", source_currency: COP, target_currency: USD, exchange_rate: 0.0003}
+          - {date: "2026-03-10", source_currency: COP, target_currency: USD, exchange_rate: 0.00025}
+    expect:
+      rows:
+        - {transaction_id: T1, amount_usd: 250.0, amount_usd_derived: true, fx_rate_used: 0.00025}
+        - {transaction_id: T2, amount_usd: 50.0, amount_usd_derived: false, fx_rate_used: null}
+        - {transaction_id: T3, amount_usd: 1.0, amount_usd_derived: false, fx_rate_used: null}
+
+  - name: local_date_uses_the_customers_time_zone
+    description: "A2: 03:00 UTC on 1 March is still 28 February in Mexico City (UTC-6)."
+    model: silver_transactions
+    given:
+      - input: ref('int_transactions_checked')
+        rows:
+          - {transaction_id: T1, customer_id: C1, product_id: P1, transaction_date: "2026-03-01 03:00:00", process_date: "2026-02-28", amount: 10, currency: USD, amount_usd: 10, transaction_country: México, transaction_status: Approved, _reject_reasons: []}
+      - input: ref('silver_customers')
+        rows:
+          - {customer_id: C1, country: MX, timezone: America/Mexico_City}
+      - input: ref('map_countries')
+        rows:
+          - {raw_value: México, iso2: MX, timezone: America/Mexico_City, is_home_market: true}
+      - input: ref('silver_fx_rates')
+        rows:
+          - {date: "2026-03-01", source_currency: COP, target_currency: USD, exchange_rate: 0.00025}
+    expect:
+      rows:
+        - {transaction_id: T1, transaction_date_local: "2026-02-28", transaction_country: MX, is_foreign: false}
+
+  - name: complaint_never_points_to_another_customers_product
+    description: "C1: a link to someone else's product is removed and flagged; a missing subcategory comes from the category."
+    model: silver_complaints
+    given:
+      - input: ref('int_complaints_checked')
+        rows:
+          - {complaint_id: K1, customer_id: C1, creation_date: "2026-01-05 10:00:00", category: Transactions, subcategory: null, affected_product_id: P_OTHER, status: Open, _reject_reasons: []}
+          - {complaint_id: K2, customer_id: C1, creation_date: "2026-01-05 11:00:00", category: Fees, subcategory: Cobro indebido, affected_product_id: P_MINE, status: Open, _reject_reasons: []}
+      - input: ref('map_complaint_category')
+        rows:
+          - {category: Transactions, subcategory_code: unrecognized_charge, is_dispute: true}
+          - {category: Fees, subcategory_code: wrongful_fee, is_dispute: true}
+      - input: ref('map_labels')
+        rows:
+          - {domain: complaint_subcategory, raw_value: Cobro indebido, code: wrongful_fee, label_en: Wrongful fee}
+      - input: ref('silver_products')
+        rows:
+          - {product_id: P_OTHER, customer_id: C2}
+          - {product_id: P_MINE, customer_id: C1}
+      - input: ref('silver_customers')
+        rows:
+          - {customer_id: C1, timezone: America/Bogota}
+    expect:
+      rows:
+        - {complaint_id: K1, affected_product_id: null, product_owner_mismatch: true, subcategory: unrecognized_charge, subcategory_derived: true, is_dispute: true}
+        - {complaint_id: K2, affected_product_id: P_MINE, product_owner_mismatch: false, subcategory: wrongful_fee, subcategory_derived: false, is_dispute: true}
