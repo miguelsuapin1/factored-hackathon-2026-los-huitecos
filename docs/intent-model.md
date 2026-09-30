@@ -156,6 +156,7 @@ Each entry: what we chose, what else we considered, and why.
   - Its out-of-scope questions, expected to be the most useful part, hurt most (83.2–83.6%): English card-support questions pull Spanish/Portuguese phrases toward `out_of_scope`.
   - Leakage check: 0 of our 834 non-test phrases has a Banking77 sentence at cosine ≥ 0.92.
 - **Why, most likely:** it's English and in-domain for a UK app (top-ups, virtual cards), while our customers write Spanish/Portuguese about a Latin American bank. Cross-lingual embeddings carry the topic but also the other product's boundaries.
+- **Caveat: the scoring favours our own style.** The phrases it's scored on were written by the same single author as our training phrases, so a model trained only on them has a home advantage; this can't show whether Banking77's real human phrasing helps with real customers. The conclusion is "on our phrases, it doesn't help and makes the model less careful", not "it can't help". **Re-run the same script scored on Person 3's human-written messages** (step 16) once they exist; that's allowed, since the scoring is on their messages, never on Banking77.
 - **What would test it better (not done):** a small machine-translated Spanish/Portuguese subset of the dispute-related categories (labelled as translated), judged the same way. Only worth it if Person 3's human-written messages show a gap it could fill.
 
 ## Errors worth knowing (test)
