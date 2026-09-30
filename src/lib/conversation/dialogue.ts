@@ -95,6 +95,8 @@ export function readPick(text: string, options: MatchView[], merchant?: string |
   return null;
 }
 
+/** C16: the customer states what the amount should have been. */
+const SHOULD_BE = /\b(deberia (ser|haber sido)|tenia que ser|tendria que ser|deveria (ser|ter sido)|era para ser|tinha que ser)\b/;
 /** C15: words that say which kind of charge question it is. */
 const UNREC_WORDS = /\b(no (lo |la )?reconozco|desconozco|no fui yo|no (lo |la )?hice|no autorice|fraude|clonar\w*|me robaron|nao reconhec\w*|nao reconheco|nao fiz|nao fui eu|desconhec\w*|clonad\w*)\b/;
 const WRONG_WORDS = /\b(dos veces|duplicad\w*|doble|de mas|incorrect\w*|mal cobrad\w*|equivocad\w*|error en el monto|deberia (ser|haber sido)|duas vezes|a mais|errad\w*|deveria ser|comision\w*|anuidade|tarifa)\b/;
@@ -156,7 +158,16 @@ function mergeDetails(prev: Details, next: Partial<Details>): { details: Details
 export function advance(prev: ConversationState, input: TurnInput): TurnOutcome {
   const { intent } = input;
   const pendingBefore = prev.pending;
-  const merged = mergeDetails(prev.details, input.details);
+  // C16: once the charged amount is known, a new amount said as "debería ser 250" is the expected amount, never a
+  // replacement. Haiku sometimes returns it as `amount` (seen live, 1 of 9 runs of TC-01: 350 was overwritten by
+  // 250 and the lookup found nothing). A correction at the confirmation step ("no, era de 360") still replaces it.
+  const incoming = { ...input.details };
+  if (prev.details.amount !== null && incoming.amount !== undefined && incoming.amount !== prev.details.amount
+      && prev.pending?.kind !== "confirm" && SHOULD_BE.test(normalize(input.text))) {
+    if (incoming.expectedAmount === undefined || incoming.expectedAmount === null) incoming.expectedAmount = incoming.amount;
+    delete incoming.amount;
+  }
+  const merged = mergeDetails(prev.details, incoming);
   const state: ConversationState = {
     ...prev,
     turn: prev.turn + 1,

@@ -291,3 +291,22 @@ describe("C12c: a reply that gives what we asked for is an answer", () => {
   });
 });
 
+describe("C16: 'debería ser 250' never overwrites the charged amount", () => {
+  it("Haiku returning 250 as `amount` (seen live) is moved to the expected amount; 350 stays", () => {
+    const [, t2] = run([
+      { text: "No reconozco un cargo de 350 pesos", intent: intent({ unrecognized_charge: 0.58, wrongful_fee: 0.3 }), details: { amount: 350 } },
+      { text: "Error en el monto, debería ser de 250 pesos", intent: intent({ move_money: 0.51 }), details: { amount: 250 } },
+    ]);
+    assert.equal(t2.state.details.amount, 350);
+    assert.equal(t2.state.details.expectedAmount, 250);
+    assert.equal(t2.state.workingIntent, "wrongful_fee");
+  });
+  it("a correction at the confirmation step still replaces the amount", () => {
+    const [, t2] = run([
+      { text: "No reconozco un cargo de 120 dólares del 3 de junio", intent: intent({ unrecognized_charge: 0.9 }), details: { amount: 120, date: "2026-06-03" } },
+      { text: "no, era de 125", intent: intent({ out_of_scope: 0.5 }), details: { amount: 125 } },
+    ]);
+    assert.equal(t2.state.details.amount, 125);
+  });
+});
+

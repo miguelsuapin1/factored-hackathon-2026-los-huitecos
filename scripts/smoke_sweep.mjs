@@ -2,6 +2,8 @@
 // judges come from Person 3's human-written tests). Replays 30 conversations against a running server and flags:
 // HTTP errors, unexpected final move, template fallbacks, restarts, slow turns (> 6 s), leaked card/ID digits.
 // Usage: node scripts/smoke_sweep.mjs [base-url=http://localhost:3000] [normal|fallback] [out.json]
+// REPEAT=5 node scripts/smoke_sweep.mjs ...   runs each conversation 5 times: Haiku's reading varies between runs,
+// and some bugs only show up occasionally (lessons P19: 1 in 9 runs).
 // Uses the demo login from .env.local. Each run creates a few cases tagged environment "local".
 import fs from "node:fs";
 
@@ -62,7 +64,8 @@ const cookie = await login();
 const results = [];
 const LEAK = /4111|9876|GODE561231/;
 const t0 = Date.now();
-for (const [id, expected, turns] of CONVS) {
+const REPEAT = Math.max(1, Number(process.env.REPEAT ?? 1));
+for (const [id, expected, turns] of CONVS.flatMap((c) => Array.from({ length: REPEAT }, () => c))) {
   let state = null;
   const conv = { id, expected, turns: [], flags: [] };
   for (const text of turns) {

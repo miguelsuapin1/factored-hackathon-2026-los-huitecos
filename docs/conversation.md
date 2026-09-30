@@ -98,6 +98,10 @@ Each entry says who decided it, so the team knows who to ask.
 - **Why:** the lookup and rules are the same for all three kinds, so the question changed nothing we did next; and it was the most common derailment in live runs: clear messages like "No reconozco un cargo de 350 dólares" score 43–66%, and customers answered the question with "no me acuerdo" or "Cable TV" (3 of 4 ladder scenarios, and the Portuguese high-risk case never reached its hand-off).
 - **Result:** smoke-sweep flags 6 → 2 (both non-bugs); "Não fiz essa compra de 120…" now reaches confirmation in one message; TC-01 no longer asks "A or B?" (its turn 1 asks for the date).
 
+### C16. "Debería ser 250" never overwrites the charged amount (Miguel, 2026-09-30)
+- **Found on the preview:** TC-01 ended in "no matching charge" once in 9 runs. The trace showed `detailsKnown: ["amount","date"]` with no expected amount: that run, Haiku returned "debería ser de 250" as the `amount`, overwriting 350, and the lookup searched for 250.
+- **Chose (code, not prompt):** once the charged amount is known, a different amount in a message that says what it *should* be ("debería ser", "tenía que ser", "deveria ser") becomes the expected amount. A correction at the confirmation step ("no, era de 125") still replaces it. Unit-tested both ways; `REPEAT=n` added to the smoke sweep to catch run-to-run variation.
+
 ## What we verified (2026-09-29, local, Cohere + Haiku live)
 
 | Scenario | Result |
