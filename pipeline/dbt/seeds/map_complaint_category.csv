@@ -1,0 +1,6 @@
+category,subcategory_code,is_dispute
+Transactions,unrecognized_charge,true
+Fees,wrongful_fee,true
+Technical,app_problem,false
+Branch,branch_service,false
+Service,service_quality,false

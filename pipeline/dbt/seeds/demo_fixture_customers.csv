@@ -1,0 +1,3 @@
+customer_id,first_name,country,timezone,segment,customer_status,purpose
+CLI-DEMO00000001,Demo,MX,America/Mexico_City,Basic,Active,Miguel's demo customer: every charge exercises one policy path (docs/policy.md)
+CLI-OTHER0000000001,Otro,MX,America/Mexico_City,Basic,Active,Another customer with a same-amount charge: must never be returned to the demo customer (scoping)

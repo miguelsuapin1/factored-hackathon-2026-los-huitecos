@@ -1,0 +1,36 @@
+version: 2
+
+seeds:
+  - name: map_labels
+    description: "Spanish (organizer) → canonical codes for every label used downstream (docs/data-issues.md D1, D4). Team-written, versioned. A raw value missing here fails the accepted_values tests on silver."
+    config:
+      column_types: {domain: STRING, raw_value: STRING, code: STRING, label_en: STRING}
+    columns:
+      - name: domain
+        data_tests: [not_null]
+      - name: raw_value
+        data_tests: [not_null]
+      - name: code
+        data_tests: [not_null]
+  - name: map_complaint_category
+    description: "Each complaint category has exactly one subcategory in the data (checked 2026-09-30), so a missing subcategory is derived from its category. is_dispute marks the two money-dispute subcategories (docs/decisions.md D-002)."
+    config:
+      column_types: {category: STRING, subcategory_code: STRING, is_dispute: BOOL}
+    columns:
+      - name: category
+        data_tests: [unique, not_null]
+  - name: map_countries
+    description: "Country spellings → ISO 3166-1 alpha-2 and the IANA time zone used to derive local dates (docs/data-issues.md A2, D3). Foreign transaction countries have no bank time zone."
+    config:
+      column_types: {raw_value: STRING, iso2: STRING, timezone: STRING, is_home_market: BOOL}
+    columns:
+      - name: raw_value
+        data_tests: [unique, not_null]
+  - name: demo_fixture_transactions
+    description: "TEAM-GENERATED SYNTHETIC demo charges (Miguel, 2026-09-30), copied from src/lib/lookup/mock.ts so the Supabase lookup reproduces the test conversations. The organizer data has no repeated charges (0 same merchant + amount within 3 days) and only 2 customers with 3+ similar amounts, so the ambiguous and duplicate paths need these. Times are LOCAL (the customer's time zone). Marked data_source = 'team_synthetic' in the serving slice."
+    config:
+      column_types: {transaction_id: STRING, customer_id: STRING, transaction_local_ts: STRING, amount: "{{ 'FLOAT64' if target.type == 'bigquery' else 'DOUBLE' }}", currency: STRING, merchant_name: STRING, transaction_status: STRING, response_code: STRING, fraud_score: "{{ 'FLOAT64' if target.type == 'bigquery' else 'DOUBLE' }}", channel: STRING, transaction_country: STRING}
+  - name: demo_fixture_customers
+    description: "TEAM-GENERATED SYNTHETIC demo customers matching demo_fixture_transactions."
+    config:
+      column_types: {customer_id: STRING, first_name: STRING, country: STRING, timezone: STRING, segment: STRING, customer_status: STRING, purpose: STRING}

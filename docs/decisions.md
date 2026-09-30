@@ -60,3 +60,17 @@ GCP project `project-d49391de-51c4-49bf-aae`, location `us-east1` (dataset and b
 **How we may not use it:** no reported number is computed on Banking77: not the test set, not validation, not threshold selection, not cross-validation scores (CV folds are scored on our Spanish/Portuguese phrases only). It is never downloaded into `data/phrases/` and never touches `split_manifest.json`.
 
 **Why:** our training set is 948 team-generated phrases by one author (Claude); Banking77 adds real phrasing variety and many out-of-scope banking questions. Risks we'll measure, not assume: it's English while our customers write Spanish and Portuguese, and 13K sentences could swamp our 948 (we'll rebalance). **Result (2026-09-30): tried and rejected; the live model doesn't use it** ([intent-model.md D17](intent-model.md), [reports/banking77_experiment.md](../reports/banking77_experiment.md)).
+
+## D-005: dbt for silver and gold, same models on BigQuery and DuckDB (2026-09-30)
+**Status:** proposed by Carlos, silver + gold built on the full population; team to confirm.
+
+**Options considered:** (A) dbt, (B) numbered SQL files + a Python runner (like `bronze_bq.py`), (C) Python dataframes + Pandera/Great Expectations, (Dataform) Google's in-console dbt. Chosen A.
+
+**Why:** the work is typing, mapping, deduplication and joins (what SQL does best); dbt gives contracts as tests (unique, not_null, accepted_values, relationships), unit tests for tricky rules, a lineage graph and docs, and the **same models run on DuckDB**, so a judge without a GCP account can run the pipeline on the fixture bronze (removes the reproducibility trade-off in D-003). Adapter differences live in dispatched macros (`macros/casts.sql`, `macros/silver_utils.sql`).
+
+**Pinned:** dbt-core 1.11 (1.12 downloads a parser binary at install time, which failed behind the proxy; lessons-learned X2).
+
+**How it ran first:** no dbt login was available in the assistant session, so `compile_offline.py` + `plan_sql.py` compiled the project and the statements were executed through the BigQuery connector (pipeline/dbt/README.md). The canonical path is `dbt build --target bq`.
+
+**Rules of the layers:** silver never drops a row silently (bronze = silver + quarantine, tested); every change carries a rule id in `_rule_flags`; reports are generated from `ops.ops_silver_quality`. Serving gold is a sample (~2,000 stratified customers + demo scenarios) sized for Supabase, with representativeness measured.
+

@@ -1,0 +1,8 @@
+raw_value,iso2,timezone,is_home_market
+México,MX,America/Mexico_City,true
+Mexico,MX,America/Mexico_City,true
+Colombia,CO,America/Bogota,true
+Argentina,AR,America/Argentina/Buenos_Aires,true
+USA,US,,false
+Spain,ES,,false
+Brazil,BR,,false

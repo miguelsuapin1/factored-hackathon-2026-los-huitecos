@@ -1,0 +1,13 @@
+version: 2
+models:
+  - name: gold_contact_reason_metrics
+    description: "Contacts, first-contact resolution, handle time, agent minutes per resolution and share of unresolved agent time per reason (full population)."
+    columns:
+      - name: reason_category
+        data_tests: [unique, not_null]
+  - name: gold_dispute_kpis
+    description: "Complaint outcomes by subcategory × country × segment; is_dispute marks the workflow's history."
+  - name: gold_baseline_human
+    description: "Human-only historical baseline per reason × country × segment for the evaluation report."
+  - name: gold_digital_events_profile
+    description: "Monthly digital-event volume by type, category and channel, with the anonymous share."

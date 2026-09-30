@@ -66,6 +66,16 @@ Everything we tried and replaced, dropped or had to fix, in one place. Failures 
 | S6 | Cohere models on day one | Blocked for a few hours by new-account verification | Retried after it cleared |
 | S7 | Data Dictionary credentials | The first PDF version had none on page 1 | The organizers published an updated version |
 
+## Data pipeline (silver/gold, 2026-09-30)
+
+| # | What we tried | Result | What replaced it / lesson | Evidence |
+|---|---|---|---|---|
+| X1 | Running `dbt build` from the assistant session | dbt needs Google credentials; the session only had a BigQuery connector | `compile_offline.py` (anonymous auth, `--no-introspect --no-populate-cache`) + `plan_sql.py` → statements executed through the connector. The canonical path stays `dbt build` | 🔎 pipeline/dbt/README.md |
+| X2 | Installing the latest dbt-core (1.12) | Install fails: it downloads a parser binary from GitHub at build time (TLS error behind the proxy) | Pinned dbt-core/dbt-bigquery/dbt-duckdb < 1.12 | 🔎 pyproject.toml |
+| X3 | Treating `customer_id` as required for every table | 3,745,446 digital events (24%) went to quarantine; they are anonymous sessions, not bad rows | Only keys are required for digital events; anonymous rows kept and flagged (A7). **Profile a table before writing its rules** | 📊 reports/silver_quality.md |
+| X4 | Filling missing transcript durations from the linked interaction (E6 plan) | 0 of 24,029 could be filled: the interaction lacks it too | Flag only. Check a fill rule's coverage before promising it | 📝 query in D-005 session |
+| X5 | Planning demo scenarios from organizer data only | No repeated charges exist (0 near-duplicates, 2 customers with 3+ similar amounts) | Serving slice carries the team's labelled synthetic demo charges (data issue G) | 📊 reports/serving_slice.md |
+
 ## Gaps in this record
 
 - The ad-hoc experiments (M3–M6) were run inline, not saved as scripts, so those numbers can't be regenerated exactly. A future `pipeline/experiments/` script could reproduce them against the git history's phrase set (commit `d5ccd02` for the 88-family version).

@@ -1,0 +1,52 @@
+version: 2
+
+# The slice that goes to Supabase (build step 7 → steps 8, 10). Tables mirror docs/contracts.md K2.
+
+models:
+  - name: serving_cohort
+    description: "Customers in the slice and why: stratified_sample (country × segment, fixed seed), scenario:* (demo paths), team_synthetic_demo."
+    columns:
+      - name: customer_id
+        data_tests: [unique, not_null]
+  - name: serving_customers
+    description: "Minimised customer records: first name, country, time zone, segment, status, document type and a SHA-256 of the document number (step-8 login)."
+    columns:
+      - name: customer_id
+        data_tests: [unique, not_null]
+      - name: timezone
+        data_tests: [not_null]
+      - name: data_source
+        data_tests:
+          - accepted_values: {arguments: {values: ['organizer', 'team_synthetic']}}
+  - name: serving_products
+    columns:
+      - name: product_id
+        data_tests: [unique, not_null]
+      - name: customer_id
+        data_tests:
+          - relationships: {arguments: {to: ref('serving_customers'), field: customer_id}}
+  - name: serving_transactions
+    description: "What the lookup (K2) reads: the cohort's transactions in the serving window plus labelled synthetic demo charges. No is_fraud."
+    columns:
+      - name: transaction_id
+        data_tests: [unique, not_null]
+      - name: customer_id
+        data_tests:
+          - not_null
+          - relationships: {arguments: {to: ref('serving_customers'), field: customer_id}}
+      - name: transaction_date_local
+        data_tests: [not_null]
+      - name: transaction_status
+        data_tests:
+          - accepted_values: {arguments: {values: ['Approved', 'Declined', 'Pending', 'Reversed']}}
+      - name: data_source
+        data_tests:
+          - accepted_values: {arguments: {values: ['organizer', 'team_synthetic']}}
+  - name: serving_agent_pools
+    description: "Active agents per country and hand-off pool (counts only)."
+  - name: serving_fx_rates
+    description: "Rates to USD for the serving window."
+  - name: gold_serving_representativeness
+    description: "Stratified sample vs population, per dimension and value, in percentage points."
+  - name: gold_serving_size_estimate
+    description: "Estimated Postgres size per serving table; the slice must stay under the 100 MB budget."
