@@ -2,7 +2,7 @@
 // decide what the conversation is about and the assistant's next move. Plain code, no model calls, so every rule is
 // testable (dialogue.test.ts) and explainable. Rules and their reasons: docs/conversation.md C5–C8.
 import type { IntentLabel, Scores } from "@/lib/intent/model";
-import { EMPTY_DETAILS, FINISHED, MAX_TEXTS, type ConversationState, type Details } from "./state";
+import { EMPTY_DETAILS, FINISHED, MAX_TEXTS, NO_WHEN, type ConversationState, type Details, type MatchView } from "./state";
 
 export const DISPUTES: IntentLabel[] = ["unrecognized_charge", "wrongful_fee"];
 /** Intents about one specific charge: they collect amount + date and use the lookup (disputes, and status: S1). */
@@ -29,6 +29,8 @@ export type Move =
   | "no_match" // PL-1: nothing matches, ask to check the details
   | "ask_narrow" // PL-2: several match, ask for the merchant or exact date
   | "explain_status" // PL-3/4/5: pending, reversed or declined: explain, no dispute
+  | "picked" // C14: the customer picked one of two listed charges (resolve.ts re-reads it and continues)
+  | "pick" // PL-10: two candidates listed for the customer to pick
   | "lookup_status" // S1: status question with its details complete: look the charge up (no confirmation needed)
   | "status_answer" // S1: explain what happened to the charge (PL-3/4/5, or PL-9 approved + offer a review)
   | "open_review" // PL-7: the dispute goes to review (a verified case, step 13)
@@ -40,6 +42,7 @@ export type TurnInput = {
   text: string;
   intent: { intent: IntentLabel; decision: "act" | "ask"; scores: Scores };
   details: Partial<Details>; // only grounded values
+  range?: { from: string; to: string } | null; // C13: a validated vague period ("la semana pasada")
 };
 
 export type TurnOutcome = {
@@ -56,6 +59,42 @@ const NO = new Set(["no", "nao", "incorrecto", "incorreto", "errado", "negativo"
 const BUT = /\b(pero|mas|porem|but)\b/;
 /** S2: after an approved charge is explained, the customer says it isn't theirs or isn't right. */
 const DISPUTE_IT = /\b(no (lo|la) (reconozco|hice|autorice)|no fui yo|no es mio|no es mia|nao (reconheco|fui eu|fiz)|nao e meu|incorrect[oa]|incorret[oa]|errad[oa]|de mas|a mais|duplicad[oa]|dos veces|duas vezes)\b/;
+/** C13: the customer doesn't remember (the date, or the merchant when that's what we asked). */
+const DONT_KNOW = /\b(no (me )?(acuerdo|recuerdo|se|sabria)|ni idea|no tengo idea|nao (me )?(lembro|sei)|sei la|nao faco ideia)\b/;
+/** C13: "the most recent one". */
+const LATEST = /\b(mas reciente|el ultimo|la ultima|lo ultimo|mais recente|o ultimo|a ultima)\b/;
+/** C14: picking from a list. */
+const NONE_OF_THEM = /\b(ninguno|ninguna|ningun|nenhum|nenhuma)\b/;
+const FIRST = /\b(primer|primero|primera|primeiro|primeira|el 1|o 1|a 1)\b/;
+const SECOND = /\b(segundo|segunda|el 2|o 2|a 2)\b/;
+const OLDER = /\b(anterior|mas antiguo|el antiguo|mais antigo|o antigo)\b/;
+const MONTHS = ["enero|janeiro", "febrero|fevereiro", "marzo|marco", "abril", "mayo|maio", "junio|junho", "julio|julho",
+  "agosto", "septiembre|setiembre|setembro", "octubre|outubro", "noviembre|novembro", "diciembre|dezembro"];
+
+/** C14: which of the listed charges the customer means (options are newest first), "none", or null if unclear. */
+export function readPick(text: string, options: MatchView[], merchant?: string | null): number | "none" | null {
+  const t = normalize(text);
+  if (NONE_OF_THEM.test(t)) return "none";
+  const unique = (hits: number[]) => (hits.length === 1 ? hits[0] : null);
+  const fold = (s: string) => normalize(s);
+  // merchant named (in the text or extracted), ignoring short words
+  const byMerchant = options.map((o, i) => ({ i, m: o.merchant ? fold(o.merchant) : "" })).filter(({ m }) =>
+    m && (t.includes(m) || (merchant && (m.includes(fold(merchant)) || fold(merchant).includes(m))) ||
+      m.split(" ").some((w) => w.length >= 4 && t.split(" ").includes(w))));
+  const merchantHit = unique(byMerchant.map((x) => x.i));
+  if (merchantHit !== null) return merchantHit;
+  // a day of the month ("el del 10") or a month name ("el de febrero")
+  const days = (t.match(/\b\d{1,2}\b/g) ?? []).map(Number).filter((d) => d >= 1 && d <= 31);
+  const byDay = options.map((o, i) => ({ i, d: Number(o.date.slice(8, 10)) })).filter(({ d }) => days.includes(d));
+  if (unique(byDay.map((x) => x.i)) !== null) return byDay[0].i;
+  const byMonth = options.map((o, i) => ({ i, m: Number(o.date.slice(5, 7)) }))
+    .filter(({ m }) => new RegExp(`\\b(${MONTHS[m - 1]})\\b`).test(t));
+  if (unique(byMonth.map((x) => x.i)) !== null) return byMonth[0].i;
+  if (LATEST.test(t) || FIRST.test(t)) return 0;
+  if (OLDER.test(t) || SECOND.test(t)) return options.length > 1 ? 1 : null;
+  return null;
+}
+
 /** S3: accepting the offer of a person. */
 const AGENT = /\b(asesor\w*|agente|persona|humano|atendente|pessoa|alguien|algu[eé]m)\b/;
 /** C10: choosing "the review" from the options offered after a refusal. Read by code, like yes/no. */
@@ -103,6 +142,23 @@ export function advance(prev: ConversationState, input: TurnInput): TurnOutcome 
   // new topic. The intent model scores a lone "sí" as out_of_scope 71%, just above its 70% threshold (found by the
   // robustness sweep, 2026-09-30): without this, "sí" to "¿me dices el comercio?" dropped the dispute.
   const bareAck = readYesNo(input.text) !== null && normalize(input.text).split(/\s+/).length <= 2 && !merged.changed;
+  // C13: an exact date replaces any vague one; a validated period, "el más reciente" or "no me acuerdo" stand in for
+  // a missing date while a charge is being discussed.
+  if (input.details.date) state.when = { ...NO_WHEN };
+  else if (input.range) state.when = { ...NO_WHEN, from: input.range.from, to: input.range.to };
+  const onCharge = prev.workingIntent !== null && CHARGE_INTENTS.includes(prev.workingIntent);
+  if (onCharge && !input.details.date && !input.range && prev.pending?.kind !== "merchant" && prev.pending?.kind !== "pick") {
+    // "el más reciente" / "no me acuerdo" replace whatever date or period was said before (seen live: after "el mes
+    // pasado" found nothing, "el más reciente" kept searching May).
+    const t = normalize(input.text);
+    if (LATEST.test(t)) {
+      state.details = { ...state.details, date: null };
+      state.when = { ...NO_WHEN, latest: true };
+    } else if (DONT_KNOW.test(t)) {
+      state.details = { ...state.details, date: null };
+      state.when = { ...NO_WHEN, unknown: true };
+    }
+  }
   const done = (move: Move, resolvedBy: ResolvedBy, clarifyOptions: [IntentLabel, IntentLabel] | null = null): TurnOutcome => ({
     state, move, resolvedBy, clarifyOptions, pendingBefore, missing: missingFor(state),
   });
@@ -173,6 +229,34 @@ export function advance(prev: ConversationState, input: TurnInput): TurnOutcome 
     }
   }
 
+  // 2e. We asked for the merchant because several charges matched (C13): the merchant narrows the search;
+  // "no sé" or no merchant at all → a person, with everything collected so far.
+  if (prev.pending?.kind === "merchant" && !confidentSafety) {
+    if (!DONT_KNOW.test(normalize(input.text)) && input.details.merchant) return disputeMove(state, done, "kept_topic");
+    return ambiguousHandoff(state, done);
+  }
+
+  // 2f. We listed two charges (PL-10): the customer picks one, read by code (C14). Unclear → ask once more → a person.
+  if (prev.pending?.kind === "pick" && !confidentSafety) {
+    const { options, attempts } = prev.pending;
+    const pick = readPick(input.text, options, input.details.merchant);
+    if (typeof pick === "number") {
+      state.match = options[pick];
+      state.pending = null;
+      return done("picked", "offer");
+    }
+    if (pick === "none" && !prev.merchantAsked) {
+      state.merchantAsked = true;
+      state.pending = { kind: "merchant" };
+      return done("ask_narrow", "offer");
+    }
+    if (pick === null && attempts === 0) {
+      state.pending = { kind: "pick", options, attempts: 1 };
+      return done("pick", "offer");
+    }
+    return ambiguousHandoff(state, done);
+  }
+
   // 2b. Waiting for "A or B?" (C5).
   if (prev.pending?.kind === "clarify" && !confidentSafety) {
     const [a, b] = prev.pending.options;
@@ -200,7 +284,15 @@ export function advance(prev: ConversationState, input: TurnInput): TurnOutcome 
 
   // 3. Confident: follow the model; a different intent than before is a new topic (C6). Never on a bare "sí"/"ok"
   // while a charge is being discussed (C12).
-  const ackInTopic = bareAck && prev.workingIntent !== null && CHARGE_INTENTS.includes(prev.workingIntent);
+  // C12b: a short reply (≤ 4 words) to a question we just asked about a charge ("Cable TV", "en Oxxo") is an answer,
+  // even if the intent model reads it as confidently out of scope (seen live: "Cable TV" → out_of_scope 74%).
+  const answeringUs = prev.pending?.kind === "details" || prev.pending?.kind === "merchant";
+  const shortAnswer = answeringUs && intent.intent === "out_of_scope" && normalize(input.text).split(/\s+/).length <= 4;
+  // C12c: a reply that gives what we asked for (a detail, a date range, "el más reciente", "no me acuerdo") is an
+  // answer, whatever intent the model gives it (seen live: "el más reciente" → balance_check 81%, "latest movements").
+  const t = normalize(input.text);
+  const gaveWhatWeAsked = answeringUs && (merged.changed || !!input.range || LATEST.test(t) || DONT_KNOW.test(t));
+  const ackInTopic = (bareAck || shortAnswer || gaveWhatWeAsked) && prev.workingIntent !== null && CHARGE_INTENTS.includes(prev.workingIntent) && !confidentSafety;
   if (intent.decision === "act" && !ackInTopic) {
     const resolvedBy: ResolvedBy = prev.workingIntent && prev.workingIntent !== intent.intent ? "new_topic" : "model";
     if (resolvedBy === "new_topic") state.status = "open";
@@ -215,6 +307,8 @@ export function advance(prev: ConversationState, input: TurnInput): TurnOutcome 
       state.caseId = null;
       state.summary = null;
       state.checks = [];
+      state.when = { ...NO_WHEN };
+      state.merchantAsked = false;
     }
     if (intent.intent === "human_agent") {
       // H1/H2: if we already know what it's about, hand off now with that context; otherwise ask for one line.
@@ -263,14 +357,25 @@ function humanHandoff(state: ConversationState, done: (move: Move, resolvedBy: R
   return done("handoff", "model");
 }
 
+function ambiguousHandoff(state: ConversationState, done: (move: Move, resolvedBy: ResolvedBy) => TurnOutcome): TurnOutcome {
+  state.pending = null;
+  state.status = "handoff";
+  state.handoffReason = "ambiguous";
+  return done("handoff", "kept_topic");
+}
+
 function stripNulls(details: Partial<Details>): Partial<Details> {
   return Object.fromEntries(Object.entries(details).filter(([, v]) => v !== null && v !== undefined));
 }
 
 function missingFor(state: ConversationState) {
-  return state.workingIntent && CHARGE_INTENTS.includes(state.workingIntent)
-    ? REQUIRED.filter((k) => state.details[k] === null)
-    : [];
+  if (!state.workingIntent || !CHARGE_INTENTS.includes(state.workingIntent)) return [];
+  const w = state.when;
+  // C13: an exact date, a period, "el más reciente", "no me acuerdo", or the merchant (amount + merchant identify a
+  // charge over the whole window) all let the search start.
+  const dateKnown = state.details.date !== null || (w.from !== null && w.to !== null) || w.latest || w.unknown
+    || state.details.merchant !== null;
+  return REQUIRED.filter((k) => (k === "date" ? !dateKnown : state.details[k] === null));
 }
 
 /** C7 + C8: in a dispute, ask only for what's missing; once complete, confirm (unless already confirmed). */

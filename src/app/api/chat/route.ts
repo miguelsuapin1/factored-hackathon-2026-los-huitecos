@@ -51,10 +51,14 @@ export async function POST(request: Request) {
     const skipExtract = prev.pending?.kind === "confirm" && readYesNo(text) === "yes";
     const [intent, extraction] = await Promise.all([
       classifyMessage(text, { forceFallback: body.forceFallback === true }),
-      extractDetails(text, { skip: skipExtract }),
+      extractDetails(text, {
+        skip: skipExtract,
+        asked: prev.pending?.kind === "merchant" ? ["the merchant or store"]
+          : prev.pending?.kind === "details" ? ["the missing details of the charge (amount, date)"] : [],
+      }),
     ]);
 
-    const outcome = advance(prev, { text, intent, details: extraction.details });
+    const outcome = advance(prev, { text, intent, details: extraction.details, range: extraction.range });
     const language = prev.lang ?? guessLanguage(text);
     const { move, trace: policy } = await resolveTurn(outcome, {
       session: customerFor(session.u),
@@ -83,17 +87,20 @@ export async function POST(request: Request) {
         status: state.status,
         caseRef: state.caseRef,
         warnSensitive: masked.includes("secret"),
+        options: state.pending?.kind === "pick" ? state.pending.options : null,
+        pickAttempts: state.pending?.kind === "pick" ? state.pending.attempts : 0,
       },
       language,
     );
     // Numbers the reply may contain: what the customer wrote, grounded details, and the matched record (C9, PL rules).
-    const dateParts = [d.date, m?.date].flatMap((iso) => (iso ? iso.split("-").map(Number) : []));
+    const listed = state.pending?.kind === "pick" ? state.pending.options : [];
+    const dateParts = [d.date, m?.date, ...listed.map((o) => o.date)].flatMap((iso) => (iso ? iso.split("-").map(Number) : []));
     const reply = await composeReply({
       customerText: text,
       plan,
       allowedNumbers: [
         ...state.customerTexts.flatMap(numbersIn),
-        ...[d.amount, d.expectedAmount, m?.amount ?? null].filter((v): v is number => v !== null),
+        ...[d.amount, d.expectedAmount, m?.amount ?? null, ...listed.map((o) => o.amount)].filter((v): v is number => v !== null),
         ...(state.caseRef ? numbersIn(state.caseRef) : []),
         ...dateParts,
       ],

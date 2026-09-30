@@ -79,6 +79,19 @@ Each entry says who decided it, so the team knows who to ask.
 - **Chose:** a yes/no/ok of at most two words with no new details, while a charge is being discussed, is handled inside the conversation (ask again for what's missing, or a status update if it's finished), never as a confident new topic. And when "A or B?" offers a dispute option and the answer asks for a review ("ok, revisen el cargo"), code picks the dispute (as C10), instead of the scores that leaned to `move_money`.
 - **After the fix:** those 4 conversations behave as expected; a real new topic ("¿a qué hora abre la sucursal?") still switches (unit test).
 
+### C12b/C12c. A reply that answers our question stays in the conversation (Miguel, 2026-09-30)
+- **Found live** while building C13: "Cable TV" in reply to a details question scored `out_of_scope` 74% and "el más reciente" scored `balance_check` 81% ("latest movements"); both switched topic.
+- **Chose:** while we're waiting for details or the merchant, a reply that gives what we asked for (a detail, a validated period, "el más reciente", "no me acuerdo"), or a short out-of-scope reply (≤ 4 words), is treated as an answer, whatever intent the model assigns. Asking for a person still wins. A longer, genuinely different question still switches (unit-tested).
+- Extraction is now told what was just asked ("the merchant or store", "the missing details"), so a bare "Cable TV" is read as the merchant.
+
+### C13. Vague dates: "la semana pasada", "el más reciente", "no me acuerdo" (Miguel's ladder, 2026-09-30)
+- **Chose:** the table and ladder in [policy.md](policy.md) ("When the customer can't give an exact date"). The model reads what the customer means (Haiku turns a period into a date range, extract-v4); code checks it and decides what to search and show.
+- **Why:** customers often don't remember dates but recognize a charge when they see it; before, C3 dropped vague dates and asked again, the most frustrating possible reply.
+
+### C14. Picking one of two listed charges is read by code (Miguel, 2026-09-30)
+- **Chose:** the answer to "Encontré dos cargos: … ¿Cuál es?" is matched by code against the two options: merchant name, day of month, month name, ordinals ("el primero", "a primeira", "el segundo"), recency ("el más reciente", "el anterior"), "ninguno". Unclear → ask once more → a person. A picked dispute still goes through the yes/no (C8); a picked status question is answered.
+- **Why:** like yes/no and offers (C8, C10), choosing from options the assistant just showed is a kind of message the intent model never saw in training.
+
 ## What we verified (2026-09-29, local, Cohere + Haiku live)
 
 | Scenario | Result |

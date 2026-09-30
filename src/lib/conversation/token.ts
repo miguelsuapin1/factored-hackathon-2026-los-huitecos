@@ -11,7 +11,7 @@ export async function restoreState(token: unknown, session: { u: string; exp: nu
   if (token === undefined || token === null || token === "") return { state: fresh(), restartReason: null };
   if (typeof token !== "string") return { state: fresh(), restartReason: "state is not a string" };
   const state = await verifyJson<ConversationState>(token);
-  if (!state || state.v !== 4) return { state: fresh(), restartReason: "invalid signature" };
+  if (!state || state.v !== 5) return { state: fresh(), restartReason: "invalid signature" };
   if (state.user !== session.u) return { state: fresh(), restartReason: "state belongs to another user" };
   if (state.exp <= Date.now() / 1000) return { state: fresh(), restartReason: "state expired" };
   return { state, restartReason: null };

@@ -34,11 +34,20 @@ describe("decideOnLookup", () => {
     assert.deepEqual(decideOnLookup(none, 0), { kind: "no_match", rule: "PL-1", handoff: false });
     assert.deepEqual(decideOnLookup(none, 1), { kind: "no_match", rule: "PL-1", handoff: true });
   });
-  it("PL-2: several matches ask once, then hand off", async () => {
+  it("PL-10: exactly two matches are listed for the customer to pick, newest first", async () => {
     const two = await find({ amount: 25, date: "2026-06-11" });
     const d = decideOnLookup(two, 0);
-    assert.equal(d.kind, "ambiguous");
-    assert.equal(d.kind === "ambiguous" && d.handoff, false);
+    assert.equal(d.kind, "pick");
+    assert.deepEqual(d.kind === "pick" && d.options.map((o) => o.date.slice(0, 10)), ["2026-06-12", "2026-06-11"]);
+  });
+  it("PL-2: three or more → ask the merchant once; still three or more (or merchant known) → a person", () => {
+    const tx = (d: string) => ({ transactionId: d, date: d, amount: 89.9, currency: "USD", merchant: "Cable TV", status: "Approved" as const, responseCode: "00", channel: null, country: null, fraudScore: 5, score: 1 });
+    const three = [tx("2026-04-12"), tx("2026-05-12"), tx("2026-06-12")];
+    assert.equal(decideOnLookup(three, { retries: 0 }).kind, "ask_merchant");
+    assert.equal(decideOnLookup(three, { retries: 0, merchantAsked: true }).kind, "ambiguous");
+    assert.equal(decideOnLookup(three, { retries: 0, merchantKnown: true }).kind, "ambiguous");
+    const latest = decideOnLookup(three, { retries: 0, latest: true });
+    assert.equal(latest.kind === "confirm_match" && latest.match.date, "2026-06-12");
   });
   it("PL-3/4/5: pending, reversed and declined are explained, never disputed", async () => {
     assert.equal(decideOnLookup(await find({ amount: 45, date: "2026-06-16" }), 0).rule, "PL-3");

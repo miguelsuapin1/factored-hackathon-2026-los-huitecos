@@ -120,6 +120,7 @@ type DetailsView = {
 };
 
 type MatchView = { date: string; amount: number; currency: string; merchant: string | null };
+export type { MatchView as ReplyMatch };
 
 type HandoffReason = "customer_asked" | "repeated_clarification" | "no_match" | "ambiguous" | "high_risk" | "record_unavailable" | "tool_failure";
 
@@ -165,7 +166,7 @@ export type ReplyPlanInput = {
   move:
     | "ask_clarify" | "ask_details" | "confirm" | "ask_correction" | "confirmed" | "status_update" | "answer" | "handoff"
     | "no_match" | "ask_narrow" | "explain_status" | "open_review" | "record_failed" | "ask_summary"
-    | "lookup_status" | "status_answer";
+    | "lookup_status" | "status_answer" | "pick" | "picked";
   intent: IntentLabel; // the working intent (or the model's top intent when there is none)
   clarifyOptions: [IntentLabel, IntentLabel] | null;
   clarifyAttempts: number;
@@ -177,6 +178,8 @@ export type ReplyPlanInput = {
   status: "open" | "confirmed" | "review" | "handoff" | "closed";
   caseRef: string | null; // set only when the case was written and read back (step 13, V1)
   warnSensitive: boolean; // H4: the customer typed a PIN, CVV or password (already masked)
+  options: MatchView[] | null; // PL-10: the two charges listed for the customer to pick
+  pickAttempts: number;
 };
 
 /** `explainOnly`: the reply only explains; offers of further action are rejected by code (R9). */
@@ -294,13 +297,28 @@ function planMove(p: ReplyPlanInput, lang: Lang): ReplyPlan {
         ),
       };
     case "ask_narrow":
+      // PL-2 / C13: three or more charges match; the merchant is asked once.
       return {
-        instruction: `More than one charge in the customer's account matches ${knownText}. Ask for the merchant name or the exact date so you can tell which one they mean. Do not list the charges.`,
+        instruction: `Several charges in the customer's account match ${knownText}. Ask which merchant or store it was, so you can tell which one they mean. Do not list the charges.`,
         templates: both((l) =>
-          l === "es" ? "Hay más de un cargo que coincide. ¿Me dices el nombre del comercio o la fecha exacta para identificarlo?"
-            : "Há mais de uma cobrança que corresponde. Pode me dizer o nome do estabelecimento ou a data exata para identificá-la?",
+          l === "es" ? "Encontré varios cargos que coinciden. ¿Recuerdas en qué comercio fue?"
+            : "Encontrei várias cobranças que correspondem. Você lembra em qual estabelecimento foi?",
         ),
       };
+    case "pick":
+    case "picked": {
+      // PL-10: list the two candidates exactly as the records show them; the customer picks (read by code, C14).
+      const opts = p.options ?? [];
+      const list = (l: Lang) => join(opts.map((o) => matchText(o, l)), l);
+      const again = p.pickAttempts > 0 ? "The customer's last answer didn't say which one. " : "";
+      return {
+        instruction: `${again}Two charges in the customer's account match: ${list(lang)}. Restate both exactly as written here and ask which one they mean. Don't add any other charge.`,
+        templates: both((l) =>
+          l === "es" ? `${p.pickAttempts > 0 ? "No me quedó claro. " : ""}Encontré dos cargos: ${list(l)}. ¿Cuál es?`
+            : `${p.pickAttempts > 0 ? "Não ficou claro para mim. " : ""}Encontrei duas cobranças: ${list(l)}. Qual é?`,
+        ),
+      };
+    }
     case "explain_status": {
       const rule = p.explainRule === "PL-4" || p.explainRule === "PL-5" ? p.explainRule : "PL-3";
       const en = {

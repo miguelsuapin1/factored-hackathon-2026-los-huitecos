@@ -235,3 +235,48 @@ describe("C12: bare acknowledgements stay in the conversation (found by the robu
   });
 });
 
+describe("C12b: short answers to our question stay in the conversation", () => {
+  it("'Cable TV' in reply to a details question keeps the topic even at out_of_scope 74%", () => {
+    const [, t2] = run([
+      { text: "¿Qué pasó con un cobro de 89,90?", intent: intent({ transaction_status: 0.9 }), details: { amount: 89.9 } },
+      { text: "Cable TV", intent: intent({ out_of_scope: 0.74 }), details: { merchant: "Cable TV" } },
+    ]);
+    assert.equal(t2.state.workingIntent, "transaction_status");
+  });
+  it("a longer real question still switches ('¿a qué hora abre la sucursal del centro?')", () => {
+    const [, t2] = run([
+      { text: "¿Qué pasó con un cobro de 89,90?", intent: intent({ transaction_status: 0.9 }), details: { amount: 89.9 } },
+      { text: "¿a qué hora abre la sucursal del centro?", intent: intent({ out_of_scope: 0.92 }) },
+    ]);
+    assert.equal(t2.state.workingIntent, "out_of_scope");
+  });
+  it("C14: Portuguese feminine ordinals pick ('a primeira')", async () => {
+    const { readPick } = await import("./dialogue");
+    const opts = [{ transactionId: "a", date: "2026-06-12", amount: 25, currency: "USD", merchant: "Super Ahorro", status: "Approved" as const },
+      { transactionId: "b", date: "2026-06-11", amount: 25, currency: "USD", merchant: "Tienda Don José", status: "Approved" as const }];
+    assert.equal(readPick("a primeira", opts), 0);
+    assert.equal(readPick("a segunda", opts), 1);
+    assert.equal(readPick("la de don jose", opts), 1);
+    assert.equal(readPick("el del 12", opts), 0);
+    assert.equal(readPick("mmm", opts), null);
+  });
+});
+
+describe("C12c: a reply that gives what we asked for is an answer", () => {
+  it("'el más reciente' to the date question stays in the dispute even at balance_check 81%", () => {
+    const [, t2] = run([
+      { text: "No reconozco un cargo de 350 dólares", intent: intent({ unrecognized_charge: 0.9 }), details: { amount: 350 } },
+      { text: "el más reciente", intent: intent({ balance_check: 0.81 }) },
+    ]);
+    assert.equal(t2.state.workingIntent, "unrecognized_charge");
+    assert.equal(t2.state.when.latest, true);
+  });
+  it("asking for a person while answering is still honored", () => {
+    const [, t2] = run([
+      { text: "No reconozco un cargo de 350 dólares", intent: intent({ unrecognized_charge: 0.9 }), details: { amount: 350 } },
+      { text: "no me acuerdo, pásame con un asesor", intent: intent({ human_agent: 0.9 }) },
+    ]);
+    assert.equal(t2.move, "handoff");
+  });
+});
+
