@@ -19,7 +19,7 @@ describe("every fixed template passes the reply checks", () => {
   it("no template promises timing, in any move or language", async () => {
     const { planReply } = await import("./templates");
     const moves = ["ask_clarify", "ask_details", "confirm", "ask_correction", "confirmed", "status_update", "answer", "handoff",
-      "no_match", "ask_narrow", "explain_status", "open_review", "record_failed", "ask_summary", "lookup_status", "status_answer"] as const;
+      "no_match", "ask_narrow", "explain_status", "open_review", "record_failed", "ask_summary", "lookup_status", "status_answer", "pick", "picked"] as const;
     const reasons = ["customer_asked", "repeated_clarification", "no_match", "ambiguous", "high_risk", "record_unavailable", "tool_failure"] as const;
     const match = { date: "2026-06-10", amount: 350, currency: "USD", merchant: "Super Ahorro" };
     for (const move of moves) for (const handoffReason of reasons) for (const warnSensitive of [false, true]) {
@@ -27,6 +27,7 @@ describe("every fixed template passes the reply checks", () => {
         move, intent: "unrecognized_charge", clarifyOptions: ["unrecognized_charge", "wrongful_fee"], clarifyAttempts: 0,
         details: { amount: 350, expectedAmount: null, currency: "USD", date: "2026-06-10", merchant: null }, missing: ["date"],
         match, explainRule: move === "status_answer" ? "PL-9" : "PL-3", handoffReason, status: "review", caseRef: "GT-ABCDEFGH", warnSensitive,
+        options: [match, { ...match, date: "2026-02-27", merchant: "Tienda Don José" }], pickAttempts: 0,
       }, "es");
       for (const lang of ["es", "pt"] as const) {
         assert.equal(timingPromise(plan.templates[lang]), null, `${move}/${handoffReason}/${lang}`);
@@ -55,7 +56,7 @@ describe("explain-only templates pass R9", () => {
         move: "status_answer", intent: "transaction_status", clarifyOptions: null, clarifyAttempts: 0,
         details: { amount: 560, expectedAmount: null, currency: "USD", date: "2026-06-14", merchant: null }, missing: [],
         match: { date: "2026-06-14", amount: 560, currency: "USD", merchant: "Empresa Telefónica" }, explainRule,
-        handoffReason: null, status: "closed", caseRef: null, warnSensitive: false,
+        handoffReason: null, status: "closed", caseRef: null, warnSensitive: false, options: null, pickAttempts: 0,
       }, "es");
       assert.equal(plan.explainOnly, true);
       for (const lang of ["es", "pt"] as const) assert.equal(unbackedOffer(plan.templates[lang]), null, `${explainRule}/${lang}`);

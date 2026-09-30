@@ -40,11 +40,16 @@ const CONVS = [
   ["es-refund-then-review", ["open_review", "confirm"], ["Devuélvanme el dinero del cargo de 350 dólares del 10 de junio", "ok, revisen el cargo", "sí"]],
   ["pt-declined-agent", ["handoff"], ["Por que recusaram minha compra de 560 dólares do dia 14 de junho?", "sim, quero"]],
   ["es-pending-yesterday", ["status_answer"], ["¿Qué pasó con mi compra de 45 dólares de ayer? Sigue sin aparecer bien"]],
-  ["es-duplicate", ["confirm", "open_review", "ask_narrow", "no_match"], ["Me cobraron dos veces 25 dólares, el 11 y el 12 de junio", "sí"]],
+  ["es-duplicate", ["confirm", "open_review", "ask_narrow", "no_match", "pick"], ["Me cobraron dos veces 25 dólares, el 11 y el 12 de junio", "sí"]],
   ["pt-wrong-amount", ["ask_details", "confirm", "open_review"], ["Cobraram 350 dólares mas era 250, dia 10 de junho", "sim"]],
   ["es-change-mind-person", ["handoff"], ["No reconozco un cargo de 350 dólares del 10 de junio", "mejor quiero hablar con alguien"]],
   ["es-curp-in-summary", ["handoff"], ["necesito un asesor", "mi CURP es GODE561231HDFRRN09 y me cobraron algo raro"]],
   ["es-yes-to-clarify", ["ask_clarify", "ask_details", "handoff"], ["Me cobraron algo raro", "sí"]],
+  // C13/C14/PL-10: vague dates and picking a charge
+  ["es-status-dontknow-pick", ["status_answer"], ["¿Qué pasó con mi compra de 350 dólares?", "no me acuerdo", "la de Super Ahorro"]],
+  ["es-lastmonth-then-latest", ["open_review"], ["No reconozco un cargo de 350 dólares del mes pasado", "el más reciente", "sí"]],
+  ["pt-lastweek-first", ["status_answer", "pick"], ["O que aconteceu com minha compra de 25 dólares?", "foi na semana passada", "a primeira"]],
+  ["es-subscription-person", ["handoff", "ask_details", "ask_narrow"], ["¿Qué pasó con un cobro de 89,90 dólares?", "ni idea", "no sé", "Cable TV"]],
 ];
 
 async function login() {

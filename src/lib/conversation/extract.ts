@@ -8,21 +8,19 @@ import { numbersIn } from "./numbers";
 import type { Details } from "./state";
 
 export const EXTRACT_MODEL = "claude-haiku-4-5";
-export const EXTRACT_PROMPT_VERSION = "extract-v3";
+export const EXTRACT_PROMPT_VERSION = "extract-v4";
 const TIMEOUT_MS = 5000;
-const MAX_DAYS_BACK = 180;
 const PRICE_PER_MTOK = { input: 1, output: 5 }; // Claude Haiku 4.5, USD
 
-/** C4: relative dates are resolved against the last day in the organizer's data, not the real date. */
-export function demoToday(): string {
-  const env = process.env.DEMO_TODAY;
-  return env && /^\d{4}-\d{2}-\d{2}$/.test(env) ? env : "2026-06-17";
-}
+import { demoToday, MAX_DAYS_BACK } from "./clock";
+export { demoToday } from "./clock";
 
 const Extracted = z.object({
   amount: z.number().nullable(),
   expectedAmount: z.number().nullable(),
   date: z.string().nullable(),
+  dateFrom: z.string().nullable(),
+  dateTo: z.string().nullable(),
   dateText: z.string().nullable(),
   merchant: z.string().nullable(),
 });
@@ -40,8 +38,12 @@ Portuguese. Today is ${weekday} ${today}. Return only what the customer states; 
 - expectedAmount: ONLY when they contrast two amounts: what they were charged vs what it should have been
   ("me cobraron 350 y debía ser 250" -> amount 350, expectedAmount 250). Otherwise null.
 - date: the day of the charge as YYYY-MM-DD. Resolve relative days against today ("ayer", "ontem", "el martes" = the
-  most recent Tuesday before today). If they give only a vague period ("la semana pasada", "este mês"), use null.
-- dateText: the exact words from the message that gave the date, or null.
+  most recent Tuesday before today). If they give only a vague period, date is null (see dateFrom/dateTo).
+- dateFrom, dateTo: ONLY for a vague period you can turn into a range of days, inclusive, as YYYY-MM-DD:
+  "la semana pasada" (Monday to Sunday of last week), "a principios de mes" (days 1-10 of this month),
+  "hace unos días" (the last 7 days), "este mês". Null when they give an exact day, and null for "no me acuerdo",
+  "el más reciente" or anything that isn't a period.
+- dateText: the exact words from the message that gave the date or the period, or null.
 - merchant: the business or recipient name exactly as the customer wrote it, or null. Not generic words like
   "tienda", "supermercado", "mercado", "loja" unless followed by a name.
 
@@ -93,13 +95,27 @@ export function ground(text: string, raw: z.infer<typeof Extracted>, today = dem
     if (m.length >= 2 && m.length <= 60 && folded.includes(fold(m))) details.merchant = m;
     else dropped.push("merchant");
   }
+  let range: { from: string; to: string } | null = null;
+  if (details.date === undefined && raw.dateFrom !== null && raw.dateTo !== null) {
+    // C13: a vague period, only if it's quoted from the message, ends by today, starts within the window, and spans
+    // at most ~a month (anything wider isn't narrowing anything).
+    const ok = [raw.dateFrom, raw.dateTo].every((d) => /^\d{4}-\d{2}-\d{2}$/.test(d) && !Number.isNaN(Date.parse(`${d}T00:00:00Z`)));
+    const quoted = !!raw.dateText && folded.includes(fold(raw.dateText));
+    if (ok && quoted && raw.dateFrom <= raw.dateTo && raw.dateTo <= today && daysBetween(raw.dateFrom, today) <= MAX_DAYS_BACK
+        && daysBetween(raw.dateFrom, raw.dateTo) <= MAX_RANGE_DAYS) {
+      range = { from: raw.dateFrom, to: raw.dateTo };
+    } else dropped.push("dateRange");
+  }
   const currency = currencyIn(text);
   if (currency) details.currency = currency;
-  return { details, dropped };
+  return { details, dropped, range };
 }
+
+const MAX_RANGE_DAYS = 35;
 
 export type ExtractResult = {
   details: Partial<Details>;
+  range: { from: string; to: string } | null; // C13: a validated vague period, when no exact date was given
   dropped: string[];
   source: "haiku" | "skipped" | "failed";
   error: string | null;
@@ -110,12 +126,12 @@ export type ExtractResult = {
   costUsd: number;
 };
 
-export async function extractDetails(text: string, opts: { skip?: boolean } = {}): Promise<ExtractResult> {
+export async function extractDetails(text: string, opts: { skip?: boolean; asked?: string[] } = {}): Promise<ExtractResult> {
   const started = performance.now();
   const base = { promptVersion: EXTRACT_PROMPT_VERSION, inputTokens: 0, outputTokens: 0, costUsd: 0, dropped: [] as string[] };
   const codeOnly = (source: "skipped" | "failed", error: string | null) => {
     const currency = currencyIn(text);
-    return { ...base, details: currency ? { currency } : {}, source, error, ms: performance.now() - started };
+    return { ...base, details: currency ? { currency } : {}, range: null, source, error, ms: performance.now() - started };
   };
   if (opts.skip) return codeOnly("skipped", null);
   if (!process.env.ANTHROPIC_API_KEY) return codeOnly("failed", "no ANTHROPIC_API_KEY configured");
@@ -127,7 +143,12 @@ export async function extractDetails(text: string, opts: { skip?: boolean } = {}
         model: EXTRACT_MODEL,
         max_tokens: 200,
         system: system(today),
-        messages: [{ role: "user", content: `<customer_message>\n${text}\n</customer_message>` }],
+        messages: [{
+          role: "user",
+          content: `<customer_message>\n${text}\n</customer_message>` +
+            // C13: the question the customer is answering, so a bare "Cable TV" or "el martes" is read in context.
+            (opts.asked?.length ? `\n\nThe assistant had just asked the customer for: ${opts.asked.join(", ")}.` : ""),
+        }],
         output_config: { format: zodOutputFormat(Extracted) },
       },
       { timeout: TIMEOUT_MS },
@@ -135,8 +156,8 @@ export async function extractDetails(text: string, opts: { skip?: boolean } = {}
     const usage = { inputTokens: response.usage.input_tokens, outputTokens: response.usage.output_tokens };
     const cost = (usage.inputTokens * PRICE_PER_MTOK.input + usage.outputTokens * PRICE_PER_MTOK.output) / 1e6;
     if (!response.parsed_output) return { ...codeOnly("failed", "output didn't match the schema"), ...usage, costUsd: cost };
-    const { details, dropped } = ground(text, response.parsed_output, today);
-    return { ...base, ...usage, costUsd: cost, details, dropped, source: "haiku", error: null, ms: performance.now() - started };
+    const { details, dropped, range } = ground(text, response.parsed_output, today);
+    return { ...base, ...usage, costUsd: cost, details, dropped, range, source: "haiku", error: null, ms: performance.now() - started };
   } catch (err) {
     const reason = err instanceof Anthropic.APIConnectionTimeoutError ? "Haiku timed out" : `Haiku unavailable: ${String(err)}`;
     console.error(JSON.stringify({ event: "extract_failed", reason }));

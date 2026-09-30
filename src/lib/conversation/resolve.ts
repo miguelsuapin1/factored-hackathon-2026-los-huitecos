@@ -4,7 +4,7 @@
 // (docs/verification.md V1–V3). Tool failures never break the turn (docs/policy.md PL-8).
 import { buildCase, verifyCase } from "@/lib/cases/build";
 import type { CaseStore } from "@/lib/cases/types";
-import { decideOnConfirm, decideOnLookup, FRAUD_HANDOFF_SCORE, queryFor, type RuleId } from "@/lib/policy/decide";
+import { decideOnConfirm, decideOnLookup, FRAUD_HANDOFF_SCORE, queryFor, single, type LookupDecision, type RuleId } from "@/lib/policy/decide";
 import type { CustomerSession, TransactionLookup, TransactionMatch } from "@/lib/lookup/types";
 import type { Move, TurnOutcome } from "./dialogue";
 import { MAX_CHECKS, type HandoffReason, type MatchView } from "./state";
@@ -83,74 +83,85 @@ export async function resolveTurn(outcome: TurnOutcome, ctx: ResolveContext): Pr
   if (move === "handoff" && s.handoffReason === "repeated_clarification") trace.rule = "DLG-clarify";
   // The customer asked for a person (H1/H2): also a hand-off with a case.
   if (move === "handoff" && s.handoffReason === "customer_asked") trace.rule = "DLG-human";
+  // The merchant step or the pick ended unresolved (C13, C14): PL-2's hand-off.
+  if (move === "handoff" && s.handoffReason === "ambiguous" && trace.rule === null) trace.rule = "PL-2";
 
-  // Details complete: find the charge before asking the customer to confirm it.
-  if (move === "confirm") {
-    const found = await call("find", () => lookup.findTransactions(ctx.session, queryFor(s.details)), (r) => r.length);
-    if (!found.ok) {
-      note("lookup failed");
-      move = handoff("tool_failure", "PL-8");
+  // Details complete (a dispute to confirm, or a status question, S1), or the customer picked one of two listed
+  // charges (C14): find the charge and walk the ladder (docs/policy.md PL-1, PL-2, PL-10).
+  if (move === "confirm" || move === "lookup_status" || move === "picked") {
+    const status = s.workingIntent === "transaction_status";
+    let decision: LookupDecision | null = null;
+    if (move === "picked" && s.match) {
+      const id = s.match.transactionId;
+      const got = await call("get", () => lookup.getTransaction(ctx.session, id), (r) => (r ? 1 : 0));
+      if (got.ok && got.result) {
+        note(`customer picked ${id}`);
+        decision = single(got.result);
+      } else {
+        note("lookup failed");
+        move = handoff(got.ok ? "record_unavailable" : "tool_failure", "PL-8");
+      }
     } else {
-      note(`lookup (${lookup.source}): ${found.result.length} match(es)`);
-      const d = decideOnLookup(found.result, s.lookupRetries);
-      trace.rule = d.rule;
-      trace.decision = d.kind;
-      switch (d.kind) {
-        case "confirm_match":
-          s.match = view(d.match);
-          s.checks = checks();
-          return { move: "confirm", trace };
+      const found = await call("find", () => lookup.findTransactions(ctx.session, queryFor(s.details, s.when)), (r) => r.length);
+      if (!found.ok) {
+        note("lookup failed");
+        move = handoff("tool_failure", "PL-8");
+      } else {
+        const where = s.details.date ? "around the date" : s.when.from ? "in the period described" : s.when.latest ? "most recent" : s.when.unknown ? "last 180 days" : "";
+        note(`lookup (${lookup.source}, ${where}${s.details.merchant ? ", with merchant" : ""}): ${found.result.length} match(es)`);
+        decision = decideOnLookup(found.result, {
+          retries: s.lookupRetries, latest: s.when.latest, merchantKnown: s.details.merchant !== null, merchantAsked: s.merchantAsked,
+        });
+      }
+    }
+    if (decision) {
+      trace.rule = decision.rule;
+      trace.decision = decision.kind;
+      const done = (m: Move): Resolved => {
+        s.checks = checks();
+        return { move: m, trace };
+      };
+      switch (decision.kind) {
         case "no_match":
-        case "ambiguous":
-          if (d.handoff) {
-            move = handoff(d.kind, d.rule);
+          if (decision.handoff) {
+            move = handoff("no_match", "PL-1");
             break;
           }
           s.lookupRetries += 1;
           s.match = null;
           s.pending = { kind: "details" };
-          s.checks = checks();
-          return { move: d.kind === "no_match" ? "no_match" : "ask_narrow", trace };
-        case "explain_status":
-          s.match = view(d.match);
-          s.status = "closed";
-          s.pending = null;
-          s.checks = checks();
-          return { move: "explain_status", trace };
-      }
-    }
-  }
-
-  // S1: a status question with its details complete. Same lookup and rules; the answer explains, nothing is opened.
-  if (move === "lookup_status") {
-    const found = await call("find", () => lookup.findTransactions(ctx.session, queryFor(s.details)), (r) => r.length);
-    if (!found.ok) {
-      note("lookup failed");
-      move = handoff("tool_failure", "PL-8");
-    } else {
-      note(`lookup (${lookup.source}): ${found.result.length} match(es)`);
-      const d = decideOnLookup(found.result, s.lookupRetries);
-      trace.decision = d.kind === "confirm_match" ? "status_answer" : d.kind;
-      if (d.kind === "no_match" || d.kind === "ambiguous") {
-        trace.rule = d.rule;
-        if (d.handoff) {
-          move = handoff(d.kind, d.rule);
-        } else {
-          s.lookupRetries += 1;
+          return done("no_match");
+        case "ask_merchant":
+          s.merchantAsked = true;
           s.match = null;
-          s.pending = { kind: "details" };
-          s.checks = checks();
-          return { move: d.kind === "no_match" ? "no_match" : "ask_narrow", trace };
-        }
-      } else {
-        s.match = view(d.match);
-        s.status = "closed";
-        // PL-9: approved means it was charged normally; offer a review in case it isn't theirs (S2).
-        // PL-5: declined; we don't have a reliable reason (data issue E7), so offer a person who can check (S3).
-        trace.rule = d.kind === "confirm_match" ? "PL-9" : d.rule;
-        s.pending = d.kind === "confirm_match" ? { kind: "offer_dispute" } : d.rule === "PL-5" ? { kind: "offer_agent" } : null;
-        s.checks = checks();
-        return { move: "status_answer", trace };
+          s.pending = { kind: "merchant" };
+          return done("ask_narrow");
+        case "ambiguous":
+          move = handoff("ambiguous", "PL-2");
+          break;
+        case "pick":
+          s.match = null;
+          s.pending = { kind: "pick", options: decision.options.map(view), attempts: 0 };
+          return done("pick");
+        case "explain_status":
+        case "confirm_match":
+          s.match = view(decision.match);
+          if (status) {
+            // S1: explain; PL-9 (approved) offers a review (S2), PL-5 (declined) offers a person (S3).
+            s.status = "closed";
+            trace.rule = decision.kind === "confirm_match" ? "PL-9" : decision.rule;
+            trace.decision = "status_answer";
+            s.pending = decision.kind === "confirm_match" ? { kind: "offer_dispute" } : decision.rule === "PL-5" ? { kind: "offer_agent" } : null;
+            return done("status_answer");
+          }
+          if (decision.kind === "explain_status") {
+            s.status = "closed";
+            s.pending = null;
+            return done("explain_status");
+          }
+          s.status = "open";
+          s.pending = { kind: "confirm" };
+          return done("confirm");
       }
     }
   }

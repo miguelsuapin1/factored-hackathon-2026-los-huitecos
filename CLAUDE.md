@@ -17,6 +17,7 @@ Read first: [docs/phase-1-walkthrough.md](docs/phase-1-walkthrough.md) (what exi
 - **Step 13 (branch `miguel/step-13-verification`, 2026-09-30):** every review/hand-off is a row in Supabase `public.cases` (server-only, RLS on, no policies; env `SUPABASE_SECRET_KEY`), written then read back before the reply quotes its reference (docs/verification.md V1–V5).
 - **Step 14 (branch `miguel/step-14-handoff`, 2026-09-30):** asking for a person creates a case (one-line summary if no context), sensitive data masked at the door (`src/lib/privacy/mask.ts`), code check against timing promises (docs/handoff.md H1–H4, R8).
 - **Status answers (branch `miguel/status-answers`, 2026-09-30):** status questions use the lookup and are answered from the record (PL-9, S1–S2 in docs/policy.md); explain-only replies can't offer actions (R9).
+- **Vague dates + picking (branch `miguel/vague-dates-pick`, 2026-09-30):** Miguel's ladder (docs/policy.md "When the customer can't give an exact date", PL-10, C12b/c–C14).
 - Not built yet: data cleaning layer (silver/gold), Supabase load of the gold slice, real lookup tool, eval harness, agent console.
 
 ## Phase 2 plan (build steps 7–21, see the published build plan)

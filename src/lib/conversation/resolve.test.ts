@@ -18,14 +18,14 @@ function intent(top: IntentLabel, p: number): TurnInput["intent"] {
 const me = { customerId: DEMO_CUSTOMER_ID };
 
 async function run(
-  turns: { text: string; intent: TurnInput["intent"]; details?: Partial<Details> }[],
+  turns: { text: string; intent: TurnInput["intent"]; details?: Partial<Details>; range?: TurnInput["range"] }[],
   lookup: TransactionLookup = mockLookup,
   store: CaseStore = memoryStore(),
 ) {
   let state: ConversationState = newState("c1", "demo", 0);
   const moves = [];
   for (const t of turns) {
-    const out = advance(state, { text: t.text, intent: t.intent, details: t.details ?? {} });
+    const out = advance(state, { text: t.text, intent: t.intent, details: t.details ?? {}, range: t.range ?? null });
     const r = await resolveTurn(out, { session: me, lookup, store, language: "es", promptVersions: { reply: "test" } });
     state = out.state;
     moves.push({ move: r.move, rule: r.trace.rule, case: r.trace.case, state: structuredClone(state) });
@@ -63,12 +63,13 @@ describe("dispute outcomes (docs/policy.md)", () => {
     assert.equal(t1.rule, "PL-3");
     assert.equal(t1.state.status, "closed");
   });
-  it("two matches → ask for the merchant → one match → confirm (PL-2)", async () => {
+  it("two matches → list both (PL-10) → the customer names the merchant → confirm that one", async () => {
     const [t1, t2] = await run([
       dispute(25, "2026-06-11"),
       { text: "fue en Tienda Don José", intent: intent("out_of_scope", 0.4), details: { merchant: "Tienda Don José" } },
     ]);
-    assert.equal(t1.move, "ask_narrow");
+    assert.equal(t1.move, "pick");
+    assert.equal(t1.state.pending?.kind, "pick");
     assert.equal(t2.move, "confirm");
     assert.equal(t2.state.match?.merchant, "Tienda Don José");
   });
@@ -111,7 +112,7 @@ describe("verification (step 13, docs/verification.md)", () => {
     // The case file tells the whole story, across turns (not only the final "yes").
     assert.deepEqual(store.rows[0].checksDone, [
       "turn 1: topic unrecognized_charge (by model)",
-      "turn 1: lookup (mock): 1 match(es)",
+      "turn 1: lookup (mock, around the date): 1 match(es)",
       "turn 2: customer confirmed the matched charge",
       "turn 2: re-read TRX-DEMO0000000000001: Approved",
       "turn 2: policy PL-7",
@@ -238,6 +239,82 @@ describe("declined → offer an agent (S3)", () => {
     const [, b] = await run([declined, { text: "no", intent: intent("out_of_scope", 0.6) }], mockLookup, s2);
     assert.equal(b.move, "status_update");
     assert.equal(s2.rows.length, 0);
+  });
+});
+
+describe("vague dates and picking a charge (C13, C14, PL-10)", () => {
+  const disputeNoDate = (amount: number) => ({ text: `No reconozco un cargo de ${amount} dólares`, intent: intent("unrecognized_charge", 0.9), details: { amount } });
+  const low = (text: string, details: Partial<Details> = {}) => ({ text, intent: intent("out_of_scope", 0.4), details });
+  it("'no me acuerdo' → 180 days → two charges of 350 listed → 'el de febrero' → confirm that one → review", async () => {
+    const store = memoryStore();
+    const [t1, t2, t3, t4] = await run([disputeNoDate(350), low("no me acuerdo"), low("el de febrero"), yes], mockLookup, store);
+    assert.equal(t1.move, "ask_details");
+    assert.equal(t2.move, "pick");
+    assert.deepEqual(t2.state.pending?.kind === "pick" && t2.state.pending.options.map((o) => o.merchant), ["Super Ahorro", "Tienda Don José"]);
+    assert.deepEqual([t3.move, t3.state.match?.date], ["confirm", "2026-02-27"]);
+    assert.equal(t4.move, "open_review");
+    assert.equal(store.rows[0].transactionId, "TRX-DEMO0000000000009");
+  });
+  it("'el más reciente' → only the latest of that amount → confirm it directly", async () => {
+    const [, t2] = await run([disputeNoDate(350), low("el más reciente")]);
+    assert.deepEqual([t2.move, t2.state.match?.date], ["confirm", "2026-06-10"]);
+  });
+  it("a vague period read as a range ('la semana pasada' → 8–14 June) → two charges of 25 listed → 'el primero'", async () => {
+    const [t1, t2] = await run([
+      { text: "No reconozco un cargo de 25 dólares de la semana pasada", intent: intent("unrecognized_charge", 0.9), details: { amount: 25 }, range: { from: "2026-06-08", to: "2026-06-14" } },
+      low("el primero"),
+    ]);
+    assert.equal(t1.move, "pick");
+    assert.deepEqual([t2.move, t2.state.match?.date], ["confirm", "2026-06-12"]);
+  });
+  it("three matches → ask the merchant → still three (monthly subscription) → a person with a verified case", async () => {
+    const store = memoryStore();
+    const [t1, t2, t3] = await run([disputeNoDate(89.9), low("no sé"), low("fue Cable TV", { merchant: "Cable TV" })], mockLookup, store);
+    assert.equal(t1.move, "ask_details");
+    assert.equal(t2.move, "ask_narrow");
+    assert.deepEqual([t3.move, t3.state.handoffReason, t3.case?.verified], ["handoff", "ambiguous", true]);
+    assert.equal(store.rows[0].rule, "PL-2");
+  });
+  it("'no sé' when asked for the merchant → a person", async () => {
+    const [, , t3] = await run([disputeNoDate(89.9), low("no me acuerdo"), low("no sé")]);
+    assert.deepEqual([t3.move, t3.state.handoffReason], ["handoff", "ambiguous"]);
+  });
+  it("an unclear pick is asked once more, then a person; 'ninguno' asks the merchant", async () => {
+    const [, t2, t3, t4] = await run([disputeNoDate(350), low("no me acuerdo"), low("mmm"), low("tampoco sé")]);
+    assert.deepEqual([t2.move, t3.move, t4.move], ["pick", "pick", "handoff"]);
+    const [, , n] = await run([disputeNoDate(350), low("no me acuerdo"), low("ninguno de esos")]);
+    assert.equal(n.move, "ask_narrow");
+  });
+  it("status questions use the same ladder: '¿qué pasó con mi compra de 350?' → 'no me acuerdo' → pick → status answer", async () => {
+    const [, t2, t3] = await run([
+      { text: "¿Qué pasó con mi compra de 350?", intent: intent("transaction_status", 0.9), details: { amount: 350 } },
+      low("no me acuerdo"),
+      low("la de Super Ahorro"),
+    ]);
+    assert.equal(t2.move, "pick");
+    assert.deepEqual([t3.move, t3.rule], ["status_answer", "PL-9"]);
+  });
+});
+
+describe("C13: 'el más reciente' after a period that found nothing searches the whole window", () => {
+  it("'del mes pasado' (May, nothing) → 'el más reciente' → the 10 June charge", async () => {
+    const [t1, t2] = await run([
+      { text: "No reconozco un cargo de 350 dólares del mes pasado", intent: intent("unrecognized_charge", 0.75), details: { amount: 350 }, range: { from: "2026-05-01", to: "2026-05-31" } },
+      { text: "el más reciente", intent: intent("balance_check", 0.81) },
+    ]);
+    assert.equal(t1.move, "no_match");
+    assert.deepEqual([t2.move, t2.state.match?.date], ["confirm", "2026-06-10"]);
+  });
+});
+
+describe("C13: amount + merchant is enough to search, without a date", () => {
+  it("'¿qué pasó con mi compra de 350?' → 'la de Super Ahorro' → the 10 June charge", async () => {
+    const [t1, t2] = await run([
+      { text: "¿Qué pasó con mi compra de 350?", intent: intent("transaction_status", 0.9), details: { amount: 350 } },
+      { text: "la de Super Ahorro", intent: intent("out_of_scope", 0.47), details: { merchant: "Super Ahorro" } },
+    ]);
+    assert.equal(t1.move, "ask_details");
+    assert.deepEqual([t2.move, t2.rule, t2.state.match?.date], ["status_answer", "PL-9", "2026-06-10"]);
   });
 });
 

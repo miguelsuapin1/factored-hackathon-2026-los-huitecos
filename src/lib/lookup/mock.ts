@@ -27,6 +27,11 @@ export const FIXTURES: Row[] = [
   // Two charges of 25 two days apart → ambiguous without the merchant (PL-2)
   row({ transactionId: "TRX-DEMO0000000000007", date: "2026-06-11T08:02:14", amount: 25, currency: "USD", merchant: "Tienda Don José", status: "Approved", responseCode: "00", fraudScore: 11.0 }),
   row({ transactionId: "TRX-DEMO0000000000008", date: "2026-06-12T08:15:40", amount: 25, currency: "USD", merchant: "Super Ahorro", status: "Approved", responseCode: "00", fraudScore: 13.5 }),
+  // C13/PL-10: a second 350 months earlier, so "no me acuerdo" finds two and lists them (Miguel's example)
+  row({ transactionId: "TRX-DEMO0000000000009", date: "2026-02-27T19:22:03", amount: 350, currency: "USD", merchant: "Tienda Don José", status: "Approved", responseCode: "00", fraudScore: 10.2 }),
+  // C13/PL-2: a monthly subscription (same amount, same merchant) → three matches even after the merchant → a person
+  row({ transactionId: "TRX-DEMO0000000000010", date: "2026-04-12T20:04:51", amount: 89.9, currency: "USD", merchant: "Cable TV", status: "Approved", responseCode: "00", fraudScore: 7.7, channel: "Web" }),
+  row({ transactionId: "TRX-DEMO0000000000011", date: "2026-05-12T20:06:12", amount: 89.9, currency: "USD", merchant: "Cable TV", status: "Approved", responseCode: "00", fraudScore: 8.4, channel: "Web" }),
   // Another customer's charge with the same amount as TC-01: must never be returned (scoping)
   row({ transactionId: "TRX-OTHER000000000001", customerId: "CLI-OTHER0000000001", date: "2026-06-10T10:00:00", amount: 350, currency: "USD", merchant: "Super Ahorro", status: "Approved", responseCode: "00", fraudScore: 5 }),
 ];

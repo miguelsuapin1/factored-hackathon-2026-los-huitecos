@@ -65,6 +65,16 @@ Against the stand-in lookup's synthetic demo customer (`src/lib/lookup/mock.ts`)
 | TC-16 | "Por que recusaram minha compra de 560 dólares do dia 14 de junho?" → "não precisa" | 560 read as the purchase amount (not asked again), declined explained → polite close, no case | PL-5, extract-v3 |
 | TC-14 | "¿Me dicen el estado de mi compra de 350 dólares del 10 de junio?" → "no fui yo" → "sí" | Approved + review offered → dispute with the same charge → confirm → verified review | PL-9 → S2 → PL-7 |
 
+## Vague dates and picking (team-generated, Miguel, 2026-09-30)
+
+| # | Customer | Expected | Rule |
+|---|---|---|---|
+| TC-17 | "¿Qué pasó con mi compra de 350 dólares?" → "no me acuerdo" → "la de Super Ahorro" | Amount + merchant find the 10 June charge (no date needed) | C13 |
+| TC-18 | "No reconozco un cargo de 350 dólares del mes pasado" → "el más reciente" → "sí" | May has none (check once) → "el más reciente" searches the whole window → 10 June → confirm → review | C13, PL-1, PL-7 |
+| TC-19 | "O que aconteceu com minha compra de 25 dólares?" → "foi na semana passada" → "a primeira" | Period → two charges listed → the first (12 June) → status answer | C13, PL-10, C14 |
+| TC-20 | "¿Qué pasó con un cobro de 89,90 dólares?" → "ni idea" → "no sé" → "Cable TV" | 3 monthly charges → ask merchant → still 3 → a person with a verified case | PL-2 |
+| TC-21 | "No reconozco un cargo de 350 dólares" → "no me acuerdo" → "el de febrero" → "sí" | Two 350s in 180 days (or February's one) → 27 February, Tienda Don José → review | C13, PL-10 |
+
 ## Smoke sweep (Miguel, 2026-09-30): not an evaluation
 
 `node scripts/smoke_sweep.mjs [url] [normal|fallback]` replays 30 short conversations written by Claude (ES, PT, one in English; typos, slang, caps and emoji, card numbers and a PIN, a CURP, injection, relative and slashed dates, future/old dates, refunds, duplicates, status questions, asking for a person) and flags errors, unexpected final moves, template fallbacks, slow turns and leaked digits. **Use it before merging;** judges' numbers come from Person 3's human-written tests.
