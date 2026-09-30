@@ -56,6 +56,8 @@ const NO = new Set(["no", "nao", "incorrecto", "incorreto", "errado", "negativo"
 const BUT = /\b(pero|mas|porem|but)\b/;
 /** S2: after an approved charge is explained, the customer says it isn't theirs or isn't right. */
 const DISPUTE_IT = /\b(no (lo|la) (reconozco|hice|autorice)|no fui yo|no es mio|no es mia|nao (reconheco|fui eu|fiz)|nao e meu|incorrect[oa]|incorret[oa]|errad[oa]|de mas|a mais|duplicad[oa]|dos veces|duas vezes)\b/;
+/** S3: accepting the offer of a person. */
+const AGENT = /\b(asesor\w*|agente|persona|humano|atendente|pessoa|alguien|algu[eé]m)\b/;
 /** C10: choosing "the review" from the options offered after a refusal. Read by code, like yes/no. */
 const REVIEW = /\b(revis\w*|reclam\w*|disput\w*|contest\w*|investig\w*)\b/;
 
@@ -150,6 +152,17 @@ export function advance(prev: ConversationState, input: TurnInput): TurnOutcome 
       state.pending = null;
       return disputeMove(state, done, "offer");
     }
+    if (readYesNo(input.text) === "no") {
+      state.pending = null;
+      return done("status_update", "offer");
+    }
+  }
+
+  // 2d. We explained a declined charge and offered an agent to check the reason (S3): "sí" / "un asesor" → a case
+  // for a person carrying the charge; "no" closes. Asking for a person outright is caught by the model (step 3, H2).
+  if (prev.pending?.kind === "offer_agent" && !confidentSafety) {
+    const text = normalize(input.text);
+    if (readYesNo(input.text) === "yes" || AGENT.test(text) || REVIEW.test(text)) return humanHandoff(state, done);
     if (readYesNo(input.text) === "no") {
       state.pending = null;
       return done("status_update", "offer");

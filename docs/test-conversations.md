@@ -61,4 +61,6 @@ Against the stand-in lookup's synthetic demo customer (`src/lib/lookup/mock.ts`)
 |---|---|---|---|
 | TC-12 | "¿Por qué me rechazaron una compra de 560 dólares el 14 de junio?" | Declined, nothing charged, no reason guessed, no invented offer; no case | PL-5, R9 |
 | TC-13 | "O que aconteceu com minha compra de 45 dólares de ontem?" | Pending, can still change; no case | PL-3 |
+| TC-15 | "¿Por qué me rechazaron una compra de 560 dólares el 14 de junio?" → "sí, por favor" | Declined explained, agent offered → verified hand-off case with the declined transaction | PL-5 → S3 |
+| TC-16 | "Por que recusaram minha compra de 560 dólares do dia 14 de junho?" → "não precisa" | 560 read as the purchase amount (not asked again), declined explained → polite close, no case | PL-5, extract-v3 |
 | TC-14 | "¿Me dicen el estado de mi compra de 350 dólares del 10 de junio?" → "no fui yo" → "sí" | Approved + review offered → dispute with the same charge → confirm → verified review | PL-9 → S2 → PL-7 |

@@ -48,9 +48,9 @@ describe("unbackedOffer (R9)", () => {
 
 
 describe("explain-only templates pass R9", () => {
-  it("pending / reversed / declined status answers offer nothing", async () => {
+  it("pending / reversed status answers offer nothing (declined offers an agent, backed by S3)", async () => {
     const { planReply } = await import("./templates");
-    for (const explainRule of ["PL-3", "PL-4", "PL-5"] as const) {
+    for (const explainRule of ["PL-3", "PL-4"] as const) {
       const plan = planReply({
         move: "status_answer", intent: "transaction_status", clarifyOptions: null, clarifyAttempts: 0,
         details: { amount: 560, expectedAmount: null, currency: "USD", date: "2026-06-14", merchant: null }, missing: [],

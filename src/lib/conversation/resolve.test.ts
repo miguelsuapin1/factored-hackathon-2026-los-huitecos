@@ -219,3 +219,25 @@ describe("status questions answered from the record (S1, S2, PL-9)", () => {
     assert.equal(store.rows.length, 0);
   });
 });
+
+describe("declined → offer an agent (S3)", () => {
+  const declined = { text: "¿Por qué rechazaron mi compra de 560?", intent: intent("transaction_status", 0.92), details: { amount: 560, date: "2026-06-14" } };
+  it("'sí' creates a verified hand-off case carrying the declined charge and the reason question", async () => {
+    const store = memoryStore();
+    const [t1, t2] = await run([declined, yes], mockLookup, store);
+    assert.deepEqual([t1.move, t1.rule, t1.state.pending?.kind], ["status_answer", "PL-5", "offer_agent"]);
+    assert.deepEqual([t2.move, t2.state.handoffReason, t2.case?.verified], ["handoff", "customer_asked", true]);
+    assert.equal(store.rows[0].transactionId, "TRX-DEMO0000000000006");
+    assert.ok(store.rows[0].openQuestions.some((q) => q.includes("why this charge was declined")));
+  });
+  it("'quiero hablar con un asesor' also works; 'no' closes with no case", async () => {
+    const s1 = memoryStore();
+    const [, a] = await run([declined, { text: "sí, con un asesor", intent: intent("human_agent", 0.6) }], mockLookup, s1);
+    assert.equal(a.move, "handoff");
+    const s2 = memoryStore();
+    const [, b] = await run([declined, { text: "no", intent: intent("out_of_scope", 0.6) }], mockLookup, s2);
+    assert.equal(b.move, "status_update");
+    assert.equal(s2.rows.length, 0);
+  });
+});
+

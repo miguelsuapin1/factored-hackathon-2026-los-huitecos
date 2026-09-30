@@ -326,25 +326,25 @@ function planMove(p: ReplyPlanInput, lang: Lang): ReplyPlan {
       const en = {
         "PL-3": "is still pending: it hasn't been completed yet and can still change or be cancelled.",
         "PL-4": "appears as reversed: the amount was returned to their account. Do not say when it shows in the balance.",
-        "PL-5": "was declined, so it wasn't charged. You don't have the reason for the decline: say so if relevant, don't guess one.",
+        "PL-5": "was declined, so it wasn't charged. You don't have the reason for the decline: say so, don't guess one, and ask in one short question whether they'd like an agent to check the reason.",
         "PL-9": "was approved and charged normally. Offer, in one short question, to open a review if they don't recognize it or think the amount is wrong.",
       }[rule];
       return {
-        instruction: `The customer asked what happened with a charge. In their account, ${matched} ${en} ${rule === "PL-9" ? "" : "Don't offer anything beyond this explanation. "}${noRefund}`,
-        explainOnly: rule !== "PL-9",
+        instruction: `The customer asked what happened with a charge. In their account, ${matched} ${en} ${rule === "PL-3" || rule === "PL-4" ? "Don't offer anything beyond this explanation. " : ""}${noRefund}`,
+        explainOnly: rule === "PL-3" || rule === "PL-4", // PL-9 and PL-5 make offers that code backs (S2, S3)
         templates: both((l) => {
           const t = matchText(p.match!, l);
           const text = {
             es: {
               "PL-3": `Encontré ${t}: está pendiente, todavía no se completa y aún puede cambiar o anularse.`,
               "PL-4": `Encontré ${t}: aparece como revertido, el monto se devolvió a tu cuenta.`,
-              "PL-5": `Encontré ${t}: fue rechazado, así que no se cobró. No tengo el detalle del motivo del rechazo.`,
+              "PL-5": `Encontré ${t}: fue rechazado, así que no se cobró. No tengo el detalle del motivo; ¿quieres que un asesor lo revise?`,
               "PL-9": `Encontré ${t}: se aprobó y se cobró normalmente. Si no lo reconoces o el monto no es correcto, ¿quieres que abra una revisión?`,
             },
             pt: {
               "PL-3": `Encontrei ${t}: está pendente, ainda não foi concluída e ainda pode mudar ou ser cancelada.`,
               "PL-4": `Encontrei ${t}: aparece como estornada, o valor voltou para a sua conta.`,
-              "PL-5": `Encontrei ${t}: foi recusada, então não foi cobrada. Não tenho o detalhe do motivo da recusa.`,
+              "PL-5": `Encontrei ${t}: foi recusada, então não foi cobrada. Não tenho o detalhe do motivo; quer que um atendente verifique?`,
               "PL-9": `Encontrei ${t}: foi aprovada e cobrada normalmente. Se você não a reconhece ou o valor não está certo, quer que eu abra uma contestação?`,
             },
           };

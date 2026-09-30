@@ -36,6 +36,8 @@ Each entry says who decided it, so the team knows who to ask.
   - **currency:** only if the customer named it. Never assumed ([data issue A5](data-issues.md): Mexican customers transact in USD).
 - **Why:** the same principle as the reply number check (R4). The model reads; code decides what's believed. A dropped value only means we ask for it; it never breaks the turn. Every drop is recorded in the trace.
 
+**Update (extract-v3, Miguel, 2026-09-30):** `amount` is now "the amount of the transaction they're asking about, even if declined or pending"; `expectedAmount` only when the customer contrasts two amounts. Before, "Por que recusaram minha compra de 560…" put 560 in `expectedAmount` (a declined purchase was never "charged"), and the assistant asked for the amount again (lesson P16).
+
 ### C4. A demo clock for relative dates (Miguel, 2026-09-29)
 - **Chose:** "yesterday", "el martes", "semana passada" are resolved against `DEMO_TODAY` (default **2026-06-17**, the last day in the organizer's transactions), not the real date.
 - **Why:** the data ends in June 2026. Against today's date, no relative date would ever match a transaction. **Person 2:** the gold slice must include the weeks before 2026-06-17 for the demo customers.
