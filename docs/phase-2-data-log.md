@@ -60,11 +60,15 @@ Failures and fixes: [lessons-learned.md](lessons-learned.md) X1–X5.
 - The organizer data has no repeated charges, so the duplicate/ambiguous demo paths use Miguel's synthetic
   charges, carried in unchanged as `data_source = 'team_synthetic'`.
 
+### 2026-09-30: Supabase tables
+- Kept the existing Supabase project (São Paulo) so Miguel's live `public.cases` is not moved; the region question in contracts.md stays open for the team.
+- Migration `supabase/migrations/20260930220000_serving_slice.sql` applied: `customers`, `products`, `transactions`, `fx_rates`, `agent_pools`, `data_version`; indexes for per-customer lookups; RLS on with no policies and browser roles revoked (anon can read nothing, checked). `cases` untouched.
+- Loader `pipeline/load_supabase.py`: reads BigQuery `gold_serving.*`, replaces the tables in one transaction, checks every count, records the load in `data_version`. Tested end to end on a local Postgres 16 with the fixture slice (two runs, identical counts).
+
 ## Next (step 7 finish, then 8 and 10)
 1. Run the canonical `dbt build --target bq` once with a Google login (the first build ran through
    `compile_offline.py` + a BigQuery connector; X1).
-2. Load `gold_serving.*` into Supabase (tables in `supabase/migrations/`, RLS on, deny by default). The build
-   plan says `us-east-1`; the existing project is `sa-east-1`: decide first (contracts.md open question).
+2. Run `pipeline/load_supabase.py` once from a laptop with both logins (tables already exist), then verify counts and size.
 3. Step 8: per-customer test login + row-level security on the loaded tables.
 4. Step 10: the Supabase `TransactionLookup` (K2) replacing `src/lib/lookup/mock.ts`, filtering dates on
    `transaction_date_local`.
