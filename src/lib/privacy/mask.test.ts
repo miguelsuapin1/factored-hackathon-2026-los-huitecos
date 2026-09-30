@@ -8,6 +8,12 @@ describe("maskSensitive", () => {
     assert.deepEqual(maskSensitive("mi tarjeta 4111 1111 1111 1111 tiene un cargo"), { text: "mi tarjeta ****1111 tiene un cargo", masked: ["card"] });
     assert.equal(maskSensitive("5500-0000-0000-0004").text, "****0004");
   });
+  it("masks a card number followed or preceded by punctuation (found live on the preview: '…1111, mi pin')", () => {
+    assert.equal(maskSensitive("en mi tarjeta 4111 1111 1111 1111, mi pin es 4821").text, "en mi tarjeta ****1111, mi pin es [oculto]");
+    assert.equal(maskSensitive("tarjeta: 4111111111111111.").text, "tarjeta: ****1111.");
+    assert.equal(maskSensitive("(4111-1111-1111-1111)").text, "(****1111)");
+    assert.deepEqual(maskSensitive("4111 1111 1111 1111, pin 4821").masked.sort(), ["card", "secret"]);
+  });
   it("masks an 18-digit CLABE account number", () => {
     assert.equal(maskSensitive("mi CLABE 012180001234567891").text, "mi CLABE ****7891");
   });

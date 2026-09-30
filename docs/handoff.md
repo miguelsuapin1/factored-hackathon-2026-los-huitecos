@@ -36,6 +36,7 @@ Every row is written and read back before the customer hears the case number (V1
   - emails → `[email]`.
 - If a PIN, CVV or password was typed, the reply **starts with a safety reminder** ("nunca compartas tu PIN… el banco nunca te los pedirá"), decided by code.
 - **Why:** third-party models and logs should never receive card data; the brief asks for customer-record isolation. Luhn keeps amounts, dates and references intact (tested: "1.250,00", "10/06/2026", "referencia 123456" and a non-Luhn 13-digit folio are untouched).
+- **Bug found and fixed before merge (P14):** a card number followed by a comma wasn't masked; the preview's trace showed it.
 - **Limit:** pattern-based. It won't catch a PIN written in words ("cuatro ocho dos uno") or a card number split across messages. The trace records which kinds were masked, never the values.
 
 ### R8. Replies may not promise timing: checked by code (Miguel, 2026-09-30)

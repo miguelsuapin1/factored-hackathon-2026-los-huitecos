@@ -19,7 +19,9 @@ function luhn(digits: string) {
 }
 
 // 13–19 digits, optionally grouped by spaces or dashes (card numbers; 18-digit CLABE accounts too).
-const LONG_NUMBER = /(?<![\d.,])\d(?:[ -]?\d){12,18}(?![\d.,])/g;
+// Not preceded/followed by a digit or by a separator+digit ("1.250,00" stays an amount), but ordinary punctuation
+// after the number ("…1111, mi pin") must not stop the match: that bug let a card number through (lessons P14).
+const LONG_NUMBER = /(?<!\d|\d[.,])\d(?:[ -]?\d){12,18}(?!\d|[.,]\d)/g;
 // A PIN, CVV, password or code followed by its value: "mi pin es 1234", "cvv: 123", "senha 9876", "clave abc123".
 const SECRET = /\b(pin|nip|cvv2?|cvc|cv2|clave|contrase[ñn]a|password|senha|c[oó]digo de seguridad|c[oó]digo de seguran[çc]a|token|otp)\b(\s*(?:es|era|é|:|=|de)?\s*)([A-Za-z0-9]{3,12})/giu;
 const EMAIL = /[\w.+-]+@[\w-]+(?:\.[\w-]+)+/g;
