@@ -19,6 +19,7 @@ Everything we tried and replaced, dropped or had to fix, in one place. Failures 
 | M10 | Amazon Titan Text Embeddings V2 (1024 and 512 dims) | 80.1% / 78.5% CV | Beaten by Cohere (84.6%); also 0.5–1 s per call and a 60/min quota | 📊 D15 |
 | M11 | Char TF-IDF + softmax as a second baseline | 76.2% test, asks on 61% of clear messages | Kept only as a reference row | 📊 reports/intent_eval_*.md |
 | M12 | v1 (e5-small) as the live model | 85.7% test | Replaced by v2 (Cohere, 91.7%); **kept as the in-app fallback** | 📊 |
+| M14 | Banking77 (13K English banking queries) as extra training data (Miguel, 2026-09-30) | Accuracy unchanged (84.6% → 83.2–84.8%, McNemar p ≥ 0.13); more confident but more wrong actions (2.1% → 3.0–3.7%) and fewer questions on ambiguous messages | Rejected by the rule committed before the run; v2 stays. **Lesson:** more data can buy confidence without buying correctness; judge on wrong actions, not accuracy or coverage | 📊 reports/banking77_experiment.md, intent-model.md D17 |
 | M13 | Near-duplicate threshold 0.92 (calibrated on translations) | Over-flags short phrases that share one word (109 flags, 2 real near-copies) | Kept, with manual review; documented that cosine similarity alone overstates leakage for short texts | 📊 reports/split_leakage.md |
 
 ## Evaluation process

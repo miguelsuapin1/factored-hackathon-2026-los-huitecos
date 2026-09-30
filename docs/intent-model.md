@@ -147,6 +147,17 @@ Each entry: what we chose, what else we considered, and why.
 - **Why not LaBSE:** it's more accurate than e5 (+4.3), but it would need its own server. A fallback's job is to work when the primary doesn't; e5 needs no network, while a LaBSE server on AWS would likely fail together with Bedrock. Kept as a stretch goal.
 - **Consequence:** during an outage the system is less accurate but still safe (v1 had 0 wrong actions on test); it asks for clarification more often.
 
+### D17. Banking77 as extra training data: tried, rejected on measurement (Miguel, 2026-09-30)
+- **Permission and limits:** organizers allow Banking77 for training only, never evaluation (docs/decisions.md D-004).
+- **How:** 9,917 of its 10,003 English training rows mapped to our intents by [pipeline/banking77_map.py](../pipeline/banking77_map.py) (each category tied to a LABELING_GUIDE rule; "compromised card" excluded), embedded with the same Cohere settings as production. [pipeline/compare_banking77.py](../pipeline/compare_banking77.py) added them to training in 9 variants (all rows / only out_of_scope / all but out_of_scope, each at total weight 0.25, 0.5 and 1× our phrases) and scored **only our Spanish/Portuguese phrases** with the same grouped 5-fold CV as D15. The decision rule was committed before the run (commit `2e45482`): replace v2 only if the decision cost is lower **and** wrong actions don't increase.
+- **Result** ([reports/banking77_experiment.md](../reports/banking77_experiment.md)): **no variant qualifies; v2 stays.**
+  - Accuracy doesn't move: 84.6% for ours only vs 83.2–84.8% with Banking77; every McNemar p ≥ 0.13.
+  - It makes the model **more confident, not more right**: it answers more clear messages without asking (61% → up to 70%) but **wrong actions rise** (2.1% → 3.0–3.7%) and it **asks less on ambiguous messages** (90% → 70–83%). The lowest-cost variant got there by asking less, which the rule forbids.
+  - Its out-of-scope questions, expected to be the most useful part, hurt most (83.2–83.6%): English card-support questions pull Spanish/Portuguese phrases toward `out_of_scope`.
+  - Leakage check: 0 of our 834 non-test phrases has a Banking77 sentence at cosine ≥ 0.92.
+- **Why, most likely:** it's English and in-domain for a UK app (top-ups, virtual cards), while our customers write Spanish/Portuguese about a Latin American bank. Cross-lingual embeddings carry the topic but also the other product's boundaries.
+- **What would test it better (not done):** a small machine-translated Spanish/Portuguese subset of the dispute-related categories (labelled as translated), judged the same way. Only worth it if Person 3's human-written messages show a gap it could fill.
+
 ## Errors worth knowing (test)
 
 - **ATM withdrawal not made (UC05)** is mostly misread as transaction status or move money. No training scenario covers "cash I didn't withdraw"; the model generalizes poorly to unseen scenarios.
