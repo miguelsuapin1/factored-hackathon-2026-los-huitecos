@@ -89,6 +89,7 @@ export async function POST(request: Request) {
         warnSensitive: masked.includes("secret"),
         options: state.pending?.kind === "pick" ? state.pending.options : null,
         pickAttempts: state.pending?.kind === "pick" ? state.pending.attempts : 0,
+        intentGuessed: state.intentGuessed,
       },
       language,
     );

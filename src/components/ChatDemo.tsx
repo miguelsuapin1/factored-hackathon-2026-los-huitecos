@@ -233,6 +233,7 @@ const RESOLVED_LABELS: Record<string, string> = {
   model: "the intent model",
   clarification: "the answer to the clarifying question",
   offer: "the option chosen from the ones offered",
+  words: "the customer's own words (no clarifying question needed)",
   kept_topic: "the ongoing topic (low-confidence follow-up)",
   new_topic: "a confident change of topic",
   confirmation: "the confirmation step",

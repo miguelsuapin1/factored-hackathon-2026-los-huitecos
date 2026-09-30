@@ -13,6 +13,7 @@ Multi-turn scenarios with the behavior we expect. Each should become an automate
 **Root cause:** each message is classified and answered in isolation (no conversation state, no extracted details).
 **Fix (steps 9 + 11):** (a) when the previous turn asked "A or B", interpret the next message as a choice between A and B first; (b) keep the working intent across turns unless the customer clearly changes topic; (c) extract amount/date/merchant into a per-conversation record and have the reply instruction list known vs missing details, asking only for the missing ones.
 **Safety note:** no wrong action was taken, and the "250" in the reply passed the number check only because the customer wrote it.
+**C15 (Miguel, 2026-09-30):** turn 1 no longer asks "A or B?": "No reconozco" starts it as unrecognized and asks for the date; turn 2 ("debería ser 250") switches it to wrongful fee and keeps 350/250; turn 3 (date) → confirm; "Sí" → review.
 **Step 13 (Miguel, 2026-09-30):** "Sí" now creates a review case, reads it back, and the reply quotes its reference (e.g. GT-9SGJPKMT).
 **Step 12 (Miguel, 2026-09-30):** after the date, the assistant now finds and confirms the record ("350 USD en Super Ahorro, el 10 de junio"), and "Sí" sends it to review (PL-7).
 **Status (Miguel, 2026-09-29):** ✅ fixed by steps 9 + 11 (reply-v2, extract-v2); see [conversation.md](conversation.md) "What we verified". Unit test: `src/lib/conversation/dialogue.test.ts`.

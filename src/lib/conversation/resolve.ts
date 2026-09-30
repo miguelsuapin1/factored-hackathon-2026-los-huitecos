@@ -48,7 +48,7 @@ export async function resolveTurn(outcome: TurnOutcome, ctx: ResolveContext): Pr
   // Checks accumulate across turns in the state (the case file needs the whole story, not just this turn).
   const turnChecks: string[] = [];
   const note = (c: string) => turnChecks.push(`turn ${s.turn}: ${c}`);
-  if (["model", "clarification", "offer", "new_topic"].includes(outcome.resolvedBy) && s.workingIntent) {
+  if (["model", "clarification", "offer", "new_topic", "words"].includes(outcome.resolvedBy) && s.workingIntent) {
     note(`topic ${s.workingIntent} (by ${outcome.resolvedBy})`);
   }
   const checks = () => [...s.checks, ...turnChecks].slice(-MAX_CHECKS);

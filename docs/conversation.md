@@ -92,6 +92,16 @@ Each entry says who decided it, so the team knows who to ask.
 - **Chose:** the answer to "Encontré dos cargos: … ¿Cuál es?" is matched by code against the two options: merchant name, day of month, month name, ordinals ("el primero", "a primeira", "el segundo"), recency ("el más reciente", "el anterior"), "ninguno". Unclear → ask once more → a person. A picked dispute still goes through the yes/no (C8); a picked status question is answered.
 - **Why:** like yes/no and offers (C8, C10), choosing from options the assistant just showed is a kind of message the intent model never saw in training.
 
+### C15. No up-front "A or B?" between two charge questions (Miguel, 2026-09-30)
+- **Chose:** when the two most likely intents are both about a charge (unrecognized, wrongful fee, status), don't ask "¿no lo reconoces o es incorrecto?". Take the kind from the customer's words ("no reconozco", "no fui yo" → unrecognized; "dos veces", "debería ser", "incorrecto", or an expected amount → wrongful fee; "¿qué pasó?", "rechazaron", "pendiente" → status). If the words don't decide: between two disputes, the model's top one; between a dispute and status, **status** (read-only; an approved charge then offers a review, S2). Later words update the kind ("Error en el monto, debería ser 250" → wrongful fee). Any other pair (e.g. refund vs dispute) is still asked (C5).
+- **The distinction isn't lost:** a guessed dispute kind is worded neutrally to the customer ("el cargo", not "el cargo que no reconoces") and the case file asks the agent to check it ("if not recognized, consider blocking the card").
+- **Why:** the lookup and rules are the same for all three kinds, so the question changed nothing we did next; and it was the most common derailment in live runs: clear messages like "No reconozco un cargo de 350 dólares" score 43–66%, and customers answered the question with "no me acuerdo" or "Cable TV" (3 of 4 ladder scenarios, and the Portuguese high-risk case never reached its hand-off).
+- **Result:** smoke-sweep flags 6 → 2 (both non-bugs); "Não fiz essa compra de 120…" now reaches confirmation in one message; TC-01 no longer asks "A or B?" (its turn 1 asks for the date).
+
+### C16. "Debería ser 250" never overwrites the charged amount (Miguel, 2026-09-30)
+- **Found on the preview:** TC-01 ended in "no matching charge" once in 9 runs. The trace showed `detailsKnown: ["amount","date"]` with no expected amount: that run, Haiku returned "debería ser de 250" as the `amount`, overwriting 350, and the lookup searched for 250.
+- **Chose (code, not prompt):** once the charged amount is known, a different amount in a message that says what it *should* be ("debería ser", "tenía que ser", "deveria ser") becomes the expected amount. A correction at the confirmation step ("no, era de 125") still replaces it. Unit-tested both ways; `REPEAT=n` added to the smoke sweep to catch run-to-run variation.
+
 ## What we verified (2026-09-29, local, Cohere + Haiku live)
 
 | Scenario | Result |
