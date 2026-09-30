@@ -1,11 +1,14 @@
 // One customer turn: understand (intent + details, in parallel) -> decide the next move from the conversation state
-// (code) -> respond (Haiku phrasing a code-chosen instruction). API contract: docs/contracts.md K1.
+// (code) -> look up the charge and apply the policy (code) -> respond (Haiku phrasing a code-chosen instruction).
+// API contract: docs/contracts.md K1.
 import { after } from "next/server";
 import { cookies } from "next/headers";
 import { SESSION_COOKIE, verifySession } from "@/lib/auth/session";
 import { advance, readYesNo } from "@/lib/conversation/dialogue";
 import { extractDetails } from "@/lib/conversation/extract";
 import { numbersIn } from "@/lib/conversation/numbers";
+import { resolveTurn } from "@/lib/conversation/resolve";
+import { customerFor, lookup } from "@/lib/lookup";
 import { restoreState, sealState } from "@/lib/conversation/token";
 import { classifyMessage, IntentUnavailableError } from "@/lib/intent/classify";
 import { composeReply } from "@/lib/reply/compose";
@@ -47,26 +50,33 @@ export async function POST(request: Request) {
     ]);
 
     const outcome = advance(prev, { text, intent, details: extraction.details });
+    const { move, trace: policy } = await resolveTurn(outcome, customerFor(session.u), lookup);
     const { state } = outcome;
     const d = state.details;
+    const m = state.match;
     const plan = planReply(
       {
-        move: outcome.move,
+        move,
         intent: state.workingIntent ?? intent.intent,
         clarifyOptions: outcome.clarifyOptions,
         clarifyAttempts: state.pending?.kind === "clarify" ? state.pending.attempts : 0,
         details: d,
-        missing: outcome.missing.filter((m): m is "amount" | "date" => m === "amount" || m === "date"),
+        missing: outcome.missing.filter((k): k is "amount" | "date" => k === "amount" || k === "date"),
+        match: m,
+        explainRule: policy.rule === "PL-3" || policy.rule === "PL-4" || policy.rule === "PL-5" ? policy.rule : null,
+        handoffReason: state.handoffReason,
+        status: state.status,
       },
       prev.lang ?? guessLanguage(text),
     );
-    const dateParts = d.date ? d.date.split("-").map(Number) : [];
+    // Numbers the reply may contain: what the customer wrote, grounded details, and the matched record (C9, PL rules).
+    const dateParts = [d.date, m?.date].flatMap((iso) => (iso ? iso.split("-").map(Number) : []));
     const reply = await composeReply({
       customerText: text,
       plan,
       allowedNumbers: [
         ...state.customerTexts.flatMap(numbersIn),
-        ...[d.amount, d.expectedAmount].filter((v): v is number => v !== null),
+        ...[d.amount, d.expectedAmount, m?.amount ?? null].filter((v): v is number => v !== null),
         ...dateParts,
       ],
       languageHint: prev.lang,
@@ -80,8 +90,11 @@ export async function POST(request: Request) {
       turn: state.turn,
       workingIntent: state.workingIntent,
       resolvedBy: outcome.resolvedBy,
-      move: outcome.move,
+      move,
       details: d,
+      match: m, // the matched charge as the customer may see it (no fraud score)
+      policy: { rule: policy.rule, decision: policy.decision, lookup: policy.lookup && { source: policy.lookup.source, count: policy.lookup.count } },
+      handoffReason: state.handoffReason,
       missing: outcome.missing,
       pending: state.pending,
       status: state.status,
@@ -97,12 +110,14 @@ export async function POST(request: Request) {
       intent: { model: intent.model, label: intent.intent, confidence: Number(intent.confidence.toFixed(4)),
         decision: intent.decision, fallbackReason: intent.fallbackReason,
         attempts: intent.attempts.map((a) => ({ ...a, ms: Math.round(a.ms) })), ms: Math.round(intent.totalMs) },
-      conversation: { conversationId: state.id, turn: state.turn, resolvedBy: outcome.resolvedBy, move: outcome.move,
+      conversation: { conversationId: state.id, turn: state.turn, resolvedBy: outcome.resolvedBy, move, dialogueMove: outcome.move,
         workingIntent: state.workingIntent, pendingBefore: outcome.pendingBefore?.kind ?? null, status: state.status,
         restartReason, detailsKnown: Object.entries(d).filter(([, v]) => v !== null).map(([k]) => k),
         extract: { source: extraction.source, dropped: extraction.dropped, error: extraction.error,
           ms: Math.round(extraction.ms), inputTokens: extraction.inputTokens, outputTokens: extraction.outputTokens,
           costUsd: extraction.costUsd } },
+      policy: { rule: policy.rule, decision: policy.decision, lookup: policy.lookup, handoffReason: state.handoffReason,
+        matchStatus: m?.status ?? null },
       reply: { source: reply.source, language: reply.language, fallbackReason: reply.fallbackReason,
         promptVersion: reply.promptVersion, ms: Math.round(reply.ms), inputTokens: reply.inputTokens,
         outputTokens: reply.outputTokens, costUsd: reply.costUsd },

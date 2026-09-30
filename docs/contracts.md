@@ -5,7 +5,7 @@ The interfaces where one person's work plugs into another's. Agree here first, t
 | # | Contract | Producer → consumer | Status |
 |---|---|---|---|
 | K1 | `POST /api/chat` v2 (multi-turn) | Miguel → Person 3 (eval harness, steps 17–18) | implemented on `miguel/step-9-11-memory` (Miguel, 2026-09-29) |
-| K2 | Transaction lookup | Person 2 (step 10) → Miguel (steps 12–13) | draft, Person 2 to confirm |
+| K2 | Transaction lookup | Person 2 (step 10) → Miguel (steps 12–13) | types in `src/lib/lookup/types.ts`; stand-in used by step 12 (Miguel, 2026-09-30); Person 2 to confirm |
 | K3 | Handoff case file | Miguel (step 14) → Person 2 (agent console, step 20) | draft |
 | K4 | Trace line | everyone → Person 3 (eval report) | Phase 1 shape + conversation fields |
 
@@ -27,18 +27,22 @@ Backward compatible: a request without `state` starts a new conversation, exactl
     "turn": 2,
     "workingIntent": "wrongful_fee",            // what the conversation is about now (may differ from intent.intent)
     "resolvedBy": "clarification",              // model | clarification | offer | kept_topic | confirmation | new_topic
-    "move": "ask_details",                      // ask_clarify | ask_details | confirm | ask_correction | confirmed | answer | handoff
+    "move": "ask_details",                      // ask_clarify | ask_details | confirm | ask_correction | no_match | ask_narrow
+                                                // | explain_status | open_review | handoff | status_update | answer
     "details": { "amount": 350, "expectedAmount": 250, "currency": null, "date": null, "merchant": null },
     "missing": ["date"],
     "pending": { "kind": "details" },           // or { kind: "clarify", options: [a, b], attempts } | { kind: "offer_review", dispute } | { kind: "confirm" } | null
-    "status": "open",                           // open | confirmed | handoff
+    "match": null,                              // the matched charge: { transactionId, date, amount, currency, merchant, status }
+    "policy": { "rule": null, "decision": null, "lookup": null }, // e.g. { rule: "PL-7", decision: "open_review", lookup: { source: "mock", count: 1 } }
+    "handoffReason": null,                      // repeated_clarification | no_match | ambiguous | high_risk | record_unavailable | tool_failure
+    "status": "open",                           // open | confirmed | review | handoff | closed
     "restartReason": null,                      // set when a sent state was rejected (invalid signature, expired, other user)
     "extraction": { "source": "haiku", "dropped": [], "error": null, "ms": 950, "promptVersion": "extract-v2", "costUsd": 0.0005 }
   }
 }
 ```
 
-**For the harness:** replay a conversation by sending each customer message with the `state` from the previous response. Grade on `conversation.move`, `conversation.workingIntent` and `conversation.details`, not on the reply wording. A tampered or expired `state` silently starts a new conversation (`turn: 1`).
+**For the harness:** replay a conversation by sending each customer message with the `state` from the previous response. Grade on `conversation.move`, `conversation.status`, `conversation.policy.rule`, `conversation.workingIntent` and `conversation.details`, not on the reply wording. The expected outcome per test conversation ("resolve, ask, refuse or hand off") maps to: `open_review` / `explain_status` = resolved, `ask_*`/`no_match`/`confirm` = asked, `answer` for move_money = refused, `handoff` = handed off. A tampered or expired `state` silently starts a new conversation (`turn: 1`).
 
 ## K2. Transaction lookup (Person 2, step 10)
 
@@ -69,7 +73,10 @@ type TransactionMatch = {
 };
 
 async function findTransactions(session: CustomerSession, query: LookupQuery): Promise<TransactionMatch[]>;
+async function getTransaction(session: CustomerSession, transactionId: string): Promise<TransactionMatch | null>; // re-read before deciding (step 12)
 ```
+
+**Now in code (Miguel, 2026-09-30):** the types are [src/lib/lookup/types.ts](../src/lib/lookup/types.ts); the stand-in with synthetic fixtures is `src/lib/lookup/mock.ts`. **Person 2:** implement `TransactionLookup` against Supabase and export it from `src/lib/lookup/index.ts`; the unit tests in `src/lib/policy/policy.test.ts` show the expected behaviour (scoping, ±1% amount, date window, merchant and currency narrow only when something still matches). There is deliberately **no `is_fraud` field** (docs/policy.md PL-6).
 
 Relative dates are resolved against the demo clock (`DEMO_TODAY`, default 2026-06-17; see [conversation.md](conversation.md) C4), so the gold slice must cover the weeks before it. Until K2 is live, Miguel uses a mock returning fixed fixtures with this shape.
 

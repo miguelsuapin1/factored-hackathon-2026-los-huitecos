@@ -21,8 +21,24 @@ export type Pending =
   | { kind: "confirm" }
   | null;
 
+/** The matched transaction as the customer may see it. No fraud score: the state is readable by the client. */
+export type MatchView = {
+  transactionId: string;
+  date: string; // YYYY-MM-DD
+  amount: number;
+  currency: string;
+  merchant: string | null;
+  status: "Approved" | "Declined" | "Pending" | "Reversed";
+};
+
+export type Status = "open" | "confirmed" | "review" | "handoff" | "closed";
+/** Statuses where the current dispute is finished: a new dispute starts a new case. */
+export const FINISHED: Status[] = ["confirmed", "review", "handoff", "closed"];
+
+export type HandoffReason = "repeated_clarification" | "no_match" | "ambiguous" | "high_risk" | "record_unavailable" | "tool_failure";
+
 export type ConversationState = {
-  v: 1;
+  v: 2; // bumped when the shape changes: older tokens restart the conversation
   id: string;
   user: string; // the signed-in user the token belongs to
   exp: number; // unix seconds; the session's expiry
@@ -31,7 +47,10 @@ export type ConversationState = {
   workingIntent: IntentLabel | null;
   details: Details;
   pending: Pending;
-  status: "open" | "confirmed" | "handoff";
+  status: Status;
+  match: MatchView | null; // the transaction the customer is being asked to confirm (step 12)
+  lookupRetries: number; // no-match / ambiguous turns so far (PL-1, PL-2)
+  handoffReason: HandoffReason | null;
   customerTexts: string[]; // the last MAX_TEXTS customer messages (for the reply number check, C9)
 };
 
@@ -41,7 +60,8 @@ export const EMPTY_DETAILS: Details = { amount: null, expectedAmount: null, curr
 
 export function newState(id: string, user: string, exp: number): ConversationState {
   return {
-    v: 1, id, user, exp, turn: 0, lang: null, workingIntent: null,
+    v: 2, id, user, exp, turn: 0, lang: null, workingIntent: null,
     details: { ...EMPTY_DETAILS }, pending: null, status: "open", customerTexts: [],
+    match: null, lookupRetries: 0, handoffReason: null,
   };
 }

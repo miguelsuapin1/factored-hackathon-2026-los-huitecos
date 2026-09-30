@@ -84,5 +84,5 @@ Each entry says who decided it, so the team knows who to ask.
 
 - **The thresholds are provisional:** CLARIFY_SHARE 0.60, 2 clarifications before an agent, 6 turns kept, and the keyword lists (yes/no, review). No multi-turn data exists to tune them. Person 3's test conversations (step 17) are the evaluation.
 - **Only disputes collect details.** Transaction status would also benefit (it needs the same details for the lookup); that comes with step 10.
-- **"Confirmed" doesn't do anything yet.** Steps 12–14 decide (policy), act and verify, or hand off.
+- ~~"Confirmed" doesn't do anything yet.~~ Step 12 (docs/policy.md): the charge is looked up before confirmation, and confirmed disputes go to review or to a person by rule.
 - **Extraction adds cost, not latency:** about $0.0005 per turn, in parallel with the intent call.
