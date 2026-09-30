@@ -1,5 +1,6 @@
 import { after } from "next/server";
 import { classifyMessage, IntentUnavailableError } from "@/lib/intent/classify";
+import { maskSensitive } from "@/lib/privacy/mask";
 
 export const maxDuration = 30;
 
@@ -23,11 +24,13 @@ export async function POST(request: Request) {
   } catch {
     return Response.json({ error: "Send JSON: { \"text\": \"...\" }" }, { status: 400 });
   }
-  const text = typeof body.text === "string" ? body.text.trim() : "";
-  if (!text) return Response.json({ error: "text is required" }, { status: 400 });
-  if (text.length > MAX_CHARS) {
+  const raw = typeof body.text === "string" ? body.text.trim() : "";
+  if (!raw) return Response.json({ error: "text is required" }, { status: 400 });
+  if (raw.length > MAX_CHARS) {
     return Response.json({ error: `text is longer than ${MAX_CHARS} characters` }, { status: 413 });
   }
+  // H4: this endpoint also sends text to Cohere, so it masks exactly like /api/chat.
+  const { text } = maskSensitive(raw);
 
   warmFallback();
   try {

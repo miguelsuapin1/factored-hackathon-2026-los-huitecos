@@ -135,6 +135,21 @@ describe("clarification limits (C5)", () => {
     assert.equal(t2.move, "ask_clarify");
     assert.equal(t3.move, "handoff");
   });
+  it("C11: a bare 'sí' to 'A or B?' doesn't pick one, even if the scores lean one way (seen live)", () => {
+    const [, t2] = run([
+      { text: "No reconozco un cargo de 120 dólares", intent: intent({ unrecognized_charge: 0.5, transaction_status: 0.3 }) },
+      { text: "sí", intent: intent({ transaction_status: 0.41, out_of_scope: 0.3, unrecognized_charge: 0.05 }) },
+    ]);
+    assert.equal(t2.move, "ask_clarify");
+    assert.equal(t2.state.workingIntent, null);
+  });
+  it("C11: 'sí, no lo reconozco' still resolves (it's more than a bare yes)", () => {
+    const [, t2] = run([
+      { text: "Me cobraron algo raro", intent: intent({ unrecognized_charge: 0.45, wrongful_fee: 0.4 }) },
+      { text: "sí, no lo reconozco para nada", intent: intent({ unrecognized_charge: 0.6, wrongful_fee: 0.1 }) },
+    ]);
+    assert.equal(t2.state.workingIntent, "unrecognized_charge");
+  });
   it("a confident safety intent overrides a pending clarification", () => {
     const [, t2] = run([
       { text: "Me cobraron algo raro", intent: intent({ unrecognized_charge: 0.45, wrongful_fee: 0.4 }) },

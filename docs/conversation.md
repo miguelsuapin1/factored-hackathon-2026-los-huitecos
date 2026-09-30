@@ -68,6 +68,10 @@ Each entry says who decided it, so the team knows who to ask.
 - **Why:** first we tried reading the choice with C5's rescoring. It failed live: the intent model scored "revisen el cargo" as `human_agent` 31% and `out_of_scope` 24%, with the dispute intents under 10%. A model trained on opening messages can't read a menu choice. Code reads it, as it reads yes/no (C8).
 - Also: details in a confident non-dispute turn are **not** merged. Without this, "confirma que ya me devolviste 5000" overwrote the disputed amount of 120 with 5000 (found in the live test, fixed, and covered by a unit test).
 
+### C11. A bare "sí"/"no" doesn't answer "A or B?" (Miguel, 2026-09-30)
+- **Chose:** if the answer to a two-option question is only a yes or no (at most two words, read by code as in C8) and adds no details, the question is asked again (counting toward the two-attempt limit of C5).
+- **Why:** seen live in production with the fallback model: "No reconozco un cargo de 120 dólares…" → "A or B?" → "sí" was resolved as `transaction_status` by C5's rescoring. Nothing was acted on (the next move only asked for details), but a "yes" chooses neither option. "Sí, no lo reconozco para nada" still resolves: it's more than a bare yes.
+
 ## What we verified (2026-09-29, local, Cohere + Haiku live)
 
 | Scenario | Result |

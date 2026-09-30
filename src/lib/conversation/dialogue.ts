@@ -137,10 +137,12 @@ export function advance(prev: ConversationState, input: TurnInput): TurnOutcome 
   // 2b. Waiting for "A or B?" (C5).
   if (prev.pending?.kind === "clarify" && !confidentSafety) {
     const [a, b] = prev.pending.options;
+    // C11: a bare "sí"/"no" doesn't choose between two options (seen live with the fallback model): ask again.
+    const bareYesNo = readYesNo(input.text) !== null && normalize(input.text).split(/\s+/).length <= 2 && !merged.changed;
     const p = (label: IntentLabel) => intent.scores.find((s) => s.label === label)?.probability ?? 0;
     const total = p(a) + p(b);
     const winner = p(a) >= p(b) ? a : b;
-    if (total > 0 && p(winner) / total >= CLARIFY_SHARE) {
+    if (!bareYesNo && total > 0 && p(winner) / total >= CLARIFY_SHARE) {
       state.workingIntent = winner;
       state.pending = null;
       return DISPUTES.includes(winner) ? disputeMove(state, done, "clarification") : done("answer", "clarification");
