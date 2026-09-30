@@ -15,6 +15,7 @@ const REQUIRED: (keyof Details)[] = ["amount", "date"];
 
 export type Move =
   | "ask_clarify" // "¿A o B?"
+  | "ask_summary" // H1: the customer asked for a person; ask for a one-line summary for the agent
   | "ask_details" // ask only for what's missing
   | "confirm" // restate details, ask yes/no
   | "ask_correction" // customer said no: which detail is wrong?
@@ -94,6 +95,17 @@ export function advance(prev: ConversationState, input: TurnInput): TurnOutcome 
     state, move, resolvedBy, clarifyOptions, pendingBefore, missing: missingFor(state),
   });
 
+  // 0. We asked for a one-line summary for the agent (H1): this message is it, whatever its intent.
+  if (prev.pending?.kind === "summary") {
+    if (readYesNo(input.text) === "no" && input.text.trim().split(/\s+/).length <= 3) {
+      state.pending = null; // "no, ya no": the customer changed their mind
+      state.workingIntent = null;
+      return done("answer", "model");
+    }
+    state.summary = input.text.slice(0, SUMMARY_MAX);
+    return humanHandoff(state, done);
+  }
+
   // 1. Waiting for a yes/no (C8).
   if (prev.pending?.kind === "confirm" && !confidentSafety) {
     const answer = readYesNo(input.text);
@@ -157,7 +169,15 @@ export function advance(prev: ConversationState, input: TurnInput): TurnOutcome 
       state.handoffReason = null;
       state.caseRef = null;
       state.caseId = null;
+      state.summary = null;
       state.checks = [];
+    }
+    if (intent.intent === "human_agent") {
+      // H1/H2: if we already know what it's about, hand off now with that context; otherwise ask for one line.
+      if (hasContext(prev)) return humanHandoff(state, done);
+      state.workingIntent = "human_agent";
+      state.pending = { kind: "summary" };
+      return done("ask_summary", resolvedBy);
     }
     state.workingIntent = intent.intent;
     state.pending = null;
@@ -183,6 +203,20 @@ export function advance(prev: ConversationState, input: TurnInput): TurnOutcome 
   const options: [IntentLabel, IntentLabel] = [intent.scores[0].label, intent.scores[1].label];
   state.pending = { kind: "clarify", options, attempts: 0 };
   return done("ask_clarify", "model", options);
+}
+
+const SUMMARY_MAX = 300;
+
+/** H2: the conversation already holds dispute details, so the agent has context without asking for a summary. */
+function hasContext(prev: ConversationState) {
+  return Object.values(prev.details).some((v) => v !== null) || prev.match !== null;
+}
+
+function humanHandoff(state: ConversationState, done: (move: Move, resolvedBy: ResolvedBy) => TurnOutcome): TurnOutcome {
+  state.pending = null;
+  state.status = "handoff";
+  state.handoffReason = "customer_asked";
+  return done("handoff", "model");
 }
 
 function stripNulls(details: Partial<Details>): Partial<Details> {

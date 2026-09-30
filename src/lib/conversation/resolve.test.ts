@@ -154,3 +154,26 @@ describe("verification (step 13, docs/verification.md)", () => {
   });
 });
 
+describe("hand-off when the customer asks (step 14)", () => {
+  it("creates a verified case with the customer's summary and rule DLG-human", async () => {
+    const store = memoryStore();
+    const [t1, t2] = await run([
+      { text: "quiero hablar con alguien", intent: intent("human_agent", 0.98) },
+      { text: "me cobraron una comisión que no autoricé", intent: intent("wrongful_fee", 0.8) },
+    ], mockLookup, store);
+    assert.equal(t1.move, "ask_summary");
+    assert.equal(t2.move, "handoff");
+    assert.equal(t2.rule, "DLG-human");
+    assert.equal(t2.case?.verified, true);
+    assert.equal(store.rows[0].reason, "customer_asked");
+    assert.equal(store.rows[0].customerStatements.summary, "me cobraron una comisión que no autoricé");
+    assert.match(store.rows[0].summary, /Customer's summary: "me cobraron una comisión que no autoricé"/);
+  });
+  it("mid-dispute: the case carries the dispute details and the matched charge", async () => {
+    const store = memoryStore();
+    await run([dispute(350, "2026-06-09"), { text: "mejor pásame con un asesor", intent: intent("human_agent", 0.95) }], mockLookup, store);
+    assert.equal(store.rows[0].reason, "customer_asked");
+    assert.equal(store.rows[0].customerStatements.amount, 350);
+    assert.equal(store.rows[0].intent, "unrecognized_charge");
+  });
+});

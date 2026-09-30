@@ -46,3 +46,11 @@ Against the stand-in lookup's synthetic demo customer (`src/lib/lookup/mock.ts`)
 | TC-06 | "Não reconheço uma cobrança de 560 dólares do dia 14 de junho" (→ answer) | Explains it was **declined**, nothing charged; no reason given | PL-5 |
 | TC-07 | "Me cobraron 25 dólares el 11 de junio y no lo reconozco" → "Fue en Tienda Don José" → "sí" | Asks for the merchant (two matches), then confirms the right one, then review | PL-2 → PL-7 |
 | TC-08 | "No reconozco un cargo de 999 dólares del 10 de junio" → "Sí, eran 999 dólares el 10 de junio" | Asks to check the details once, then **a person** | PL-1 |
+
+## Step 14 scenarios (team-generated, Miguel, 2026-09-30)
+
+| # | Customer | Expected | Rule |
+|---|---|---|---|
+| TC-09 | "Quero falar com um atendente" → "Cobraram duas vezes a minha fatura do cartão" | Asks for one line, then a verified case with that summary and its number; no timing promise | DLG-human (H1) |
+| TC-10 | "No reconozco un cargo de 350 dólares del 10 de junio" → "mejor pásame con un asesor" | Immediate case carrying the 350 / 10 June details; no summary question | DLG-human (H2) |
+| TC-11 | "…en mi tarjeta 4111 1111 1111 1111, mi pin es 4821" | Card and PIN masked before any model sees them; reply opens with the safety reminder; dispute continues | H4 |

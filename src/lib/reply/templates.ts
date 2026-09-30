@@ -17,7 +17,7 @@ export const GUIDANCE: Record<IntentLabel, string> = {
   move_money:
     "Explain politely that this chat can't move money: no refunds, reversals, transfers or payments. Offer instead to open a review of the charge or to connect them with an agent.",
   human_agent:
-    "Confirm that you'll connect them with an agent. Ask for a one-line summary of the issue so the agent has context.",
+    "Confirm that you'll connect them with an agent. Ask for a one-line summary of the issue so the agent has context. Do not say how soon.",
   out_of_scope:
     "Say briefly that this assistant helps with card and account charges: charges they don't recognize, fees they think are wrong, the status of a transaction, and balances. For anything else, suggest the bank's other service channels. If it's a greeting, greet back and say what you can help with. Do not answer unrelated questions.",
 };
@@ -121,7 +121,7 @@ type DetailsView = {
 
 type MatchView = { date: string; amount: number; currency: string; merchant: string | null };
 
-type HandoffReason = "repeated_clarification" | "no_match" | "ambiguous" | "high_risk" | "record_unavailable" | "tool_failure";
+type HandoffReason = "customer_asked" | "repeated_clarification" | "no_match" | "ambiguous" | "high_risk" | "record_unavailable" | "tool_failure";
 
 const MONTHS: Record<Lang, string[]> = {
   es: ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"],
@@ -164,7 +164,7 @@ const join = (items: string[], lang: Lang) =>
 export type ReplyPlanInput = {
   move:
     | "ask_clarify" | "ask_details" | "confirm" | "ask_correction" | "confirmed" | "status_update" | "answer" | "handoff"
-    | "no_match" | "ask_narrow" | "explain_status" | "open_review" | "record_failed";
+    | "no_match" | "ask_narrow" | "explain_status" | "open_review" | "record_failed" | "ask_summary";
   intent: IntentLabel; // the working intent (or the model's top intent when there is none)
   clarifyOptions: [IntentLabel, IntentLabel] | null;
   clarifyAttempts: number;
@@ -175,11 +175,13 @@ export type ReplyPlanInput = {
   handoffReason: HandoffReason | null;
   status: "open" | "confirmed" | "review" | "handoff" | "closed";
   caseRef: string | null; // set only when the case was written and read back (step 13, V1)
+  warnSensitive: boolean; // H4: the customer typed a PIN, CVV or password (already masked)
 };
 
 export type ReplyPlan = { instruction: string; templates: Record<Lang, string> };
 
 const HANDOFF_EN: Record<HandoffReason, string> = {
+  customer_asked: "The customer asked to speak with a person. Confirm an agent will take over with what they've told you, so they don't need to repeat it.",
   repeated_clarification: "After two questions it's still not clear what the customer needs. Say you'll pass the conversation to an agent who can help, and ask them to describe the issue briefly in their own words.",
   no_match: "You couldn't find a charge matching the details the customer gave, even after they checked them. Say an agent will continue with the details already collected, so they don't need to repeat them.",
   ambiguous: "Several charges match and it's still not clear which one the customer means. Say an agent will continue with the details already collected, so they don't need to repeat them.",
@@ -190,6 +192,7 @@ const HANDOFF_EN: Record<HandoffReason, string> = {
 
 const HANDOFF_LOCAL: Record<Lang, Record<HandoffReason, string>> = {
   es: {
+    customer_asked: "Listo, un asesor continuará con tu caso con lo que ya me contaste, así no tienes que repetirlo.",
     repeated_clarification: "Para ayudarte mejor, te paso con un asesor. ¿Me cuentas en una frase qué ocurrió?",
     no_match: "No logré ubicar ese cargo con los datos que me diste. Un asesor continuará con tu caso usando esos datos, así no tienes que repetirlos.",
     ambiguous: "Hay más de un cargo que coincide. Un asesor continuará con tu caso usando los datos que ya me diste.",
@@ -198,6 +201,7 @@ const HANDOFF_LOCAL: Record<Lang, Record<HandoffReason, string>> = {
     tool_failure: "No puedo consultar tus movimientos en este momento. Un asesor continuará con los datos que ya me diste.",
   },
   pt: {
+    customer_asked: "Pronto, um atendente vai continuar com o seu caso com o que você já me contou, sem precisar repetir.",
     repeated_clarification: "Para te ajudar melhor, vou te passar para um atendente. Pode me contar em uma frase o que aconteceu?",
     no_match: "Não consegui localizar essa cobrança com os dados informados. Um atendente vai continuar com o seu caso usando esses dados, sem que você precise repeti-los.",
     ambiguous: "Há mais de uma cobrança que corresponde. Um atendente vai continuar com o seu caso usando os dados que você já informou.",
@@ -207,8 +211,23 @@ const HANDOFF_LOCAL: Record<Lang, Record<HandoffReason, string>> = {
   },
 };
 
+const WARN_EN = "First, remind the customer in one short sentence never to share their PIN, CVV or passwords in any chat: the bank never asks for them. ";
+const WARN_LOCAL: Record<Lang, string> = {
+  es: "Por tu seguridad, nunca compartas tu PIN, CVV ni contraseñas por chat: el banco nunca te los pedirá. ",
+  pt: "Para sua segurança, nunca compartilhe seu PIN, CVV ou senhas pelo chat: o banco nunca vai pedir. ",
+};
+
 /** Code decides what each move's reply must say (R1): an instruction for Haiku plus the fixed ES/PT fallback. */
 export function planReply(p: ReplyPlanInput, lang: Lang): ReplyPlan {
+  const plan = planMove(p, lang);
+  if (!p.warnSensitive) return plan;
+  return {
+    instruction: WARN_EN + plan.instruction,
+    templates: { es: WARN_LOCAL.es + plan.templates.es, pt: WARN_LOCAL.pt + plan.templates.pt },
+  };
+}
+
+function planMove(p: ReplyPlanInput, lang: Lang): ReplyPlan {
   const known = knownParts(p.details, lang);
   const knownText = known.length ? known.join(", ") : "nothing yet";
   const both = (f: (l: Lang) => string) => ({ es: f("es"), pt: f("pt") });
@@ -308,10 +327,10 @@ export function planReply(p: ReplyPlanInput, lang: Lang): ReplyPlan {
       };
     case "record_failed":
       return {
-        instruction: `The case could not be registered right now because of a technical problem. Say so plainly: nothing has been registered yet. ${p.match ? "Ask them to reply \"sí\" (or \"sim\") in a few minutes to try again; the details are kept." : "Ask them to write again in a few minutes."} Do not say anything was sent, opened or passed to an agent. ${noRefund}`,
+        instruction: `The case could not be registered right now because of a technical problem. Say so plainly: nothing has been registered yet. ${p.match ? "Ask them to reply \"sí\" (or \"sim\") later to try again; the details are kept." : "Ask them to write again later."} Do not say anything was sent, opened or passed to an agent. ${noRefund}`,
         templates: both((l) =>
-          l === "es" ? `No pude registrar tu caso por un problema técnico; todavía no quedó registrado. ${p.match ? "Guardé los datos: responde \"sí\" en unos minutos para intentarlo de nuevo." : "Por favor escríbenos de nuevo en unos minutos."}`
-            : `Não consegui registrar o seu caso por um problema técnico; ainda não ficou registrado. ${p.match ? "Guardei os dados: responda \"sim\" em alguns minutos para tentar de novo." : "Por favor, escreva de novo em alguns minutos."}`,
+          l === "es" ? `No pude registrar tu caso por un problema técnico; todavía no quedó registrado. ${p.match ? "Guardé los datos: responde \"sí\" más tarde para intentarlo de nuevo." : "Por favor escríbenos de nuevo más tarde."}`
+            : `Não consegui registrar o seu caso por um problema técnico; ainda não ficou registrado. ${p.match ? "Guardei os dados: responda \"sim\" mais tarde para tentar de novo." : "Por favor, escreva de novo mais tarde."}`,
         ),
       };
     case "confirmed":
@@ -340,6 +359,8 @@ export function planReply(p: ReplyPlanInput, lang: Lang): ReplyPlan {
         templates: both((l) => HANDOFF_LOCAL[l][reason] + (p.caseRef ? (l === "es" ? ` Tu número de caso es ${p.caseRef}.` : ` O número do seu caso é ${p.caseRef}.`) : "")),
       };
     }
+    case "ask_summary":
+      return { instruction: GUIDANCE.human_agent, templates: both((l) => TEMPLATES[l].human_agent) };
     case "answer":
       return { instruction: GUIDANCE[p.intent], templates: both((l) => TEMPLATES[l][p.intent]) };
   }

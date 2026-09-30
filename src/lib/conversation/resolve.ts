@@ -13,7 +13,7 @@ const LOOKUP_TIMEOUT_MS = 3000;
 
 export type PolicyTrace = {
   lookup: { source: string; op: "find" | "get"; ms: number; count: number | null; error: string | null } | null;
-  rule: RuleId | "DLG-clarify" | null;
+  rule: RuleId | "DLG-clarify" | "DLG-human" | null;
   decision: string | null;
   case: { source: string; ms: number; kind: string; verified: boolean; reference: string | null; error: string | null } | null;
 };
@@ -53,7 +53,7 @@ export async function resolveTurn(outcome: TurnOutcome, ctx: ResolveContext): Pr
   }
   const checks = () => [...s.checks, ...turnChecks].slice(-MAX_CHECKS);
 
-  const handoff = (reason: HandoffReason, rule: RuleId | "DLG-clarify") => {
+  const handoff = (reason: HandoffReason, rule: RuleId) => {
     s.status = "handoff";
     s.pending = null;
     s.handoffReason = reason;
@@ -81,6 +81,8 @@ export async function resolveTurn(outcome: TurnOutcome, ctx: ResolveContext): Pr
 
   // The dialogue itself gave up (two unresolved clarifications): that's a hand-off too, and gets a case.
   if (move === "handoff" && s.handoffReason === "repeated_clarification") trace.rule = "DLG-clarify";
+  // The customer asked for a person (H1/H2): also a hand-off with a case.
+  if (move === "handoff" && s.handoffReason === "customer_asked") trace.rule = "DLG-human";
 
   // Details complete: find the charge before asking the customer to confirm it.
   if (move === "confirm") {

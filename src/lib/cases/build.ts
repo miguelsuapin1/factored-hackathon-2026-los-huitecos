@@ -20,6 +20,7 @@ export type CaseContext = {
 };
 
 const OPEN_QUESTIONS: Record<HandoffReason, string> = {
+  customer_asked: "The customer asked to speak with a person. Start from their summary and any details below.",
   repeated_clarification: "The request is still unclear after two clarifying questions: ask the customer what happened.",
   no_match: "No transaction matched the customer's details, after one correction. Check other accounts/cards or a different date.",
   ambiguous: "Several transactions match the customer's details; the customer couldn't tell which one.",
@@ -33,13 +34,15 @@ const money = (v: number, c: string | null) => `${v}${c ? ` ${c}` : ""}`;
 export function buildCase(ctx: CaseContext): CaseInput {
   const { state: s, record: r } = ctx;
   const d = s.details;
-  const stated = Object.fromEntries(Object.entries(d).filter(([, v]) => v !== null));
+  const stated: Record<string, unknown> = Object.fromEntries(Object.entries(d).filter(([, v]) => v !== null));
+  if (s.summary) stated.summary = s.summary; // the customer's own words, already masked (H4)
   const what = r
     ? `${money(r.amount, r.currency)} at ${r.merchant ?? "unknown merchant"} on ${r.date.slice(0, 10)}`
     : [d.amount !== null ? money(d.amount, d.currency) : null, d.merchant ? `at ${d.merchant}` : null, d.date ? `on ${d.date}` : null]
         .filter(Boolean).join(" ") || "a charge (details not collected)";
   const expected = d.expectedAmount !== null ? ` (customer says it should be ${money(d.expectedAmount, d.currency ?? r?.currency ?? null)})` : "";
   const outcome = ctx.kind === "review" ? "sent to review" : `handed off: ${ctx.reason}`;
+  const theirWords = s.summary ? ` Customer's summary: "${s.summary}".` : "";
 
   const verifiedFacts: CaseInput["verifiedFacts"] = [];
   if (r) {
@@ -70,7 +73,7 @@ export function buildCase(ctx: CaseContext): CaseInput {
     intent: s.workingIntent ?? "unknown",
     language: ctx.language,
     transactionId: r?.transactionId ?? null,
-    summary: `${s.workingIntent ?? "unknown"}: ${what}${expected}. ${outcome} (${ctx.rule}).`,
+    summary: `${s.workingIntent ?? "unknown"}: ${what}${expected}. ${outcome} (${ctx.rule}).${theirWords}`,
     verifiedFacts,
     customerStatements: stated,
     checksDone: ctx.checks,
