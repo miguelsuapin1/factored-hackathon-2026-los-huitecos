@@ -121,6 +121,39 @@ export async function resolveTurn(outcome: TurnOutcome, ctx: ResolveContext): Pr
     }
   }
 
+  // S1: a status question with its details complete. Same lookup and rules; the answer explains, nothing is opened.
+  if (move === "lookup_status") {
+    const found = await call("find", () => lookup.findTransactions(ctx.session, queryFor(s.details)), (r) => r.length);
+    if (!found.ok) {
+      note("lookup failed");
+      move = handoff("tool_failure", "PL-8");
+    } else {
+      note(`lookup (${lookup.source}): ${found.result.length} match(es)`);
+      const d = decideOnLookup(found.result, s.lookupRetries);
+      trace.decision = d.kind === "confirm_match" ? "status_answer" : d.kind;
+      if (d.kind === "no_match" || d.kind === "ambiguous") {
+        trace.rule = d.rule;
+        if (d.handoff) {
+          move = handoff(d.kind, d.rule);
+        } else {
+          s.lookupRetries += 1;
+          s.match = null;
+          s.pending = { kind: "details" };
+          s.checks = checks();
+          return { move: d.kind === "no_match" ? "no_match" : "ask_narrow", trace };
+        }
+      } else {
+        s.match = view(d.match);
+        s.status = "closed";
+        // PL-9: approved means it was charged normally; offer a review in case it isn't theirs (S2).
+        trace.rule = d.kind === "confirm_match" ? "PL-9" : d.rule;
+        s.pending = d.kind === "confirm_match" ? { kind: "offer_dispute" } : null;
+        s.checks = checks();
+        return { move: "status_answer", trace };
+      }
+    }
+  }
+
   // The customer said yes: decide on a fresh read of the record, not on what the state remembers.
   if (move === "confirmed") {
     note("customer confirmed the matched charge");

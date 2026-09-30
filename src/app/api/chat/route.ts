@@ -78,7 +78,7 @@ export async function POST(request: Request) {
         details: d,
         missing: outcome.missing.filter((k): k is "amount" | "date" => k === "amount" || k === "date"),
         match: m,
-        explainRule: policy.rule === "PL-3" || policy.rule === "PL-4" || policy.rule === "PL-5" ? policy.rule : null,
+        explainRule: policy.rule === "PL-3" || policy.rule === "PL-4" || policy.rule === "PL-5" || policy.rule === "PL-9" ? policy.rule : null,
         handoffReason: state.handoffReason,
         status: state.status,
         caseRef: state.caseRef,

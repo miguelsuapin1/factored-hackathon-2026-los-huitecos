@@ -19,6 +19,7 @@ export type Pending =
   | { kind: "offer_review"; dispute: IntentLabel } // after refusing to move money we offered a review or an agent
   | { kind: "details" }
   | { kind: "summary" } // the customer asked for a person; we asked for a one-line summary (H1)
+  | { kind: "offer_dispute" } // S2: we explained an approved charge and offered to open a review
   | { kind: "confirm" }
   | null;
 

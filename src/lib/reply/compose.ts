@@ -5,11 +5,11 @@ import Anthropic from "@anthropic-ai/sdk";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { z } from "zod";
 import { unallowedNumbers, numbersIn } from "@/lib/conversation/numbers";
-import { timingPromise } from "./checks";
+import { timingPromise, unbackedOffer } from "./checks";
 import { guessLanguage, type Lang, type ReplyPlan } from "./templates";
 
 export const REPLY_MODEL = "claude-haiku-4-5";
-export const PROMPT_VERSION = "reply-v4";
+export const PROMPT_VERSION = "reply-v6";
 const TIMEOUT_MS = 6000;
 const MAX_REPLY_CHARS = 600;
 const PRICE_PER_MTOK = { input: 1, output: 5 }; // Claude Haiku 4.5, USD
@@ -110,6 +110,8 @@ export async function composeReply({ customerText, plan, allowedNumbers, languag
     if (text.length > MAX_REPLY_CHARS) return fallback("reply too long", REPLY_MODEL, usage);
     const promise = timingPromise(text);
     if (promise) return fallback(`reply promised timing ("${promise}")`, REPLY_MODEL, usage);
+    const offer = plan.explainOnly ? unbackedOffer(text) : null;
+    if (offer) return fallback(`reply offered an action the system won't take ("${offer}")`, REPLY_MODEL, usage);
     const invented = unallowedNumbers(text, allowed);
     if (invented.length) return fallback(`reply contained numbers not in the message (${invented.join(", ")})`, REPLY_MODEL, usage);
 

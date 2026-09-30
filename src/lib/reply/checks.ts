@@ -13,3 +13,12 @@ const TIMING_PROMISE = new RegExp(
 export function timingPromise(reply: string) {
   return reply.match(TIMING_PROMISE)?.[0] ?? null;
 }
+
+/** R9: in a pure explanation (status answers), the reply may not offer an action the system won't take next
+ * ("podemos investigarlo", "puedo abrir una revisión"): only PL-9's own offer is backed by code (S2). */
+const UNBACKED_OFFER = /\b(investig\w*|averigu\w*|revis(ar|emos|arlo|arla|ión)|abrir (una|un) |analis(ar|amos)|verific(ar|amos)|contesta[çc][aã]o|reclamaç[aã]o)/iu;
+
+export function unbackedOffer(reply: string) {
+  return reply.match(UNBACKED_OFFER)?.[0] ?? null;
+}
+

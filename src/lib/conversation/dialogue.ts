@@ -5,6 +5,8 @@ import type { IntentLabel, Scores } from "@/lib/intent/model";
 import { EMPTY_DETAILS, FINISHED, MAX_TEXTS, type ConversationState, type Details } from "./state";
 
 export const DISPUTES: IntentLabel[] = ["unrecognized_charge", "wrongful_fee"];
+/** Intents about one specific charge: they collect amount + date and use the lookup (disputes, and status: S1). */
+export const CHARGE_INTENTS: IntentLabel[] = [...DISPUTES, "transaction_status"];
 const SAFETY: IntentLabel[] = ["move_money", "human_agent"];
 /** C5: share of (A + B) the winning option needs when answering "A or B?". Provisional, set by reasoning. */
 export const CLARIFY_SHARE = 0.6;
@@ -27,6 +29,8 @@ export type Move =
   | "no_match" // PL-1: nothing matches, ask to check the details
   | "ask_narrow" // PL-2: several match, ask for the merchant or exact date
   | "explain_status" // PL-3/4/5: pending, reversed or declined: explain, no dispute
+  | "lookup_status" // S1: status question with its details complete: look the charge up (no confirmation needed)
+  | "status_answer" // S1: explain what happened to the charge (PL-3/4/5, or PL-9 approved + offer a review)
   | "open_review" // PL-7: the dispute goes to review (a verified case, step 13)
   | "record_failed"; // V2: the case couldn't be written and verified: say so, nothing is claimed
 
@@ -50,6 +54,8 @@ export type TurnOutcome = {
 const YES = new Set(["si", "sim", "claro", "correcto", "correto", "exacto", "exato", "dale", "ok", "okay", "vale", "confirmo", "isso", "afirmativo", "perfecto", "perfeito", "yes", "listo", "certo"]);
 const NO = new Set(["no", "nao", "incorrecto", "incorreto", "errado", "negativo", "nop"]);
 const BUT = /\b(pero|mas|porem|but)\b/;
+/** S2: after an approved charge is explained, the customer says it isn't theirs or isn't right. */
+const DISPUTE_IT = /\b(no (lo|la) (reconozco|hice|autorice)|no fui yo|no es mio|no es mia|nao (reconheco|fui eu|fiz)|nao e meu|incorrect[oa]|incorret[oa]|errad[oa]|de mas|a mais|duplicad[oa]|dos veces|duas vezes)\b/;
 /** C10: choosing "the review" from the options offered after a refusal. Read by code, like yes/no. */
 const REVIEW = /\b(revis\w*|reclam\w*|disput\w*|contest\w*|investig\w*)\b/;
 
@@ -134,6 +140,22 @@ export function advance(prev: ConversationState, input: TurnInput): TurnOutcome 
     return disputeMove(state, done, "offer");
   }
 
+  // 2c. We explained an approved charge and offered a review (S2): "no lo reconozco", "sí", "revísenlo" → dispute,
+  // keeping the details and the matched charge; a plain "no" closes politely.
+  if (prev.pending?.kind === "offer_dispute" && !confidentSafety) {
+    const text = normalize(input.text);
+    const topDispute = DISPUTES.includes(intent.scores[0].label) ? intent.scores[0].label : null;
+    if (readYesNo(input.text) === "yes" || REVIEW.test(text) || DISPUTE_IT.test(text) || (intent.decision === "act" && topDispute)) {
+      state.workingIntent = topDispute ?? (state.details.expectedAmount !== null ? "wrongful_fee" : "unrecognized_charge");
+      state.pending = null;
+      return disputeMove(state, done, "offer");
+    }
+    if (readYesNo(input.text) === "no") {
+      state.pending = null;
+      return done("status_update", "offer");
+    }
+  }
+
   // 2b. Waiting for "A or B?" (C5).
   if (prev.pending?.kind === "clarify" && !confidentSafety) {
     const [a, b] = prev.pending.options;
@@ -145,7 +167,7 @@ export function advance(prev: ConversationState, input: TurnInput): TurnOutcome 
     if (!bareYesNo && total > 0 && p(winner) / total >= CLARIFY_SHARE) {
       state.workingIntent = winner;
       state.pending = null;
-      return DISPUTES.includes(winner) ? disputeMove(state, done, "clarification") : done("answer", "clarification");
+      return CHARGE_INTENTS.includes(winner) ? disputeMove(state, done, "clarification") : done("answer", "clarification");
     }
     const attempts = prev.pending.attempts + 1;
     if (attempts >= MAX_CLARIFY) {
@@ -163,7 +185,7 @@ export function advance(prev: ConversationState, input: TurnInput): TurnOutcome 
     const resolvedBy: ResolvedBy = prev.workingIntent && prev.workingIntent !== intent.intent ? "new_topic" : "model";
     if (resolvedBy === "new_topic") state.status = "open";
     // A new dispute after a confirmed one is a new case: start from this message's details only.
-    if (FINISHED.includes(prev.status) && DISPUTES.includes(intent.intent)) {
+    if (FINISHED.includes(prev.status) && CHARGE_INTENTS.includes(intent.intent)) {
       state.details = { ...EMPTY_DETAILS, ...stripNulls(input.details) };
       state.status = "open";
       state.match = null;
@@ -183,7 +205,7 @@ export function advance(prev: ConversationState, input: TurnInput): TurnOutcome 
     }
     state.workingIntent = intent.intent;
     state.pending = null;
-    if (!DISPUTES.includes(intent.intent)) {
+    if (!CHARGE_INTENTS.includes(intent.intent)) {
       // Numbers in a refund demand or another topic are not details of the disputed charge ("devuélveme 5000").
       state.details = prev.details;
       if (intent.intent === "move_money") {
@@ -196,8 +218,8 @@ export function advance(prev: ConversationState, input: TurnInput): TurnOutcome 
     return disputeMove(state, done, resolvedBy);
   }
 
-  // 4. Not confident, but we're already in a dispute: it's probably a detail ("fue el martes"). Keep the topic (C6).
-  if (prev.workingIntent && DISPUTES.includes(prev.workingIntent)) {
+  // 4. Not confident, but we're already on a charge: it's probably a detail ("fue el martes"). Keep the topic (C6).
+  if (prev.workingIntent && CHARGE_INTENTS.includes(prev.workingIntent)) {
     return disputeMove(state, done, "kept_topic");
   }
 
@@ -226,7 +248,7 @@ function stripNulls(details: Partial<Details>): Partial<Details> {
 }
 
 function missingFor(state: ConversationState) {
-  return state.workingIntent && DISPUTES.includes(state.workingIntent)
+  return state.workingIntent && CHARGE_INTENTS.includes(state.workingIntent)
     ? REQUIRED.filter((k) => state.details[k] === null)
     : [];
 }
@@ -244,6 +266,12 @@ function disputeMove(
   if (FINISHED.includes(state.status) && resolvedBy === "kept_topic") {
     state.pending = null;
     return done("status_update", resolvedBy);
+  }
+  if (state.workingIntent === "transaction_status") {
+    // S1: a status question only reads a record, so there's nothing to confirm: look it up straight away.
+    state.status = "open";
+    state.pending = null;
+    return done("lookup_status", resolvedBy);
   }
   state.status = "open";
   state.pending = { kind: "confirm" };

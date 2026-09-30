@@ -82,7 +82,7 @@ Each entry says who decided it, so the team knows who to ask.
 | Forged state token | ✅ conversation restarted, `restartReason: invalid signature` |
 | Unit tests (`npm test`) | 18 pass: the rules above with hand-set scores |
 
-**Observed, not fixed:** "el martes pasado" resolved to 9 June (the Tuesday of the previous week), where "the most recent Tuesday" would be 16 June. Both readings are common in Spanish; the confirmation step exists for exactly this. The first extraction call after a server start took 4.6 s (5 s timeout); later calls took 0.8–1.4 s, run in parallel with the intent model.
+**Observed, not fixed:** "el martes pasado" resolved to 9 June (the Tuesday of the previous week), where "the most recent Tuesday" would be 16 June. Both readings are common in Spanish; the confirmation step exists for exactly this. The first extraction call after a server start took 4.6 s (5 s timeout) **on the local dev server only** (Next.js compiles the route on the first request). **Measured in deployed code (2026-09-30), closed:** 1,315 ms on the first turn after a production deploy (cold) and 754–1,489 ms otherwise, with one SDK retry on timeout; no warm-up needed.
 
 ## Limitations
 

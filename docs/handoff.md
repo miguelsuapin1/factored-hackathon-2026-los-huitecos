@@ -52,6 +52,11 @@ Every row is written and read back before the customer hears the case number (V1
 - **Guard for the guard:** a unit test runs every fixed template (every move × hand-off reason × language) through the check, since templates are what the customer gets when a reply is rejected. It caught our own "responde en unos minutos" in the record-failed template, reworded to "más tarde".
 - **Limit:** plain "ahora"/"agora" passes (our own template says "Ahora revisaremos ese cargo").
 
+### R9. Explanations may not offer actions the system won't take (Miguel, 2026-09-30)
+- **Chose:** status answers for pending, reversed and declined charges are *explain-only*: a reply that offers to investigate, review, verify, analyse or open something is rejected by code and the template is used. PL-9's own offer is exempt, because code backs it (S2).
+- **Why:** with the instruction "don't offer anything beyond this explanation" (reply-v5), Haiku still wrote "podemos investigarlo juntos" on every declined answer tested. Nothing in the system would investigate.
+- **Cost:** for declined charges the template is used every time (seen 3 of 3), so that Haiku call (~$0.0008) is wasted. Better fix: give the answer a real next step (see policy.md), then Haiku has no reason to invent one.
+
 ## Verified
 
 - `npm test`: 59 tests, including H1–H3, the case contents for both hand-off paths, masking (cards, CLABE, PIN/CVV/senha, emails, and what must not be masked), R8, and every template.
