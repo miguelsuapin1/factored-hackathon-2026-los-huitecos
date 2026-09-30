@@ -40,6 +40,12 @@ Every row is written and read back before the customer hears the case number (V1
 - **Bug found and fixed before merge (P14):** a card number followed by a comma wasn't masked; the preview's trace showed it.
 - **Limit:** pattern-based. It won't catch a PIN written in words ("cuatro ocho dos uno") or a card number split across messages. The trace records which kinds were masked, never the values.
 
+### H5. National IDs and phone numbers are masked too (Miguel, 2026-09-30)
+- **Chose:** added to H4, only in formats that can't be an amount or a reference: Mexican **CURP** and **RFC**, Brazilian **CPF** in its dotted format (check digits verified), Argentine **CUIL/CUIT** dashed; any ID or phone number **right after its label** (DNI, cédula, documento, INE, RG, CPF, pasaporte; teléfono, celular, WhatsApp); phones with the country code of a country we serve (+52, +55, +57, +54). IDs → `[documento]`, phones → `[teléfono]`.
+- **Why:** the data covers Mexico, Colombia and Argentina, and we serve Portuguese speakers; "customer-record isolation" is scored, and an ID number is as identifying as a card. We don't need either: identity comes from the login.
+- **What stays, on purpose:** a bare 8–11 digit number without a label ("folio 30123456") is left alone, since it may be a reference the lookup needs. Names and addresses aren't masked (no reliable pattern).
+- **Verified live (local, 2026-09-30):** a hand-off summary "…meu CPF é 529.982.247-25 e meu celular +55 11 98765 4321" was stored as "…meu CPF é [documento] e meu celular [teléfono]" (case GT-WSXZXHTZ).
+
 ### R8. Replies may not promise timing: checked by code (Miguel, 2026-09-30)
 - **Chose:** a reply containing an explicit speed promise ("ahora mismo", "enseguida", "en breve", "de inmediato", "em breve", "agora mesmo", "imediatamente", …) is rejected and the fixed template is used, like the number check (R4). `reply-v4`.
 - **Why:** the prompt forbade it since reply-v3 (P11), and Haiku still wrote "em breve" and "ahora mismo" in step 14's live tests. We don't control how fast agents or reviewers respond. Verified live: "ahora mismo" → template.

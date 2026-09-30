@@ -33,4 +33,26 @@ describe("maskSensitive", () => {
   it("masks emails", () => {
     assert.equal(maskSensitive("escríbanme a ana.perez+1@correo.com.mx").text, "escríbanme a [email]");
   });
+  it("H5: masks national IDs in unmistakable formats", () => {
+    assert.equal(maskSensitive("mi CURP es GODE561231HDFRRN09").text, "mi CURP es [documento]");
+    assert.equal(maskSensitive("RFC GODE561231AB3 para la factura").text, "RFC [documento] para la factura");
+    assert.equal(maskSensitive("meu CPF é 529.982.247-25").text, "meu CPF é [documento]");
+    assert.equal(maskSensitive("CUIL 20-30123456-7").text, "CUIL [documento]");
+    assert.equal(maskSensitive("no reconozco un cargo, mi DNI es 30123456").text, "no reconozco un cargo, mi DNI es [documento]");
+    assert.equal(maskSensitive("cédula 1020304050").text, "cédula [documento]");
+  });
+  it("H5: masks phones with a country code or after their label", () => {
+    assert.equal(maskSensitive("llámame al +52 55 1234 5678").text, "llámame al [teléfono]");
+    assert.equal(maskSensitive("meu celular: 11 98765-4321").text, "meu celular: [teléfono]");
+    assert.deepEqual(maskSensitive("whatsapp 3001234567").masked, ["phone"]);
+  });
+  it("H5: leaves amounts, dates, references and bare numbers alone", () => {
+    for (const t of [
+      "Me cobraron 1.250,00 pesos el 10/06/2026",
+      "referencia 123456789, folio 30123456",
+      "cobraram R$ 1.234.567,89 na fatura",
+      "el cargo TRX-7I07NJ7LT0TPC5YC33UL",
+      "un número 529.982.247-24 que no es un CPF válido",
+    ]) assert.deepEqual(maskSensitive(t), { text: t, masked: [] }, t);
+  });
 });

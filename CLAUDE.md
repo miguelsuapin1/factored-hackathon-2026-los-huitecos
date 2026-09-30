@@ -24,6 +24,7 @@ Control: 11 memory + confirmation · 12 policy engine (code thresholds) · 13 ve
 Evidence: 16 human-written tests · 17 test conversations · 18 eval report (start early) · 19 break-it cases · 20 agent console · 21 repo rename `factored-hackathon-2026-[team]`, one-command setup, slides, video.
 
 ## Rules we follow (keep them)
+- **Banking77 (D-004):** allowed for training only, never evaluation; document every use.
 - **Sealed test set.** `data/phrases/split_manifest.json` stores a SHA-256 of test phrases; scripts refuse to run if it changes. New training data: `uv run python pipeline/split.py --add-to-train`. Never tune on test.
 - **Test runs:** `pipeline/train_intent.py` evaluates test only with `--test`; every run is appended to `reports/test_runs.jsonl`. Commit the decision/code BEFORE running `--test`, and document it in docs/intent-model.md.
 - **Policy lives in code, not prompts.** The LLM phrases; code decides what may be said or done. No money movement, ever.
