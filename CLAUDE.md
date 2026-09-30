@@ -18,7 +18,8 @@ Read first: [docs/phase-1-walkthrough.md](docs/phase-1-walkthrough.md) (what exi
 - **Step 14 (branch `miguel/step-14-handoff`, 2026-09-30):** asking for a person creates a case (one-line summary if no context), sensitive data masked at the door (`src/lib/privacy/mask.ts`), code check against timing promises (docs/handoff.md H1–H4, R8).
 - **Status answers (branch `miguel/status-answers`, 2026-09-30):** status questions use the lookup and are answered from the record (PL-9, S1–S2 in docs/policy.md); explain-only replies can't offer actions (R9).
 - **Vague dates + picking (branch `miguel/vague-dates-pick`, 2026-09-30):** Miguel's ladder (docs/policy.md "When the customer can't give an exact date", PL-10, C12b/c–C14).
-- Not built yet: data cleaning layer (silver/gold), Supabase load of the gold slice, real lookup tool, eval harness, agent console.
+- **Step 7 (branch `Phase2_Cuellar`, Carlos, 2026-10-01):** bronze/silver/gold in BigQuery (dbt, `pipeline/dbt`), gold serving slice loaded into Supabase (`customers`, `products`, `transactions`, `fx_rates`, `agent_pools`, `data_version`; server-only). Log: docs/phase-2-data-log.md.
+- Not built yet: real lookup tool, eval harness, agent console.
 
 ## Phase 2 plan (build steps 7–21, see the published build plan)
 Data & access: 7 pipeline + Supabase load + labeled fixtures · 8 test login + row-level security · 9 extract amount/date/merchant · 10 transaction lookup tool.
@@ -61,7 +62,7 @@ uv run python pipeline/split.py               # verify the sealed split
 - Vercel env: `AWS_ROLE_ARN` (OIDC role `latam-bank-vercel`, keyless, can only invoke Cohere embed), `BEDROCK_REGION`, `DEMO_*`, `SESSION_SECRET`, `ANTHROPIC_API_KEY` (sensitive).
 - AWS account 082229155656 (Free plan, credits). Local profiles: `factored` (organizer's read-only S3 keys), `bedrock` (IAM user latam-bank-bedrock, embeddings only). IAM user `miguel` is read-only; IAM changes need root (Miguel does them).
 - GCP project `project-d49391de-51c4-49bf-aae` (Carlos): bucket `gs://factored_gt_latam_bank_raw/raw/` (S3 copy), BigQuery datasets in us-east1: `raw_ext` + `bronze` (D-003, `pipeline/bigquery/bronze_bq.py`), then `staging`, `silver`, `silver_quarantine`, `ref`, `ops`, `gold`, `gold_serving` (D-005, `pipeline/dbt`). Progress log: docs/phase-2-data-log.md.
-- Supabase project `paguvqqelfwadcolocaq` (org "hackathon", sa-east-1), empty so far. Schema changes go in supabase/migrations/.
+- Supabase project `paguvqqelfwadcolocaq` (org "hackathon", sa-east-1): `cases` (Miguel) + the serving slice (Carlos, loaded 2026-10-01 by `pipeline/load_supabase.py`, about 10 MB). Schema changes go in supabase/migrations/.
 
 ## Gotchas we already hit
 - **Next.js 16:** middleware is `src/proxy.ts`; read `node_modules/next/dist/docs/` before using an API (see AGENTS.md).

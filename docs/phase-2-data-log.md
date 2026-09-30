@@ -65,10 +65,24 @@ Failures and fixes: [lessons-learned.md](lessons-learned.md) X1–X5.
 - Migration `supabase/migrations/20260930220000_serving_slice.sql` applied: `customers`, `products`, `transactions`, `fx_rates`, `agent_pools`, `data_version`; indexes for per-customer lookups; RLS on with no policies and browser roles revoked (anon can read nothing, checked). `cases` untouched.
 - Loader `pipeline/load_supabase.py`: reads BigQuery `gold_serving.*`, replaces the tables in one transaction, checks every count, records the load in `data_version`. Tested end to end on a local Postgres 16 with the fixture slice (two runs, identical counts).
 
+### 2026-10-01: gold slice loaded into Supabase (Carlos)
+- `pipeline/load_supabase.py` run from Carlos's laptop, BigQuery → Supabase, one transaction. `data_version` id 1:
+  source `bigquery:project-d49391de-51c4-49bf-aae.gold_serving`, demo_today 2026-06-17.
+- Checked afterwards in Supabase:
+  - Row counts equal BigQuery: customers 2,040 (2 team_synthetic), products 6,110, transactions 23,052
+    (12 team_synthetic), fx_rates 1,095, agent_pools 12. No transaction without its customer.
+  - Statuses: Approved 21,176, Declined 1,174, Pending 465, Reversed 237. Foreign 1,035. Fraud score ≥ 30: 26
+    (25 approved). Local dates 2025-06-18 to 2026-06-17 (12 months up to the demo clock).
+  - Size about 10 MB for the six tables (transactions 7.6 MB), half the 20 MB estimate and 2% of the 500 MB free tier.
+  - Access: RLS on, no policies, and anon/authenticated can't select any table (including `cases`). The advisor lists
+    only "RLS enabled, no policy" (INFO), which is intended until step 8.
+  - `public.cases` untouched: 144 rows, same structure.
+- Loader fix on the way: a `.env.local` saved by Windows editors (BOM / UTF-16) wasn't read; fixed in f2e6ac2.
+
 ## Next (step 7 finish, then 8 and 10)
 1. Run the canonical `dbt build --target bq` once with a Google login (the first build ran through
    `compile_offline.py` + a BigQuery connector; X1).
-2. Run `pipeline/load_supabase.py` once from a laptop with both logins (tables already exist), then verify counts and size.
+2. ~~Load the slice into Supabase~~ done 2026-10-01.
 3. Step 8: per-customer test login + row-level security on the loaded tables.
 4. Step 10: the Supabase `TransactionLookup` (K2) replacing `src/lib/lookup/mock.ts`, filtering dates on
    `transaction_date_local`.
