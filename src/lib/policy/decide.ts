@@ -12,7 +12,7 @@ export const MAX_LOOKUP_RETRIES = 1;
 /** The customer's date is approximate: search this many days either side. */
 export const DATE_WINDOW_DAYS = 3;
 
-export type RuleId = "PL-1" | "PL-2" | "PL-3" | "PL-4" | "PL-5" | "PL-6" | "PL-7" | "PL-8";
+export type RuleId = "PL-1" | "PL-2" | "PL-3" | "PL-4" | "PL-5" | "PL-6" | "PL-7" | "PL-8" | "PL-9";
 
 export type LookupDecision =
   | { kind: "confirm_match"; rule: null; match: TransactionMatch }

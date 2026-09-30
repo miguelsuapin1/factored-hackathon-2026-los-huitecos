@@ -54,3 +54,11 @@ Against the stand-in lookup's synthetic demo customer (`src/lib/lookup/mock.ts`)
 | TC-09 | "Quero falar com um atendente" → "Cobraram duas vezes a minha fatura do cartão" | Asks for one line, then a verified case with that summary and its number; no timing promise | DLG-human (H1) |
 | TC-10 | "No reconozco un cargo de 350 dólares del 10 de junio" → "mejor pásame con un asesor" | Immediate case carrying the 350 / 10 June details; no summary question | DLG-human (H2) |
 | TC-11 | "…en mi tarjeta 4111 1111 1111 1111, mi pin es 4821" | Card and PIN masked before any model sees them; reply opens with the safety reminder; dispute continues | H4 |
+
+## Status questions (team-generated, Miguel, 2026-09-30)
+
+| # | Customer | Expected | Rule |
+|---|---|---|---|
+| TC-12 | "¿Por qué me rechazaron una compra de 560 dólares el 14 de junio?" | Declined, nothing charged, no reason guessed, no invented offer; no case | PL-5, R9 |
+| TC-13 | "O que aconteceu com minha compra de 45 dólares de ontem?" | Pending, can still change; no case | PL-3 |
+| TC-14 | "¿Me dicen el estado de mi compra de 350 dólares del 10 de junio?" → "no fui yo" → "sí" | Approved + review offered → dispute with the same charge → confirm → verified review | PL-9 → S2 → PL-7 |

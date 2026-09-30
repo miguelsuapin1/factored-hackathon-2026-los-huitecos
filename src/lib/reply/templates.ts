@@ -164,21 +164,23 @@ const join = (items: string[], lang: Lang) =>
 export type ReplyPlanInput = {
   move:
     | "ask_clarify" | "ask_details" | "confirm" | "ask_correction" | "confirmed" | "status_update" | "answer" | "handoff"
-    | "no_match" | "ask_narrow" | "explain_status" | "open_review" | "record_failed" | "ask_summary";
+    | "no_match" | "ask_narrow" | "explain_status" | "open_review" | "record_failed" | "ask_summary"
+    | "lookup_status" | "status_answer";
   intent: IntentLabel; // the working intent (or the model's top intent when there is none)
   clarifyOptions: [IntentLabel, IntentLabel] | null;
   clarifyAttempts: number;
   details: DetailsView;
   missing: ("amount" | "date")[];
   match: MatchView | null;
-  explainRule: "PL-3" | "PL-4" | "PL-5" | null;
+  explainRule: "PL-3" | "PL-4" | "PL-5" | "PL-9" | null;
   handoffReason: HandoffReason | null;
   status: "open" | "confirmed" | "review" | "handoff" | "closed";
   caseRef: string | null; // set only when the case was written and read back (step 13, V1)
   warnSensitive: boolean; // H4: the customer typed a PIN, CVV or password (already masked)
 };
 
-export type ReplyPlan = { instruction: string; templates: Record<Lang, string> };
+/** `explainOnly`: the reply only explains; offers of further action are rejected by code (R9). */
+export type ReplyPlan = { instruction: string; templates: Record<Lang, string>; explainOnly?: boolean };
 
 const HANDOFF_EN: Record<HandoffReason, string> = {
   customer_asked: "The customer asked to speak with a person. Confirm an agent will take over with what they've told you, so they don't need to repeat it.",
@@ -222,6 +224,7 @@ export function planReply(p: ReplyPlanInput, lang: Lang): ReplyPlan {
   const plan = planMove(p, lang);
   if (!p.warnSensitive) return plan;
   return {
+    ...plan,
     instruction: WARN_EN + plan.instruction,
     templates: { es: WARN_LOCAL.es + plan.templates.es, pt: WARN_LOCAL.pt + plan.templates.pt },
   };
@@ -243,6 +246,7 @@ function planMove(p: ReplyPlanInput, lang: Lang): ReplyPlan {
         templates: both((l) => templateReply(l, a, "ask", b)),
       };
     }
+    case "lookup_status": // always turned into a status answer by resolve.ts; falls back to asking for details
     case "ask_details":
       return {
         instruction: `The customer is disputing ${OPTION_TEXT[p.intent]}. Already known: ${knownText}. Briefly acknowledge what's known (you may restate those details exactly as written here), then ask ONLY for: ${p.missing.map((m) => MISSING_EN[m]).join(" and ")}. Do not ask again for anything already known. Do not promise a refund.`,
@@ -298,7 +302,7 @@ function planMove(p: ReplyPlanInput, lang: Lang): ReplyPlan {
         ),
       };
     case "explain_status": {
-      const rule = p.explainRule ?? "PL-3";
+      const rule = p.explainRule === "PL-4" || p.explainRule === "PL-5" ? p.explainRule : "PL-3";
       const en = {
         "PL-3": "is still pending: it hasn't been finalized. Explain that a pending charge can still change or be cancelled, so it can't be disputed yet; if it's still there once it's finalized, they can write again. Don't promise it will disappear.",
         "PL-4": "appears as reversed: the amount was returned to their account. Say so, and that no dispute is needed. Do not say when it shows in the balance.",
@@ -311,6 +315,38 @@ function planMove(p: ReplyPlanInput, lang: Lang): ReplyPlan {
           const text = {
             es: { "PL-3": `Encontré ${t}, pero aún está pendiente: no se ha completado y todavía puede cambiar o anularse, así que no se puede reclamar por ahora. Si sigue ahí cuando se complete, escríbenos de nuevo.`, "PL-4": `Encontré ${t}, y aparece como revertido: el monto se devolvió a tu cuenta, así que no hace falta abrir un reclamo.`, "PL-5": `Encontré ${t}, pero fue rechazado, así que no se cobró a tu cuenta. No hace falta abrir un reclamo.` },
             pt: { "PL-3": `Encontrei ${t}, mas ela ainda está pendente: não foi concluída e ainda pode mudar ou ser cancelada, então não dá para contestar por enquanto. Se continuar quando for concluída, fale com a gente de novo.`, "PL-4": `Encontrei ${t}, e ela aparece como estornada: o valor voltou para a sua conta, então não é preciso abrir uma contestação.`, "PL-5": `Encontrei ${t}, mas ela foi recusada, então não foi cobrada na sua conta. Não é preciso abrir uma contestação.` },
+          };
+          return text[l][rule];
+        }),
+      };
+    }
+    case "status_answer": {
+      // S1: the customer asked what happened to a charge; explain its status from the record (docs/policy.md PL-9).
+      const rule = p.explainRule ?? "PL-9";
+      const en = {
+        "PL-3": "is still pending: it hasn't been completed yet and can still change or be cancelled.",
+        "PL-4": "appears as reversed: the amount was returned to their account. Do not say when it shows in the balance.",
+        "PL-5": "was declined, so it wasn't charged. You don't have the reason for the decline: say so if relevant, don't guess one.",
+        "PL-9": "was approved and charged normally. Offer, in one short question, to open a review if they don't recognize it or think the amount is wrong.",
+      }[rule];
+      return {
+        instruction: `The customer asked what happened with a charge. In their account, ${matched} ${en} ${rule === "PL-9" ? "" : "Don't offer anything beyond this explanation. "}${noRefund}`,
+        explainOnly: rule !== "PL-9",
+        templates: both((l) => {
+          const t = matchText(p.match!, l);
+          const text = {
+            es: {
+              "PL-3": `Encontré ${t}: está pendiente, todavía no se completa y aún puede cambiar o anularse.`,
+              "PL-4": `Encontré ${t}: aparece como revertido, el monto se devolvió a tu cuenta.`,
+              "PL-5": `Encontré ${t}: fue rechazado, así que no se cobró. No tengo el detalle del motivo del rechazo.`,
+              "PL-9": `Encontré ${t}: se aprobó y se cobró normalmente. Si no lo reconoces o el monto no es correcto, ¿quieres que abra una revisión?`,
+            },
+            pt: {
+              "PL-3": `Encontrei ${t}: está pendente, ainda não foi concluída e ainda pode mudar ou ser cancelada.`,
+              "PL-4": `Encontrei ${t}: aparece como estornada, o valor voltou para a sua conta.`,
+              "PL-5": `Encontrei ${t}: foi recusada, então não foi cobrada. Não tenho o detalhe do motivo da recusa.`,
+              "PL-9": `Encontrei ${t}: foi aprovada e cobrada normalmente. Se você não a reconhece ou o valor não está certo, quer que eu abra uma contestação?`,
+            },
           };
           return text[l][rule];
         }),

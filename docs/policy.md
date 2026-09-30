@@ -26,9 +26,17 @@ customer says yes → move "confirmed"
 | **PL-5** | The match is **Declined** | Explain nothing was charged; no dispute. No reason given | The response codes can't be trusted to explain a decline ([data issue E7](data-issues.md)) |
 | **PL-6** | Confirmed, approved, **fraud score ≥ 30** | A person takes the case | Data-backed cutoff, below. The customer is never told the score or the reason |
 | **PL-7** | Confirmed, approved, fraud score < 30 | The dispute goes to review | The normal path. Since step 13 a review case is written and read back before the reply gives its reference ([verification.md](verification.md)) |
+| **PL-9** | A **status question** ("¿qué pasó con mi compra?") matches one **approved** charge | Explain it was charged normally and offer a review; if the customer says it isn't theirs or isn't right, the dispute continues with the same charge (S2) | Approved is the one status where a dispute may still make sense; the offer is the only one a status answer may make (R9) |
 | **PL-8** | The record can't be read (lookup failed or timed out, or the record changed) | A person takes the case | A tool failure must never break the turn or leave the customer without an answer |
 
 Wrongful fee and unrecognized charge follow the same rules; the intent only changes the wording.
+
+## Status questions (S1–S2, Miguel, 2026-09-30)
+
+- **S1:** `transaction_status` collects the same details as a dispute (amount and date), then looks the charge up **without asking for confirmation**: reading a record changes nothing, so there's nothing to confirm. PL-1 and PL-2 apply unchanged (ask once, then a person). Pending, reversed and declined are explained by PL-3/4/5 (for a decline, "no tengo el detalle del motivo", data issue E7); approved by PL-9. Nothing is written to `cases`.
+- **S2:** after PL-9's offer, "no lo reconozco", "no fui yo", "está mal", "sí" or "revísenlo" (read by code, like yes/no) continue as a dispute with the same details and matched charge → confirmation → verified review. A "no" closes politely.
+- **Why:** it completes the brief's "normal resolution" without a hand-off: most "what happened?" questions end with a factual answer from the record.
+- **Verified live (local, 2026-09-30):** declined (ES) and pending (PT) explained; "¿Me dicen el estado de mi compra de 350…?" → approved + offer → "no fui yo" (model alone: human_agent 54%) → confirm → review GT-B7RCDNPP; "não, obrigado" → polite close, no case.
 
 ## PL-6: the fraud-score cutoff (Miguel, 2026-09-30)
 

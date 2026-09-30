@@ -177,3 +177,45 @@ describe("hand-off when the customer asks (step 14)", () => {
     assert.equal(store.rows[0].intent, "unrecognized_charge");
   });
 });
+
+describe("status questions answered from the record (S1, S2, PL-9)", () => {
+  const status = (amount: number, date: string) => ({
+    text: `¿Qué pasó con mi cargo de ${amount}?`, intent: intent("transaction_status", 0.9), details: { amount, date },
+  });
+  it("S1: no confirmation needed; pending / reversed / declined are explained and nothing is opened", async () => {
+    const store = memoryStore();
+    const [p] = await run([status(45, "2026-06-16")], mockLookup, store);
+    const [r] = await run([status(230, "2026-06-05")], mockLookup, store);
+    const [d] = await run([status(560, "2026-06-14")], mockLookup, store);
+    assert.deepEqual([p.move, p.rule], ["status_answer", "PL-3"]);
+    assert.deepEqual([r.move, r.rule], ["status_answer", "PL-4"]);
+    assert.deepEqual([d.move, d.rule], ["status_answer", "PL-5"]);
+    assert.equal(store.rows.length, 0);
+  });
+  it("S1: missing details are asked for first, then the answer comes without a yes/no", async () => {
+    const [t1, t2] = await run([
+      { text: "¿Por qué me rechazaron una compra?", intent: intent("transaction_status", 0.92) },
+      { text: "fue de 560 dólares el 14 de junio", intent: intent("out_of_scope", 0.4), details: { amount: 560, date: "2026-06-14" } },
+    ]);
+    assert.equal(t1.move, "ask_details");
+    assert.deepEqual([t2.move, t2.rule, t2.state.match?.status], ["status_answer", "PL-5", "Declined"]);
+  });
+  it("PL-9 + S2: approved → review offered → 'no lo reconozco' → confirm the same charge → verified review", async () => {
+    const store = memoryStore();
+    const [t1, t2, t3] = await run([
+      status(350, "2026-06-10"),
+      { text: "no lo reconozco", intent: intent("unrecognized_charge", 0.6) },
+      yes,
+    ], mockLookup, store);
+    assert.deepEqual([t1.move, t1.rule, t1.state.pending?.kind], ["status_answer", "PL-9", "offer_dispute"]);
+    assert.deepEqual([t2.move, t2.state.workingIntent, t2.state.match?.merchant], ["confirm", "unrecognized_charge", "Super Ahorro"]);
+    assert.equal(t3.move, "open_review");
+    assert.equal(store.rows.length, 1);
+  });
+  it("S2: 'no, gracias' after the offer closes politely, no case", async () => {
+    const store = memoryStore();
+    const [, t2] = await run([status(350, "2026-06-10"), { text: "no, gracias", intent: intent("out_of_scope", 0.7) }], mockLookup, store);
+    assert.equal(t2.move, "status_update");
+    assert.equal(store.rows.length, 0);
+  });
+});

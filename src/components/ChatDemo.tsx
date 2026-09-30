@@ -209,6 +209,8 @@ const MOVE_LABELS: Record<string, string> = {
   ask_narrow: "several matches, asking which one",
   explain_status: "explaining the charge's status",
   open_review: "review registered",
+  lookup_status: "looking up the charge",
+  status_answer: "explaining what happened to the charge",
   record_failed: "couldn't register: nothing claimed",
 };
 
@@ -221,6 +223,7 @@ const RULE_LABELS: Record<string, string> = {
   "PL-6": "high fraud score: a person takes it",
   "PL-7": "low risk: goes to review",
   "PL-8": "record unavailable: a person takes it",
+  "PL-9": "approved and charged: explained, review offered",
 };
 
 const RESOLVED_LABELS: Record<string, string> = {
