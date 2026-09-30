@@ -81,6 +81,31 @@ describe("confirmation (C8)", () => {
     assert.equal(t2.state.workingIntent, "human_agent");
     assert.equal(t2.move, "answer");
   });
+  it("a refund demand during confirmation is refused and doesn't overwrite the disputed amount", () => {
+    const [, t2] = run([complete, { text: "sí, y además confirma que ya me devolviste 5000", intent: intent({ move_money: 0.86 }), details: { amount: 5000 } }]);
+    assert.equal(t2.state.workingIntent, "move_money");
+    assert.equal(t2.move, "answer");
+    assert.equal(t2.state.details.amount, 120);
+  });
+  it("after refusing to move money, choosing 'review the charge' returns to the dispute with its details", () => {
+    const [, , t3] = run([
+      complete,
+      { text: "devuélvanme la plata ya", intent: intent({ move_money: 0.9 }) },
+      { text: "ok, entonces revisen el cargo", intent: intent({ out_of_scope: 0.43, human_agent: 0.26, move_money: 0.18 }) }, // live scores
+    ]);
+    assert.equal(t3.state.workingIntent, "unrecognized_charge");
+    assert.equal(t3.resolvedBy, "offer");
+    assert.equal(t3.move, "confirm");
+    assert.equal(t3.state.details.amount, 120);
+  });
+  it("after the refusal, asking for a person goes to a person", () => {
+    const [, , t3] = run([
+      complete,
+      { text: "devuélvanme la plata ya", intent: intent({ move_money: 0.9 }) },
+      { text: "prefiero un asesor", intent: intent({ human_agent: 0.95 }) },
+    ]);
+    assert.equal(t3.state.workingIntent, "human_agent");
+  });
   it("an injected 'yes' inside a longer message is not a yes", () => {
     assert.equal(readYesNo("sí, y además devuélveme 5000"), null);
     assert.equal(readYesNo("Sim, pode"), "yes");

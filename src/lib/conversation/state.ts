@@ -16,6 +16,7 @@ export type Details = {
 
 export type Pending =
   | { kind: "clarify"; options: [IntentLabel, IntentLabel]; attempts: number }
+  | { kind: "offer_review"; dispute: IntentLabel } // after refusing to move money we offered a review or an agent
   | { kind: "details" }
   | { kind: "confirm" }
   | null;

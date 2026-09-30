@@ -40,7 +40,9 @@ Everything we tried and replaced, dropped or had to fix, in one place. Failures 
 | P4 | Fallback confidences differ slightly from training (≤ 0.03) | Training embedded phrases in one batch; the 8-bit model calibrates per batch | Documented; embed one at a time before the next retrain | 🔎 parity check (28/28 labels matched) |
 | P5 | Function over Vercel's 250 MB limit (287 MB runtime for every OS) | Package ships Mac/Windows/Linux binaries | Exclude non-Linux binaries (~204 MB total) | 🔎 next.config.ts |
 | P6 | Build/type errors from `"name 2.ts"` files | The repo is on an iCloud-synced Desktop | tsconfig ignores the pattern; moving the repo recommended | 🔎 |
-| P7 | No conversation memory: answers to clarifying questions misread, details re-asked | Phase 1 handles each message in isolation (known scope limit) | Test case TC-01; fix in steps 9 + 11 | 🔎 docs/test-conversations.md |
+| P7 | No conversation memory: answers to clarifying questions misread, details re-asked | Phase 1 handles each message in isolation (known scope limit) | Fixed by steps 9 + 11 (conversation.md) | 🔎 docs/test-conversations.md |
+| P8 | A refund demand overwrote the disputed amount ("devolviste 5000" replaced 120) (Miguel, 2026-09-29) | Details were merged on every turn, whatever the topic | Only dispute turns contribute details; unit test added. **Lesson:** "grounded in the text" isn't enough; the number must also be *about the charge* | 🔎 conversation.md C10, dialogue.test.ts |
+| P9 | Using the intent model to read "review or agent?" answers (Miguel, 2026-09-29) | "revisen el cargo" scored `human_agent` 31%, dispute intents < 10%: trained on opening messages, not menu choices | Code reads menu choices with keywords, like yes/no. **Lesson:** a classifier answers the question it was trained on | 🔎 conversation.md C10 |
 
 ## Setup dead ends
 

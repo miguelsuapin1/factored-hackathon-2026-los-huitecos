@@ -22,7 +22,7 @@ export type Move =
   | "answer" // non-dispute intent: the Phase 1 per-intent guidance
   | "handoff"; // offer a human after repeated unresolved clarifications
 
-export type ResolvedBy = "model" | "clarification" | "kept_topic" | "new_topic" | "confirmation";
+export type ResolvedBy = "model" | "clarification" | "offer" | "kept_topic" | "new_topic" | "confirmation";
 
 export type TurnInput = {
   text: string;
@@ -42,6 +42,8 @@ export type TurnOutcome = {
 const YES = new Set(["si", "sim", "claro", "correcto", "correto", "exacto", "exato", "dale", "ok", "okay", "vale", "confirmo", "isso", "afirmativo", "perfecto", "perfeito", "yes", "listo", "certo"]);
 const NO = new Set(["no", "nao", "incorrecto", "incorreto", "errado", "negativo", "nop"]);
 const BUT = /\b(pero|mas|porem|but)\b/;
+/** C10: choosing "the review" from the options offered after a refusal. Read by code, like yes/no. */
+const REVIEW = /\b(revis\w*|reclam\w*|disput\w*|contest\w*|investig\w*)\b/;
 
 function normalize(text: string) {
   return text.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^\p{L}\p{N}\s]/gu, " ").trim();
@@ -105,7 +107,15 @@ export function advance(prev: ConversationState, input: TurnInput): TurnOutcome 
     }
   }
 
-  // 2. Waiting for "A or B?" (C5).
+  // 2a. We offered "a review or an agent" (C10). The intent model, trained on opening messages, can't read a menu
+  // choice ("revisen el cargo" scores as human_agent), so code reads it. Asking for a person is caught by the model.
+  if (prev.pending?.kind === "offer_review" && !confidentSafety && REVIEW.test(normalize(input.text))) {
+    state.workingIntent = prev.pending.dispute;
+    state.pending = null;
+    return disputeMove(state, done, "offer");
+  }
+
+  // 2b. Waiting for "A or B?" (C5).
   if (prev.pending?.kind === "clarify" && !confidentSafety) {
     const [a, b] = prev.pending.options;
     const p = (label: IntentLabel) => intent.scores.find((s) => s.label === label)?.probability ?? 0;
@@ -137,7 +147,17 @@ export function advance(prev: ConversationState, input: TurnInput): TurnOutcome 
     }
     state.workingIntent = intent.intent;
     state.pending = null;
-    return DISPUTES.includes(intent.intent) ? disputeMove(state, done, resolvedBy) : done("answer", resolvedBy);
+    if (!DISPUTES.includes(intent.intent)) {
+      // Numbers in a refund demand or another topic are not details of the disputed charge ("devuélveme 5000").
+      state.details = prev.details;
+      if (intent.intent === "move_money") {
+        // The refusal offers a review of the charge or an agent (GUIDANCE.move_money). Remember the offer (C10).
+        const dispute = prev.workingIntent && DISPUTES.includes(prev.workingIntent) ? prev.workingIntent : "unrecognized_charge";
+        state.pending = { kind: "offer_review", dispute };
+      }
+      return done("answer", resolvedBy);
+    }
+    return disputeMove(state, done, resolvedBy);
   }
 
   // 4. Not confident, but we're already in a dispute: it's probably a detail ("fue el martes"). Keep the topic (C6).

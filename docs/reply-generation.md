@@ -49,6 +49,6 @@ customer message
 ## Limitations
 
 - **No account context yet.** The assistant asks for details (date, amount) instead of looking them up; lookups come with build step 10.
-- **No conversation memory yet.** Each message is handled on its own (build step 11).
+- ~~No conversation memory yet.~~ Done in steps 9 + 11 (reply-v2): replies now follow a code-chosen *move* (ask for missing details, confirm, ...), see [conversation.md](conversation.md). The number check now covers the whole conversation (C9).
 - **Latency:** Haiku adds 1–3 s per turn from Guatemala; likely less from Vercel's US servers. Streaming the reply would improve perceived speed.
 - **Language coverage:** only Spanish and Portuguese are handled; other languages get a Spanish reply.

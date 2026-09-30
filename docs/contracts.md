@@ -4,7 +4,7 @@ The interfaces where one person's work plugs into another's. Agree here first, t
 
 | # | Contract | Producer → consumer | Status |
 |---|---|---|---|
-| K1 | `POST /api/chat` v2 (multi-turn) | Miguel → Person 3 (eval harness, steps 17–18) | draft (Miguel, 2026-09-29) |
+| K1 | `POST /api/chat` v2 (multi-turn) | Miguel → Person 3 (eval harness, steps 17–18) | implemented on `miguel/step-9-11-memory` (Miguel, 2026-09-29) |
 | K2 | Transaction lookup | Person 2 (step 10) → Miguel (steps 12–13) | draft, Person 2 to confirm |
 | K3 | Handoff case file | Miguel (step 14) → Person 2 (agent console, step 20) | draft |
 | K4 | Trace line | everyone → Person 3 (eval report) | Phase 1 shape + conversation fields |
@@ -26,11 +26,14 @@ Backward compatible: a request without `state` starts a new conversation, exactl
     "conversationId": "uuid",
     "turn": 2,
     "workingIntent": "wrongful_fee",            // what the conversation is about now (may differ from intent.intent)
-    "resolvedBy": "clarification",              // model | clarification | kept_topic | confirmation | new_topic
-    "move": "ask_details",                      // ask_clarify | ask_details | confirm | confirmed | answer | handoff
-    "details": { "amount": 250, "currency": null, "date": null, "merchant": null },
+    "resolvedBy": "clarification",              // model | clarification | offer | kept_topic | confirmation | new_topic
+    "move": "ask_details",                      // ask_clarify | ask_details | confirm | ask_correction | confirmed | answer | handoff
+    "details": { "amount": 350, "expectedAmount": 250, "currency": null, "date": null, "merchant": null },
     "missing": ["date"],
-    "pending": { "kind": "details" }            // or { kind: "clarify", options: [a, b] } | { kind: "confirm" } | null
+    "pending": { "kind": "details" },           // or { kind: "clarify", options: [a, b], attempts } | { kind: "offer_review", dispute } | { kind: "confirm" } | null
+    "status": "open",                           // open | confirmed | handoff
+    "restartReason": null,                      // set when a sent state was rejected (invalid signature, expired, other user)
+    "extraction": { "source": "haiku", "dropped": [], "error": null, "ms": 950, "promptVersion": "extract-v2", "costUsd": 0.0005 }
   }
 }
 ```
