@@ -45,10 +45,19 @@ def env_value(name: str) -> str | None:
     if os.environ.get(name):
         return os.environ[name]
     for f in (ROOT / ".env.local", ROOT / ".env"):
-        if f.exists():
-            for line in f.read_text().splitlines():
-                if line.strip().startswith(f"{name}="):
-                    return line.split("=", 1)[1].strip().strip('"').strip("'")
+        if not f.exists():
+            continue
+        raw = f.read_bytes()
+        # Windows editors may save UTF-8 with a BOM or UTF-16 (e.g. PowerShell `echo ... > .env.local`).
+        text = raw.decode("utf-16") if raw[:2] in (b"\xff\xfe", b"\xfe\xff") else raw.decode("utf-8-sig")
+        for line in text.splitlines():
+            line = line.strip().lstrip("\ufeff")
+            if line.startswith("export "):
+                line = line[7:].strip()
+            if line.replace(" ", "").startswith(f"{name}="):
+                return line.split("=", 1)[1].strip().strip('"').strip("'")
+    near = sorted(p.name for p in ROOT.glob(".env*"))
+    print(f"{name} not found. .env files in {ROOT}: {near or 'none'}")
     return None
 
 
