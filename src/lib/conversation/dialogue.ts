@@ -26,7 +26,8 @@ export type Move =
   | "no_match" // PL-1: nothing matches, ask to check the details
   | "ask_narrow" // PL-2: several match, ask for the merchant or exact date
   | "explain_status" // PL-3/4/5: pending, reversed or declined: explain, no dispute
-  | "open_review"; // PL-7: the dispute goes to review
+  | "open_review" // PL-7: the dispute goes to review (a verified case, step 13)
+  | "record_failed"; // V2: the case couldn't be written and verified: say so, nothing is claimed
 
 export type ResolvedBy = "model" | "clarification" | "offer" | "kept_topic" | "new_topic" | "confirmation";
 
@@ -154,6 +155,9 @@ export function advance(prev: ConversationState, input: TurnInput): TurnOutcome 
       state.match = null;
       state.lookupRetries = 0;
       state.handoffReason = null;
+      state.caseRef = null;
+      state.caseId = null;
+      state.checks = [];
     }
     state.workingIntent = intent.intent;
     state.pending = null;

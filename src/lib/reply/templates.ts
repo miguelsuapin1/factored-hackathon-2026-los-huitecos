@@ -164,7 +164,7 @@ const join = (items: string[], lang: Lang) =>
 export type ReplyPlanInput = {
   move:
     | "ask_clarify" | "ask_details" | "confirm" | "ask_correction" | "confirmed" | "status_update" | "answer" | "handoff"
-    | "no_match" | "ask_narrow" | "explain_status" | "open_review";
+    | "no_match" | "ask_narrow" | "explain_status" | "open_review" | "record_failed";
   intent: IntentLabel; // the working intent (or the model's top intent when there is none)
   clarifyOptions: [IntentLabel, IntentLabel] | null;
   clarifyAttempts: number;
@@ -174,6 +174,7 @@ export type ReplyPlanInput = {
   explainRule: "PL-3" | "PL-4" | "PL-5" | null;
   handoffReason: HandoffReason | null;
   status: "open" | "confirmed" | "review" | "handoff" | "closed";
+  caseRef: string | null; // set only when the case was written and read back (step 13, V1)
 };
 
 export type ReplyPlan = { instruction: string; templates: Record<Lang, string> };
@@ -297,11 +298,20 @@ export function planReply(p: ReplyPlanInput, lang: Lang): ReplyPlan {
       };
     }
     case "open_review":
+      // Only reached with a verified case (V1): now it IS registered, and the reference is real.
       return {
-        instruction: `Tell the customer that their dispute of ${matched} will go to the disputes team for review, and that they'll be told the result. Use the future tense: do not say it has been sent, registered or opened. ${noRefund}`,
+        instruction: `Tell the customer their dispute of ${matched} has been registered with case number ${p.caseRef}, which they should keep; the disputes team will review it and tell them the result. Give the case number exactly as written. ${noRefund}`,
         templates: both((l) =>
-          l === "es" ? `Gracias. Tu reclamo por ${matchText(p.match!, l)} pasará ahora a revisión del equipo de reclamos, y te informaremos el resultado.`
-            : `Obrigado. Sua contestação de ${matchText(p.match!, l)} vai agora para análise da equipe de contestações, e você será informado do resultado.`,
+          l === "es" ? `Listo: registramos tu reclamo por ${matchText(p.match!, l)}. Tu número de caso es ${p.caseRef}. El equipo de reclamos lo revisará y te informaremos el resultado.`
+            : `Pronto: registramos sua contestação de ${matchText(p.match!, l)}. O número do seu caso é ${p.caseRef}. A equipe de contestações vai analisá-la e você será informado do resultado.`,
+        ),
+      };
+    case "record_failed":
+      return {
+        instruction: `The case could not be registered right now because of a technical problem. Say so plainly: nothing has been registered yet. ${p.match ? "Ask them to reply \"sí\" (or \"sim\") in a few minutes to try again; the details are kept." : "Ask them to write again in a few minutes."} Do not say anything was sent, opened or passed to an agent. ${noRefund}`,
+        templates: both((l) =>
+          l === "es" ? `No pude registrar tu caso por un problema técnico; todavía no quedó registrado. ${p.match ? "Guardé los datos: responde \"sí\" en unos minutos para intentarlo de nuevo." : "Por favor escríbenos de nuevo en unos minutos."}`
+            : `Não consegui registrar o seu caso por um problema técnico; ainda não ficou registrado. ${p.match ? "Guardei os dados: responda \"sim\" em alguns minutos para tentar de novo." : "Por favor, escreva de novo em alguns minutos."}`,
         ),
       };
     case "confirmed":
@@ -324,9 +334,10 @@ export function planReply(p: ReplyPlanInput, lang: Lang): ReplyPlan {
     }
     case "handoff": {
       const reason = p.handoffReason ?? "repeated_clarification";
+      const ref = p.caseRef ? ` Give them their case number, exactly as written: ${p.caseRef}.` : "";
       return {
-        instruction: `${HANDOFF_EN[reason]} Do not promise any outcome or say how soon the agent will reply ("right away", "shortly", "in minutes").`,
-        templates: both((l) => HANDOFF_LOCAL[l][reason]),
+        instruction: `${HANDOFF_EN[reason]}${ref} Do not promise any outcome or say how soon the agent will reply ("right away", "shortly", "in minutes").`,
+        templates: both((l) => HANDOFF_LOCAL[l][reason] + (p.caseRef ? (l === "es" ? ` Tu número de caso es ${p.caseRef}.` : ` O número do seu caso é ${p.caseRef}.`) : "")),
       };
     }
     case "answer":

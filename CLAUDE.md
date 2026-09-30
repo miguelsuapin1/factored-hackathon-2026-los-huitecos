@@ -3,7 +3,7 @@
 # Project context
 Factored AI & Data Hackathon 2026 (10-day sprint from 2026-09-25, deadline ~2026-10-05, to confirm). Team: Miguel (miguelsuapin1), lpcuellar, Carloscuellark.
 We build **transaction-dispute intake** (unrecognized charges + wrongful fees) for a **fictional bank, "GT Bank"**, in Spanish and Portuguese.
-Read first: [docs/phase-1-walkthrough.md](docs/phase-1-walkthrough.md) (what exists and why). Brief: docs/challenge.md. Decisions: docs/decisions.md, docs/intent-model.md (D1–D16), docs/reply-generation.md (R1–R7), docs/conversation.md (C1–, steps 9 + 11), docs/policy.md (PL-1–PL-8, step 12). Team interfaces: docs/contracts.md. Data findings: docs/contact-reason-analysis.md, docs/data-issues.md. What failed and was replaced: docs/lessons-learned.md (add new entries as they happen).
+Read first: [docs/phase-1-walkthrough.md](docs/phase-1-walkthrough.md) (what exists and why). Brief: docs/challenge.md. Decisions: docs/decisions.md, docs/intent-model.md (D1–D16), docs/reply-generation.md (R1–R7), docs/conversation.md (C1–, steps 9 + 11), docs/policy.md (PL-1–PL-8, step 12), docs/verification.md (V1–V5, step 13). Team interfaces: docs/contracts.md. Data findings: docs/contact-reason-analysis.md, docs/data-issues.md. What failed and was replaced: docs/lessons-learned.md (add new entries as they happen).
 
 ## Current state (end of Phase 1, 2026-09-29)
 - Live: https://latam-bank-service-sigma.vercel.app — `/` sign-in, `/app` chat. Every push to `main` deploys.
@@ -14,7 +14,8 @@ Read first: [docs/phase-1-walkthrough.md](docs/phase-1-walkthrough.md) (what exi
 - Tracing: one JSON log line per turn (`event: "turn"`) in Vercel runtime logs. Not persisted yet.
 - **Steps 9 + 11 (branch `miguel/step-9-11-memory`, 2026-09-29):** conversation memory, extraction and confirmation in `src/lib/conversation/` (docs/conversation.md C1–C10). The state is a signed token the client sends back; dialogue rules are pure code with unit tests (`npm test`). TC-01 fixed.
 - **Step 12 (branch `miguel/step-12-policy`, 2026-09-30):** policy rules PL-1..PL-8 in `src/lib/policy/` (docs/policy.md); fraud-score cutoff 30 from `pipeline/fraud_threshold.py` (held-out 2026 check). Lookup is a stand-in (`src/lib/lookup/mock.ts`, synthetic) until Person 2's step 10; swap point `src/lib/lookup/index.ts`.
-- Not built yet: data cleaning layer (silver/gold), Supabase schema/load, real lookup tool, verification, handoff case file, eval harness, agent console.
+- **Step 13 (branch `miguel/step-13-verification`, 2026-09-30):** every review/hand-off is a row in Supabase `public.cases` (server-only, RLS on, no policies; env `SUPABASE_SECRET_KEY`), written then read back before the reply quotes its reference (docs/verification.md V1–V5).
+- Not built yet: data cleaning layer (silver/gold), Supabase load of the gold slice, real lookup tool, case for direct "talk to a person" (step 14), eval harness, agent console.
 
 ## Phase 2 plan (build steps 7–21, see the published build plan)
 Data & access: 7 pipeline + Supabase load + labeled fixtures · 8 test login + row-level security · 9 extract amount/date/merchant · 10 transaction lookup tool.

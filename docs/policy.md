@@ -25,7 +25,7 @@ customer says yes → move "confirmed"
 | **PL-4** | The match is **Reversed** | Explain the amount was returned; no dispute | Nothing left to dispute |
 | **PL-5** | The match is **Declined** | Explain nothing was charged; no dispute. No reason given | The response codes can't be trusted to explain a decline ([data issue E7](data-issues.md)) |
 | **PL-6** | Confirmed, approved, **fraud score ≥ 30** | A person takes the case | Data-backed cutoff, below. The customer is never told the score or the reason |
-| **PL-7** | Confirmed, approved, fraud score < 30 | The dispute goes to review | The normal path. Step 13 will create the review record and verify it; until then the reply says it *will* go to review |
+| **PL-7** | Confirmed, approved, fraud score < 30 | The dispute goes to review | The normal path. Since step 13 a review case is written and read back before the reply gives its reference ([verification.md](verification.md)) |
 | **PL-8** | The record can't be read (lookup failed or timed out, or the record changed) | A person takes the case | A tool failure must never break the turn or leave the customer without an answer |
 
 Wrongful fee and unrecognized charge follow the same rules; the intent only changes the wording.
@@ -58,6 +58,6 @@ Wrongful fee and unrecognized charge follow the same rules; the intent only chan
 ## Known limits and next steps
 
 - **The lookup is a stand-in** (one synthetic demo customer, labelled in `src/lib/lookup/mock.ts`). Person 2 swaps in the Supabase version in `src/lib/lookup/index.ts`.
-- **"Review" isn't a record yet:** step 13 creates it and verifies it before saying so. Step 14 turns a hand-off into the K3 case file.
+- ~~"Review" isn't a record yet.~~ Step 13: reviews and hand-offs are verified cases ([verification.md](verification.md)).
 - **Wording can still overstate.** Haiku once wrote "has been sent" for a review that didn't exist yet, and once promised an agent "right away". The instructions now forbid both (reply-v3), but code can't check tense the way it checks numbers. The trace has the reply source and prompt version for review.
 - **Proposal (not built):** when the intent model hesitates between the two dispute intents, the clarifying question changes nothing: both lead to the same lookup and rules. Skipping it would save a turn. Needs Person 3's conversations to confirm it doesn't hurt.

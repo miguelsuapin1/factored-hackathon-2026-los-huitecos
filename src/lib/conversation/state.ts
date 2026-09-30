@@ -38,7 +38,7 @@ export const FINISHED: Status[] = ["confirmed", "review", "handoff", "closed"];
 export type HandoffReason = "repeated_clarification" | "no_match" | "ambiguous" | "high_risk" | "record_unavailable" | "tool_failure";
 
 export type ConversationState = {
-  v: 2; // bumped when the shape changes: older tokens restart the conversation
+  v: 3; // bumped when the shape changes: older tokens restart the conversation
   id: string;
   user: string; // the signed-in user the token belongs to
   exp: number; // unix seconds; the session's expiry
@@ -51,17 +51,21 @@ export type ConversationState = {
   match: MatchView | null; // the transaction the customer is being asked to confirm (step 12)
   lookupRetries: number; // no-match / ambiguous turns so far (PL-1, PL-2)
   handoffReason: HandoffReason | null;
+  caseRef: string | null; // reference of the verified case (step 13), shown to the customer
+  caseId: string | null;
+  checks: string[]; // what was checked across turns, for the case file (last MAX_CHECKS)
   customerTexts: string[]; // the last MAX_TEXTS customer messages (for the reply number check, C9)
 };
 
 export const MAX_TEXTS = 6;
+export const MAX_CHECKS = 12;
 
 export const EMPTY_DETAILS: Details = { amount: null, expectedAmount: null, currency: null, date: null, merchant: null };
 
 export function newState(id: string, user: string, exp: number): ConversationState {
   return {
-    v: 2, id, user, exp, turn: 0, lang: null, workingIntent: null,
+    v: 3, id, user, exp, turn: 0, lang: null, workingIntent: null,
     details: { ...EMPTY_DETAILS }, pending: null, status: "open", customerTexts: [],
-    match: null, lookupRetries: 0, handoffReason: null,
+    match: null, lookupRetries: 0, handoffReason: null, caseRef: null, caseId: null, checks: [],
   };
 }

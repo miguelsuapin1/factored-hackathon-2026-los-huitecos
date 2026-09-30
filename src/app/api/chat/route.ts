@@ -8,10 +8,12 @@ import { advance, readYesNo } from "@/lib/conversation/dialogue";
 import { extractDetails } from "@/lib/conversation/extract";
 import { numbersIn } from "@/lib/conversation/numbers";
 import { resolveTurn } from "@/lib/conversation/resolve";
+import { supabaseStore } from "@/lib/cases/supabase-store";
+import { EXTRACT_PROMPT_VERSION } from "@/lib/conversation/extract";
 import { customerFor, lookup } from "@/lib/lookup";
 import { restoreState, sealState } from "@/lib/conversation/token";
 import { classifyMessage, IntentUnavailableError } from "@/lib/intent/classify";
-import { composeReply } from "@/lib/reply/compose";
+import { composeReply, PROMPT_VERSION } from "@/lib/reply/compose";
 import { guessLanguage, planReply } from "@/lib/reply/templates";
 
 export const maxDuration = 30;
@@ -50,7 +52,17 @@ export async function POST(request: Request) {
     ]);
 
     const outcome = advance(prev, { text, intent, details: extraction.details });
-    const { move, trace: policy } = await resolveTurn(outcome, customerFor(session.u), lookup);
+    const language = prev.lang ?? guessLanguage(text);
+    const { move, trace: policy } = await resolveTurn(outcome, {
+      session: customerFor(session.u),
+      lookup,
+      store: supabaseStore,
+      language,
+      promptVersions: {
+        intent: `${intent.model}@${intent.modelVersion}`, extract: EXTRACT_PROMPT_VERSION, reply: PROMPT_VERSION,
+        environment: process.env.VERCEL_ENV ?? "local", // local/preview/production share one table: filter test rows
+      },
+    });
     const { state } = outcome;
     const d = state.details;
     const m = state.match;
@@ -66,8 +78,9 @@ export async function POST(request: Request) {
         explainRule: policy.rule === "PL-3" || policy.rule === "PL-4" || policy.rule === "PL-5" ? policy.rule : null,
         handoffReason: state.handoffReason,
         status: state.status,
+        caseRef: state.caseRef,
       },
-      prev.lang ?? guessLanguage(text),
+      language,
     );
     // Numbers the reply may contain: what the customer wrote, grounded details, and the matched record (C9, PL rules).
     const dateParts = [d.date, m?.date].flatMap((iso) => (iso ? iso.split("-").map(Number) : []));
@@ -77,6 +90,7 @@ export async function POST(request: Request) {
       allowedNumbers: [
         ...state.customerTexts.flatMap(numbersIn),
         ...[d.amount, d.expectedAmount, m?.amount ?? null].filter((v): v is number => v !== null),
+        ...(state.caseRef ? numbersIn(state.caseRef) : []),
         ...dateParts,
       ],
       languageHint: prev.lang,
@@ -95,6 +109,7 @@ export async function POST(request: Request) {
       match: m, // the matched charge as the customer may see it (no fraud score)
       policy: { rule: policy.rule, decision: policy.decision, lookup: policy.lookup && { source: policy.lookup.source, count: policy.lookup.count } },
       handoffReason: state.handoffReason,
+      case: policy.case && { reference: policy.case.reference, verified: policy.case.verified, kind: policy.case.kind },
       missing: outcome.missing,
       pending: state.pending,
       status: state.status,
@@ -118,6 +133,8 @@ export async function POST(request: Request) {
           costUsd: extraction.costUsd } },
       policy: { rule: policy.rule, decision: policy.decision, lookup: policy.lookup, handoffReason: state.handoffReason,
         matchStatus: m?.status ?? null },
+      case: policy.case && { source: policy.case.source, kind: policy.case.kind, verified: policy.case.verified,
+        ms: policy.case.ms, error: policy.case.error },
       reply: { source: reply.source, language: reply.language, fallbackReason: reply.fallbackReason,
         promptVersion: reply.promptVersion, ms: Math.round(reply.ms), inputTokens: reply.inputTokens,
         outputTokens: reply.outputTokens, costUsd: reply.costUsd },
