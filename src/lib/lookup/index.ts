@@ -1,9 +1,13 @@
-// The one place that picks the lookup implementation. Person 2: when the Supabase lookup (step 10) is ready,
-// export it here instead of the mock; nothing else changes. Step 8 (D-006): the customer comes from the signed session.
+// The one place that picks the lookup implementation (docs/contracts.md K2).
+// Step 10 (Carlos, 2026-10-01): the Supabase lookup whenever SUPABASE_LOOKUP_DB_URL is set (Vercel production and
+// preview); otherwise the synthetic stand-in, so a laptop without database credentials still runs the demo customer.
+// The trace records which one answered (`policy.lookup.source`). Step 8 (D-006): the customer comes from the session.
+import { lookupConfigured } from "@/lib/db/scoped";
 import { mockLookup } from "./mock";
+import { supabaseLookup } from "./supabase";
 import type { CustomerSession, TransactionLookup } from "./types";
 
-export const lookup: TransactionLookup = mockLookup;
+export const lookup: TransactionLookup = lookupConfigured() ? supabaseLookup : mockLookup;
 
 /** The signed-in customer, from the signed session cookie (src/lib/auth/session.ts) and nowhere else. */
 export function customerFor(session: { c: string }): CustomerSession {
