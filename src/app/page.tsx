@@ -24,7 +24,7 @@ export default async function SignInPage() {
             <p className="sub">Dispute assistant · fictional bank, synthetic data</p>
           </div>
         </div>
-        <p className="signin-lede">Sign in with the demo credentials to try the assistant in Spanish or Portuguese.</p>
+        <p className="signin-lede">Sign in with a test customer login to try the assistant in Spanish or Portuguese. You only see that customer’s data.</p>
         <Suspense>
           <SignInForm />
         </Suspense>

@@ -87,9 +87,23 @@ Failures and fixes: [lessons-learned.md](lessons-learned.md) X1–X5.
   transactions and products (MD5 of the sorted IDs is identical in BigQuery and Supabase). The fixed seed keeps the
   slice reproducible.
 
+### 2026-10-01: step 8, per-customer login + row-level security (D-006)
+- Migration `20261001010000_step8_login_rls.sql` applied: `public.app_users` (server-only), role `lookup_reader`
+  (read `customers`/`products`/`transactions` only), policies "own rows via `app.customer_id`". Browser roles still get
+  nothing; `cases` untouched.
+- `supabase/tests/step8_rls_check.sql` passed on Supabase: no customer → 0 rows; demo customer with no `WHERE` → only
+  own rows; another customer's id or transaction id → 0; empty or injection-shaped ids → 0; no access to `cases` or
+  `app_users`; no writes. Run without the role it fails (23,052 rows visible), so the check has teeth.
+- App: login checks `app_users` (PBKDF2) or the shared demo account; the session carries the customer id; customer
+  data goes through `src/lib/db/scoped.ts` as `lookup_reader`. 13 new unit tests; full suite 111/111.
+- 12 test logins chosen from the slice: Miguel's 2 synthetic customers, one per scenario (pending, reversed, declined
+  with/without code, fraud ≥ 30, foreign, MX in USD, ambiguous), a suspended customer and one with no recent charges.
+  Created by `pipeline/seed_test_users.py` (tested end to end on a local Postgres 16, including the role login with
+  a SCRAM verifier and the Python↔TypeScript hash check). Loader now refuses a reload that drops a test customer.
+
 ## Next (step 7 finish, then 8 and 10)
 1. ~~Official `dbt build --target bq`~~ done 2026-10-01, 179/179.
 2. ~~Load the slice into Supabase~~ done 2026-10-01.
-3. Step 8: per-customer test login + row-level security on the loaded tables.
+3. ~~Step 8~~ built 2026-10-01; Carlos runs `pipeline/seed_test_users.py` and adds `SUPABASE_LOOKUP_DB_URL` to Vercel.
 4. Step 10: the Supabase `TransactionLookup` (K2) replacing `src/lib/lookup/mock.ts`, filtering dates on
    `transaction_date_local`.

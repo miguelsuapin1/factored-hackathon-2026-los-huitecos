@@ -111,6 +111,15 @@ def load(url: str, data: dict[str, list[tuple]], source: str) -> None:
                 got = cur.fetchone()[0]
                 if got != n:
                     raise RuntimeError(f"{target}: loaded {got} rows, source has {n}; rolled back")
+            # Step 8: test logins point at customers by id (no foreign key, so this truncate is allowed). A slice that
+            # drops one of them would leave a login with no data: refuse it instead.
+            cur.execute("select to_regclass('public.app_users') is not null")
+            if cur.fetchone()[0]:
+                cur.execute("select array_agg(username order by username) from public.app_users a where not exists "
+                            "(select 1 from public.customers c where c.customer_id = a.customer_id)")
+                lost = cur.fetchone()[0]
+                if lost:
+                    raise RuntimeError(f"test logins would lose their customer: {lost}; rolled back")
             cur.execute("insert into public.data_version (source, git_commit, row_counts, demo_today) "
                         "values (%s, %s, %s, %s)", (source, git_commit(), json.dumps(counts), DEMO_TODAY))
             cur.execute("select pg_size_pretty(sum(pg_total_relation_size(c.oid))) from pg_class c "

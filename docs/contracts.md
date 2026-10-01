@@ -48,6 +48,8 @@ Backward compatible: a request without `state` starts a new conversation, exactl
 
 Server-only, always scoped to the signed-in customer (row-level security enforces it in the database, step 8). The caller never passes someone else's id: the customer id comes from the session, not from the conversation.
 
+**Step 8 (Carlos, 2026-10-01, D-006):** `customerFor(session)` returns the customer id from the signed session cookie (`c`). The Supabase implementation must read through `asCustomer(session, tx => ...)` in `src/lib/db/scoped.ts` (role `lookup_reader`, env `SUPABASE_LOOKUP_DB_URL`), never with `SUPABASE_SECRET_KEY`: the policies then hide every other customer's rows even if a query has no `WHERE customer_id`.
+
 ```ts
 type LookupQuery = {
   amount?: number;          // matched with tolerance (e.g. ±1%), in the transaction's own currency

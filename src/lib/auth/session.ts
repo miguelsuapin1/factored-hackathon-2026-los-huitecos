@@ -1,11 +1,12 @@
-// Demo access gate: a signed, expiring session cookie (HMAC-SHA256 with SESSION_SECRET).
-// This protects the demo and the Bedrock quota; it is NOT customer authentication (that's build step 8).
+// Session cookie: signed (HMAC-SHA256 with SESSION_SECRET), expiring, and since step 8 (D-006) bound to ONE customer.
+// `c` is the customer id the login resolved; the lookup scopes every query to it (row-level security in Supabase).
+// The customer id never comes from the conversation or the request body, only from this signed cookie.
 // Uses Web Crypto only, so it runs in the proxy and in route handlers alike.
 
 export const SESSION_COOKIE = "gt_session";
 export const SESSION_TTL_SECONDS = 8 * 60 * 60;
 
-export type Payload = { u: string; exp: number };
+export type Payload = { u: string; c: string; exp: number };
 
 const encoder = new TextEncoder();
 
@@ -47,18 +48,22 @@ export async function verifyJson<T>(token: string | undefined): Promise<T | null
   }
 }
 
-export async function createSession(username: string) {
-  const payload: Payload = { u: username, exp: Math.floor(Date.now() / 1000) + SESSION_TTL_SECONDS };
+export async function createSession(username: string, customerId: string) {
+  if (!customerId) throw new Error("a session needs a customer id");
+  const payload: Payload = { u: username, c: customerId, exp: Math.floor(Date.now() / 1000) + SESSION_TTL_SECONDS };
   return signJson(payload);
 }
 
-/** Returns the session if the signature is valid and it hasn't expired; otherwise null. */
+/** Returns the session if the signature is valid, it hasn't expired and it names a customer; otherwise null.
+ *  Cookies from before step 8 have no customer, so those users sign in again once. */
 export async function verifySession(token: string | undefined): Promise<Payload | null> {
   const payload = await verifyJson<Payload>(token);
-  return payload && payload.exp > Date.now() / 1000 ? payload : null;
+  if (!payload || typeof payload.c !== "string" || !payload.c || typeof payload.u !== "string") return null;
+  return payload.exp > Date.now() / 1000 ? payload : null;
 }
 
-/** Constant-time check of the demo credentials (DEMO_USERNAME / DEMO_PASSWORD env vars). */
+/** Constant-time check of the shared demo account (DEMO_USERNAME / DEMO_PASSWORD env vars). Since step 8 it signs in
+ *  as the synthetic demo customer; per-customer test logins live in public.app_users (src/lib/auth/login.ts). */
 export async function checkCredentials(username: string, password: string) {
   const expectedUser = process.env.DEMO_USERNAME;
   const expectedPass = process.env.DEMO_PASSWORD;

@@ -74,3 +74,20 @@ GCP project `project-d49391de-51c4-49bf-aae`, location `us-east1` (dataset and b
 
 **Rules of the layers:** silver never drops a row silently (bronze = silver + quarantine, tested); every change carries a rule id in `_rule_flags`; reports are generated from `ops.ops_silver_quality`. Serving gold is a sample (~2,000 stratified customers + demo scenarios) sized for Supabase, with representativeness measured.
 
+
+## D-006: Per-customer test login + row-level security through a restricted database role (2026-10-01)
+**Status:** built and checked; Miguel to review in the PR (Carlos, 2026-10-01).
+
+**Problem:** the brief asks for a trusted test session ("a national ID or customer number alone is not proof of identity") and per-customer access enforced outside model prose. Until now every sign-in was one shared demo account, and the server read Supabase with the secret key, which skips row-level security (RLS), so RLS could not protect anything.
+
+**Options considered:** (A) Supabase Auth users + `authenticated` policies, the server keeping each user's token; (B) our own test logins + a restricted Postgres role the lookup connects as. **Chose B** (Carlos, 2026-10-01): it extends Miguel's existing signed-cookie session instead of replacing it, needs no token refresh, and keeps Miguel's rule exactly: the browser keys (`anon`, `authenticated`) still get no policy and no privilege on any table.
+
+**How it works** (migration `supabase/migrations/20261001010000_step8_login_rls.sql`):
+- `public.app_users`: username → `customer_id`, password as PBKDF2-SHA256 (600k iterations, salted), server-only like `cases`. Test logins are team-generated (`pipeline/seed_test_users.py`); plaintext only in the git-ignored `test-users.local.md`.
+- Login (`src/lib/auth/login.ts`) checks a password on every path; the session cookie now carries the customer id (`c`) and is refused without one. The shared demo account (env `DEMO_*`) still works and signs in as the synthetic demo customer only.
+- Customer data is read only through `src/lib/db/scoped.ts`: it connects as `lookup_reader` (`SUPABASE_LOOKUP_DB_URL`, transaction pooler) and starts every transaction with `set_config('app.customer_id', <session customer>, true)`. Policies on `customers`, `products`, `transactions` show only that customer's rows; no setting → no rows. A query that forgets its `WHERE` still can't leak.
+- `lookup_reader` can read those three tables and nothing else (no `cases`, no `app_users`, no writes).
+
+**Evidence:** `supabase/tests/step8_rls_check.sql` (passed on Supabase 2026-10-01; checked to fail when run without the role), `src/lib/auth/auth.test.ts` (hashing, Python↔TS hash compatibility, wrong/unknown/disabled user, id-only login, forged and pre-step-8 cookies), and the seed script re-checks isolation through the pooler as `lookup_reader` after every run.
+
+**Trade-offs:** one more secret (`SUPABASE_LOOKUP_DB_URL`) and a direct Postgres connection from Vercel; password hashing is ours, not a managed identity service. `app_users.customer_id` has no foreign key (the step-7 loader truncates `customers`); the loader refuses a reload that would orphan a login instead.
