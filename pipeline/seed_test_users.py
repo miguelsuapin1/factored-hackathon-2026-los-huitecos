@@ -107,7 +107,7 @@ def main() -> None:
     admin = env_value("SUPABASE_DB_URL")
     if not admin:
         raise SystemExit("SUPABASE_DB_URL is not set (put it in .env.local; see pipeline/load_supabase.py)")
-    existing_lookup = env_value("SUPABASE_LOOKUP_DB_URL")
+    existing_lookup = env_value("SUPABASE_LOOKUP_DB_URL", required=False)
     set_role_password = a.rotate_role_password or not existing_lookup
 
     passwords = {u: new_password() for u in TEST_USERS}

@@ -41,7 +41,7 @@ TABLES = {
 }
 
 
-def env_value(name: str) -> str | None:
+def env_value(name: str, required: bool = True) -> str | None:
     if os.environ.get(name):
         return os.environ[name]
     for f in (ROOT / ".env.local", ROOT / ".env"):
@@ -56,8 +56,9 @@ def env_value(name: str) -> str | None:
                 line = line[7:].strip()
             if line.replace(" ", "").startswith(f"{name}="):
                 return line.split("=", 1)[1].strip().strip('"').strip("'")
-    near = sorted(p.name for p in ROOT.glob(".env*"))
-    print(f"{name} not found. .env files in {ROOT}: {near or 'none'}")
+    if required:  # optional values (e.g. one a script is about to create) stay quiet
+        near = sorted(p.name for p in ROOT.glob(".env*"))
+        print(f"{name} not found. .env files in {ROOT}: {near or 'none'}")
     return None
 
 
