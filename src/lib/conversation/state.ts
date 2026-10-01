@@ -52,7 +52,7 @@ export const FINISHED: Status[] = ["confirmed", "review", "handoff", "closed"];
 export type HandoffReason = "customer_asked" | "repeated_clarification" | "no_match" | "ambiguous" | "high_risk" | "record_unavailable" | "tool_failure";
 
 export type ConversationState = {
-  v: 5; // bumped when the shape changes: older tokens restart the conversation
+  v: 6; // bumped when the shape changes: older tokens restart the conversation
   id: string;
   user: string; // the signed-in user the token belongs to
   exp: number; // unix seconds; the session's expiry
@@ -69,6 +69,7 @@ export type ConversationState = {
   caseId: string | null;
   when: When; // C13: what the customer said about the date when they didn't give an exact one
   merchantAsked: boolean; // C13: we already asked for the merchant once (PL-2)
+  intentGuessed: boolean; // C15: the dispute kind was guessed (neither the words nor a confident model said it)
   summary: string | null; // the customer's own one-line summary when they asked for a person (masked, ≤ 300 chars)
   checks: string[]; // what was checked across turns, for the case file (last MAX_CHECKS)
   customerTexts: string[]; // the last MAX_TEXTS customer messages (for the reply number check, C9)
@@ -81,8 +82,8 @@ export const EMPTY_DETAILS: Details = { amount: null, expectedAmount: null, curr
 
 export function newState(id: string, user: string, exp: number): ConversationState {
   return {
-    v: 5, id, user, exp, turn: 0, lang: null, workingIntent: null,
+    v: 6, id, user, exp, turn: 0, lang: null, workingIntent: null,
     details: { ...EMPTY_DETAILS }, pending: null, status: "open", customerTexts: [],
-    match: null, lookupRetries: 0, handoffReason: null, caseRef: null, caseId: null, summary: null, checks: [], when: { ...NO_WHEN }, merchantAsked: false,
+    match: null, lookupRetries: 0, handoffReason: null, caseRef: null, caseId: null, summary: null, checks: [], when: { ...NO_WHEN }, merchantAsked: false, intentGuessed: false,
   };
 }

@@ -18,6 +18,7 @@ Read first: [docs/phase-1-walkthrough.md](docs/phase-1-walkthrough.md) (what exi
 - **Step 14 (branch `miguel/step-14-handoff`, 2026-09-30):** asking for a person creates a case (one-line summary if no context), sensitive data masked at the door (`src/lib/privacy/mask.ts`), code check against timing promises (docs/handoff.md H1–H4, R8).
 - **Status answers (branch `miguel/status-answers`, 2026-09-30):** status questions use the lookup and are answered from the record (PL-9, S1–S2 in docs/policy.md); explain-only replies can't offer actions (R9).
 - **Vague dates + picking (branch `miguel/vague-dates-pick`, 2026-09-30):** Miguel's ladder (docs/policy.md "When the customer can't give an exact date", PL-10, C12b/c–C14).
+- **C15 (branch `miguel/skip-charge-clarify`, 2026-09-30):** no "A or B?" between two charge intents; words decide the kind, else status first (docs/conversation.md C15).
 - **Step 7 (branch `Phase2_Cuellar`, Carlos, 2026-10-01):** bronze/silver/gold in BigQuery (dbt, `pipeline/dbt`), gold serving slice loaded into Supabase (`customers`, `products`, `transactions`, `fx_rates`, `agent_pools`, `data_version`; server-only). Log: docs/phase-2-data-log.md.
 - Not built yet: real lookup tool, eval harness, agent console.
 
