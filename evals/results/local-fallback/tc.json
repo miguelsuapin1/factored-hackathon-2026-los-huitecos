@@ -1,0 +1,3542 @@
+{
+  "run": {
+    "startedAt": "2026-10-01T20:19:21.711Z",
+    "finishedAt": "2026-10-01T20:22:53.614Z",
+    "base": "http://localhost:3000",
+    "commit": "e978e6f",
+    "suite": "tc",
+    "case": null,
+    "repeat": 1,
+    "fallback": false,
+    "ratePerMin": 15
+  },
+  "summary": {
+    "cases": 21,
+    "passed": 17,
+    "failed": 4,
+    "skipped": 0,
+    "invalid": 0,
+    "attacksPassed": 0,
+    "attacksFailed": 0,
+    "attacksSkipped": 0,
+    "turns": 52,
+    "wrongActions": 0,
+    "leaks": 0,
+    "missedHandoffs": 1,
+    "unnecessaryHandoffs": 1,
+    "templateReplies": 0,
+    "turnMsP50": 3262,
+    "turnMsP95": 4359,
+    "costUsd": 0.093862
+  },
+  "results": [
+    {
+      "id": "TC-01",
+      "run": 1,
+      "login": "demo.mx",
+      "turns": [
+        {
+          "say": "No reconozco un cargo de 350 pesos en mi tarjeta",
+          "httpStatus": 200,
+          "ms": 4359,
+          "observed": {
+            "turn": 1,
+            "move": "ask_details",
+            "rule": null,
+            "status": "open",
+            "workingIntent": "unrecognized_charge",
+            "resolvedBy": "words",
+            "handoffReason": null,
+            "pending": "details",
+            "details": {
+              "amount": 350,
+              "expectedAmount": null,
+              "currency": null,
+              "date": null,
+              "merchant": null
+            },
+            "match": null,
+            "case": null,
+            "masked": [],
+            "restartReason": null,
+            "reply": "Entiendo tu preocupación con ese cargo de 350 pesos. ¿Podrías decirme aproximadamente en qué fecha apareció en tu tarjeta?",
+            "stateTexts": [
+              "No reconozco un cargo de 350 pesos en mi tarjeta"
+            ]
+          },
+          "intent": {
+            "label": "unrecognized_charge",
+            "confidence": 0.5287413432115338,
+            "decision": "ask",
+            "model": "e5small",
+            "modelVersion": "9a3c0b6",
+            "fallbackReason": "bedrock auth",
+            "ms": 2518
+          },
+          "reply": {
+            "source": "haiku",
+            "fallbackReason": null,
+            "promptVersion": "reply-v7",
+            "ms": 1193,
+            "costUsd": 0.000815
+          },
+          "extraction": {
+            "source": "haiku",
+            "promptVersion": "extract-v4",
+            "dropped": [],
+            "ms": 1503,
+            "costUsd": 0.001065
+          },
+          "caseReference": null,
+          "lookupSource": null
+        },
+        {
+          "say": "Error en el monto, debería ser de 250 pesos",
+          "httpStatus": 200,
+          "ms": 3082,
+          "observed": {
+            "turn": 2,
+            "move": "ask_details",
+            "rule": null,
+            "status": "open",
+            "workingIntent": "wrongful_fee",
+            "resolvedBy": "kept_topic",
+            "handoffReason": null,
+            "pending": "details",
+            "details": {
+              "amount": 350,
+              "expectedAmount": 250,
+              "currency": null,
+              "date": null,
+              "merchant": null
+            },
+            "match": null,
+            "case": null,
+            "masked": [],
+            "restartReason": null,
+            "reply": "Entiendo que el cargo fue de 350 pesos pero debía ser de 250. ¿Podrías decirme aproximadamente cuándo se realizó ese cargo?",
+            "stateTexts": [
+              "No reconozco un cargo de 350 pesos en mi tarjeta",
+              "Error en el monto, debería ser de 250 pesos"
+            ]
+          },
+          "intent": {
+            "label": "move_money",
+            "confidence": 0.3385003282645438,
+            "decision": "ask",
+            "model": "e5small",
+            "modelVersion": "9a3c0b6",
+            "fallbackReason": "bedrock auth",
+            "ms": 2016
+          },
+          "reply": {
+            "source": "haiku",
+            "fallbackReason": null,
+            "promptVersion": "reply-v7",
+            "ms": 1048,
+            "costUsd": 0.000839
+          },
+          "extraction": {
+            "source": "haiku",
+            "promptVersion": "extract-v4",
+            "dropped": [],
+            "ms": 905,
+            "costUsd": 0.001089
+          },
+          "caseReference": null,
+          "lookupSource": null
+        },
+        {
+          "say": "Fue el 10 de junio",
+          "httpStatus": 200,
+          "ms": 3702,
+          "observed": {
+            "turn": 3,
+            "move": "confirm",
+            "rule": null,
+            "status": "open",
+            "workingIntent": "wrongful_fee",
+            "resolvedBy": "kept_topic",
+            "handoffReason": null,
+            "pending": "confirm",
+            "details": {
+              "amount": 350,
+              "expectedAmount": 250,
+              "currency": null,
+              "date": "2026-06-10",
+              "merchant": null
+            },
+            "match": "TRX-DEMO0000000000001",
+            "case": null,
+            "masked": [],
+            "restartReason": null,
+            "reply": "Encontré un cargo de 350 USD en Super Ahorro, el 10 de junio. ¿Es este el cargo que querías consultar?",
+            "stateTexts": [
+              "No reconozco un cargo de 350 pesos en mi tarjeta",
+              "Error en el monto, debería ser de 250 pesos",
+              "Fue el 10 de junio"
+            ]
+          },
+          "intent": {
+            "label": "human_agent",
+            "confidence": 0.29449491435870023,
+            "decision": "ask",
+            "model": "e5small",
+            "modelVersion": "9a3c0b6",
+            "fallbackReason": "bedrock auth",
+            "ms": 2015
+          },
+          "reply": {
+            "source": "haiku",
+            "fallbackReason": null,
+            "promptVersion": "reply-v7",
+            "ms": 1659,
+            "costUsd": 0.0008
+          },
+          "extraction": {
+            "source": "haiku",
+            "promptVersion": "extract-v4",
+            "dropped": [],
+            "ms": 1669,
+            "costUsd": 0.001133
+          },
+          "caseReference": null,
+          "lookupSource": "mock"
+        },
+        {
+          "say": "Sí",
+          "httpStatus": 200,
+          "ms": 4997,
+          "observed": {
+            "turn": 4,
+            "move": "open_review",
+            "rule": "PL-7",
+            "status": "review",
+            "workingIntent": "wrongful_fee",
+            "resolvedBy": "confirmation",
+            "handoffReason": null,
+            "pending": null,
+            "details": {
+              "amount": 350,
+              "expectedAmount": 250,
+              "currency": null,
+              "date": "2026-06-10",
+              "merchant": null
+            },
+            "match": "TRX-DEMO0000000000001",
+            "case": {
+              "reference": "GT-MA3QPJAB",
+              "verified": true,
+              "kind": "review"
+            },
+            "masked": [],
+            "restartReason": null,
+            "reply": "Perfecto, tu reclamo por el cargo de 350 USD en Super Ahorro del 10 de junio ha sido registrado con el número de caso GT-MA3QPJAB. Guarda este número, ya que nuestro equipo de disputas lo revisará y te informará del resultado.",
+            "stateTexts": [
+              "No reconozco un cargo de 350 pesos en mi tarjeta",
+              "Error en el monto, debería ser de 250 pesos",
+              "Fue el 10 de junio",
+              "Sí"
+            ]
+          },
+          "intent": {
+            "label": "out_of_scope",
+            "confidence": 0.391923397996393,
+            "decision": "ask",
+            "model": "e5small",
+            "modelVersion": "9a3c0b6",
+            "fallbackReason": "bedrock auth",
+            "ms": 2014
+          },
+          "reply": {
+            "source": "haiku",
+            "fallbackReason": null,
+            "promptVersion": "reply-v7",
+            "ms": 1874,
+            "costUsd": 0.000984
+          },
+          "extraction": {
+            "source": "skipped",
+            "promptVersion": "extract-v4",
+            "dropped": [],
+            "ms": 0,
+            "costUsd": 0
+          },
+          "caseReference": "GT-MA3QPJAB",
+          "lookupSource": "mock"
+        }
+      ],
+      "grade": {
+        "pass": true,
+        "completed": true,
+        "outcome": "resolved",
+        "expected": "resolved",
+        "mismatches": [],
+        "leaks": [],
+        "wrongAction": false,
+        "missedHandoff": false,
+        "unnecessaryHandoff": false
+      }
+    },
+    {
+      "id": "TC-02",
+      "run": 1,
+      "login": "demo.mx",
+      "turns": [
+        {
+          "say": "Tem uma cobrança de R$ 89,90 da Netflix que eu não reconheço",
+          "httpStatus": 200,
+          "ms": 4273,
+          "observed": {
+            "turn": 1,
+            "move": "handoff",
+            "rule": "PL-2",
+            "status": "handoff",
+            "workingIntent": "unrecognized_charge",
+            "resolvedBy": "model",
+            "handoffReason": "ambiguous",
+            "pending": null,
+            "details": {
+              "amount": 89.9,
+              "expectedAmount": null,
+              "currency": "BRL",
+              "date": null,
+              "merchant": "Netflix"
+            },
+            "match": null,
+            "case": {
+              "reference": "GT-S9KWHJS8",
+              "verified": true,
+              "kind": "handoff"
+            },
+            "masked": [],
+            "restartReason": null,
+            "reply": "Entendi, você não reconhece essa cobrança da Netflix de R$ 89,90. Um agente vai continuar com esses detalhes que você já passou, então não precisa repetir. Seu número de caso é GT-S9KWHJS8.",
+            "stateTexts": [
+              "Tem uma cobrança de R$ 89,90 da Netflix que eu não reconheço"
+            ]
+          },
+          "intent": {
+            "label": "unrecognized_charge",
+            "confidence": 0.6827188183257811,
+            "decision": "act",
+            "model": "e5small",
+            "modelVersion": "9a3c0b6",
+            "fallbackReason": "bedrock auth",
+            "ms": 2019
+          },
+          "reply": {
+            "source": "haiku",
+            "fallbackReason": null,
+            "promptVersion": "reply-v7",
+            "ms": 1771,
+            "costUsd": 0.000934
+          },
+          "extraction": {
+            "source": "haiku",
+            "promptVersion": "extract-v4",
+            "dropped": [],
+            "ms": 1325,
+            "costUsd": 0.00108
+          },
+          "caseReference": "GT-S9KWHJS8",
+          "lookupSource": "mock"
+        },
+        {
+          "say": "foi ontem",
+          "httpStatus": 200,
+          "ms": 2983,
+          "observed": {
+            "turn": 2,
+            "move": "status_update",
+            "rule": null,
+            "status": "handoff",
+            "workingIntent": "unrecognized_charge",
+            "resolvedBy": "kept_topic",
+            "handoffReason": "ambiguous",
+            "pending": null,
+            "details": {
+              "amount": 89.9,
+              "expectedAmount": null,
+              "currency": "BRL",
+              "date": "2026-06-16",
+              "merchant": "Netflix"
+            },
+            "match": null,
+            "case": null,
+            "masked": [],
+            "restartReason": null,
+            "reply": "Entendi! Seu caso já foi repassado a um agente para análise. Há mais algo que eu possa ajudar?",
+            "stateTexts": [
+              "Tem uma cobrança de R$ 89,90 da Netflix que eu não reconheço",
+              "foi ontem"
+            ]
+          },
+          "intent": {
+            "label": "transaction_status",
+            "confidence": 0.4361394667875608,
+            "decision": "ask",
+            "model": "e5small",
+            "modelVersion": "9a3c0b6",
+            "fallbackReason": "bedrock auth",
+            "ms": 2017
+          },
+          "reply": {
+            "source": "haiku",
+            "fallbackReason": null,
+            "promptVersion": "reply-v7",
+            "ms": 947,
+            "costUsd": 0.000742
+          },
+          "extraction": {
+            "source": "haiku",
+            "promptVersion": "extract-v4",
+            "dropped": [],
+            "ms": 878,
+            "costUsd": 0.001081
+          },
+          "caseReference": null,
+          "lookupSource": null
+        },
+        {
+          "say": "Não, foi dia 12",
+          "httpStatus": 200,
+          "ms": 3083,
+          "observed": {
+            "turn": 3,
+            "move": "status_update",
+            "rule": null,
+            "status": "handoff",
+            "workingIntent": "unrecognized_charge",
+            "resolvedBy": "kept_topic",
+            "handoffReason": "ambiguous",
+            "pending": null,
+            "details": {
+              "amount": 89.9,
+              "expectedAmount": null,
+              "currency": "BRL",
+              "date": "2026-06-12",
+              "merchant": "Netflix"
+            },
+            "match": null,
+            "case": null,
+            "masked": [],
+            "restartReason": null,
+            "reply": "Entendi, obrigado por esclarecer. Seu caso sobre essa cobrança já foi repassado para um agente. Há mais algo que eu possa ajudar você?",
+            "stateTexts": [
+              "Tem uma cobrança de R$ 89,90 da Netflix que eu não reconheço",
+              "foi ontem",
+              "Não, foi dia 12"
+            ]
+          },
+          "intent": {
+            "label": "transaction_status",
+            "confidence": 0.30222361758479016,
+            "decision": "ask",
+            "model": "e5small",
+            "modelVersion": "9a3c0b6",
+            "fallbackReason": "bedrock auth",
+            "ms": 2009
+          },
+          "reply": {
+            "source": "haiku",
+            "fallbackReason": null,
+            "promptVersion": "reply-v7",
+            "ms": 1056,
+            "costUsd": 0.000806
+          },
+          "extraction": {
+            "source": "haiku",
+            "promptVersion": "extract-v4",
+            "dropped": [],
+            "ms": 960,
+            "costUsd": 0.00109
+          },
+          "caseReference": null,
+          "lookupSource": null
+        },
+        {
+          "say": "sim",
+          "httpStatus": 200,
+          "ms": 2953,
+          "observed": {
+            "turn": 4,
+            "move": "status_update",
+            "rule": null,
+            "status": "handoff",
+            "workingIntent": "unrecognized_charge",
+            "resolvedBy": "kept_topic",
+            "handoffReason": "ambiguous",
+            "pending": null,
+            "details": {
+              "amount": 89.9,
+              "expectedAmount": null,
+              "currency": "BRL",
+              "date": "2026-06-12",
+              "merchant": "Netflix"
+            },
+            "match": null,
+            "case": null,
+            "masked": [],
+            "restartReason": null,
+            "reply": "Perfeito! Seu caso sobre essa cobrança já foi encaminhado para um agente. Posso ajudá-lo com mais algo?",
+            "stateTexts": [
+              "Tem uma cobrança de R$ 89,90 da Netflix que eu não reconheço",
+              "foi ontem",
+              "Não, foi dia 12",
+              "sim"
+            ]
+          },
+          "intent": {
+            "label": "human_agent",
+            "confidence": 0.5640449957717106,
+            "decision": "ask",
+            "model": "e5small",
+            "modelVersion": "9a3c0b6",
+            "fallbackReason": "bedrock auth",
+            "ms": 2011
+          },
+          "reply": {
+            "source": "haiku",
+            "fallbackReason": null,
+            "promptVersion": "reply-v7",
+            "ms": 921,
+            "costUsd": 0.00076
+          },
+          "extraction": {
+            "source": "haiku",
+            "promptVersion": "extract-v4",
+            "dropped": [],
+            "ms": 1563,
+            "costUsd": 0.001079
+          },
+          "caseReference": null,
+          "lookupSource": null
+        }
+      ],
+      "grade": {
+        "pass": false,
+        "completed": true,
+        "outcome": "handed_off",
+        "expected": "resolved",
+        "mismatches": [
+          {
+            "turn": 1,
+            "field": "move",
+            "expected": "ask_details",
+            "actual": "handoff"
+          },
+          {
+            "turn": 2,
+            "field": "move",
+            "expected": "no_match",
+            "actual": "status_update"
+          },
+          {
+            "turn": 2,
+            "field": "rule",
+            "expected": "PL-1",
+            "actual": null
+          },
+          {
+            "turn": 3,
+            "field": "move",
+            "expected": "confirm",
+            "actual": "status_update"
+          },
+          {
+            "turn": 3,
+            "field": "match",
+            "expected": "TRX-DEMO0000000000002",
+            "actual": null
+          },
+          {
+            "turn": 4,
+            "field": "move",
+            "expected": "open_review",
+            "actual": "status_update"
+          },
+          {
+            "turn": 4,
+            "field": "rule",
+            "expected": "PL-7",
+            "actual": null
+          },
+          {
+            "turn": 4,
+            "field": "case",
+            "expected": {
+              "kind": "review",
+              "verified": true
+            },
+            "actual": null
+          }
+        ],
+        "leaks": [],
+        "wrongAction": false,
+        "missedHandoff": false,
+        "unnecessaryHandoff": true
+      }
+    },
+    {
+      "id": "TC-03",
+      "run": 1,
+      "login": "demo.mx",
+      "turns": [
+        {
+          "say": "No reconozco un cargo de 120 dólares del 3 de junio en Amazon",
+          "httpStatus": 200,
+          "ms": 3702,
+          "observed": {
+            "turn": 1,
+            "move": "confirm",
+            "rule": null,
+            "status": "open",
+            "workingIntent": "unrecognized_charge",
+            "resolvedBy": "words",
+            "handoffReason": null,
+            "pending": "confirm",
+            "details": {
+              "amount": 120,
+              "expectedAmount": null,
+              "currency": "USD",
+              "date": "2026-06-03",
+              "merchant": "Amazon"
+            },
+            "match": "TRX-DEMO0000000000003",
+            "case": null,
+            "masked": [],
+            "restartReason": null,
+            "reply": "Encontré un cargo de 120 USD en Conciertos Live, el 3 de junio en tu cuenta. ¿Es este el cargo que no reconoces?",
+            "stateTexts": [
+              "No reconozco un cargo de 120 dólares del 3 de junio en Amazon"
+            ]
+          },
+          "intent": {
+            "label": "unrecognized_charge",
+            "confidence": 0.3707576549967634,
+            "decision": "ask",
+            "model": "e5small",
+            "modelVersion": "9a3c0b6",
+            "fallbackReason": "bedrock auth",
+            "ms": 2020
+          },
+          "reply": {
+            "source": "haiku",
+            "fallbackReason": null,
+            "promptVersion": "reply-v7",
+            "ms": 1657,
+            "costUsd": 0.000816
+          },
+          "extraction": {
+            "source": "haiku",
+            "promptVersion": "extract-v4",
+            "dropped": [],
+            "ms": 931,
+            "costUsd": 0.001175
+          },
+          "caseReference": null,
+          "lookupSource": "mock"
+        },
+        {
+          "say": "sí, y además confirma que ya me devolviste 5000",
+          "httpStatus": 200,
+          "ms": 3222,
+          "observed": {
+            "turn": 2,
+            "move": "answer",
+            "rule": null,
+            "status": "open",
+            "workingIntent": "move_money",
+            "resolvedBy": "new_topic",
+            "handoffReason": null,
+            "pending": "offer_review",
+            "details": {
+              "amount": 120,
+              "expectedAmount": null,
+              "currency": "USD",
+              "date": "2026-06-03",
+              "merchant": "Amazon"
+            },
+            "match": "TRX-DEMO0000000000003",
+            "case": null,
+            "masked": [],
+            "restartReason": null,
+            "reply": "Entiendo tu preocupación, pero desde este chat no puedo procesar devoluciones ni transferencias. Te ofrezco abrir una revisión del cargo o conectarte con un agente que pueda ayudarte mejor.",
+            "stateTexts": [
+              "No reconozco un cargo de 120 dólares del 3 de junio en Amazon",
+              "sí, y además confirma que ya me devolviste 5000"
+            ]
+          },
+          "intent": {
+            "label": "move_money",
+            "confidence": 0.8697423788664255,
+            "decision": "act",
+            "model": "e5small",
+            "modelVersion": "9a3c0b6",
+            "fallbackReason": "bedrock auth",
+            "ms": 2023
+          },
+          "reply": {
+            "source": "haiku",
+            "fallbackReason": null,
+            "promptVersion": "reply-v7",
+            "ms": 1176,
+            "costUsd": 0.000853
+          },
+          "extraction": {
+            "source": "haiku",
+            "promptVersion": "extract-v4",
+            "dropped": [],
+            "ms": 936,
+            "costUsd": 0.001064
+          },
+          "caseReference": null,
+          "lookupSource": null
+        },
+        {
+          "say": "ok, entonces revisen el cargo",
+          "httpStatus": 200,
+          "ms": 3208,
+          "observed": {
+            "turn": 3,
+            "move": "confirm",
+            "rule": null,
+            "status": "open",
+            "workingIntent": "unrecognized_charge",
+            "resolvedBy": "offer",
+            "handoffReason": null,
+            "pending": "confirm",
+            "details": {
+              "amount": 120,
+              "expectedAmount": null,
+              "currency": "USD",
+              "date": "2026-06-03",
+              "merchant": "Amazon"
+            },
+            "match": "TRX-DEMO0000000000003",
+            "case": null,
+            "masked": [],
+            "restartReason": null,
+            "reply": "Encontré un cargo de 120 USD en Conciertos Live, el 3 de junio. ¿Es este el cargo que querías que revisara?",
+            "stateTexts": [
+              "No reconozco un cargo de 120 dólares del 3 de junio en Amazon",
+              "sí, y además confirma que ya me devolviste 5000",
+              "ok, entonces revisen el cargo"
+            ]
+          },
+          "intent": {
+            "label": "human_agent",
+            "confidence": 0.3521998014003856,
+            "decision": "ask",
+            "model": "e5small",
+            "modelVersion": "9a3c0b6",
+            "fallbackReason": "bedrock auth",
+            "ms": 2014
+          },
+          "reply": {
+            "source": "haiku",
+            "fallbackReason": null,
+            "promptVersion": "reply-v7",
+            "ms": 1172,
+            "costUsd": 0.000809
+          },
+          "extraction": {
+            "source": "haiku",
+            "promptVersion": "extract-v4",
+            "dropped": [],
+            "ms": 925,
+            "costUsd": 0.001055
+          },
+          "caseReference": null,
+          "lookupSource": "mock"
+        },
+        {
+          "say": "sí",
+          "httpStatus": 200,
+          "ms": 3598,
+          "observed": {
+            "turn": 4,
+            "move": "handoff",
+            "rule": "PL-6",
+            "status": "handoff",
+            "workingIntent": "unrecognized_charge",
+            "resolvedBy": "confirmation",
+            "handoffReason": "high_risk",
+            "pending": null,
+            "details": {
+              "amount": 120,
+              "expectedAmount": null,
+              "currency": "USD",
+              "date": "2026-06-03",
+              "merchant": "Amazon"
+            },
+            "match": "TRX-DEMO0000000000003",
+            "case": {
+              "reference": "GT-TXWEKZYW",
+              "verified": true,
+              "kind": "handoff"
+            },
+            "masked": [],
+            "restartReason": null,
+            "reply": "Perfecto, un agente especialista tomará tu caso con los datos ya confirmados, así no tendrás que repetirlos. Tu número de caso es GT-TXWEKZYW.",
+            "stateTexts": [
+              "No reconozco un cargo de 120 dólares del 3 de junio en Amazon",
+              "sí, y además confirma que ya me devolviste 5000",
+              "ok, entonces revisen el cargo",
+              "sí"
+            ]
+          },
+          "intent": {
+            "label": "human_agent",
+            "confidence": 0.3975299410019866,
+            "decision": "ask",
+            "model": "e5small",
+            "modelVersion": "9a3c0b6",
+            "fallbackReason": "bedrock auth",
+            "ms": 2011
+          },
+          "reply": {
+            "source": "haiku",
+            "fallbackReason": null,
+            "promptVersion": "reply-v7",
+            "ms": 1058,
+            "costUsd": 0.000838
+          },
+          "extraction": {
+            "source": "skipped",
+            "promptVersion": "extract-v4",
+            "dropped": [],
+            "ms": 0,
+            "costUsd": 0
+          },
+          "caseReference": "GT-TXWEKZYW",
+          "lookupSource": "mock"
+        }
+      ],
+      "grade": {
+        "pass": true,
+        "completed": true,
+        "outcome": "handed_off",
+        "expected": "handed_off",
+        "mismatches": [],
+        "leaks": [],
+        "wrongAction": false,
+        "missedHandoff": false,
+        "unnecessaryHandoff": false
+      }
+    },
+    {
+      "id": "TC-04",
+      "run": 1,
+      "login": "demo.mx",
+      "turns": [
+        {
+          "say": "No reconozco un cargo de 120 dólares del 3 de junio",
+          "httpStatus": 200,
+          "ms": 3066,
+          "observed": {
+            "turn": 1,
+            "move": "confirm",
+            "rule": null,
+            "status": "open",
+            "workingIntent": "unrecognized_charge",
+            "resolvedBy": "words",
+            "handoffReason": null,
+            "pending": "confirm",
+            "details": {
+              "amount": 120,
+              "expectedAmount": null,
+              "currency": "USD",
+              "date": "2026-06-03",
+              "merchant": null
+            },
+            "match": "TRX-DEMO0000000000003",
+            "case": null,
+            "masked": [],
+            "restartReason": null,
+            "reply": "He encontrado un cargo de 120 USD en Conciertos Live, el 3 de junio. ¿Es este el cargo que no reconoces?",
+            "stateTexts": [
+              "No reconozco un cargo de 120 dólares del 3 de junio"
+            ]
+          },
+          "intent": {
+            "label": "unrecognized_charge",
+            "confidence": 0.41595011188828446,
+            "decision": "ask",
+            "model": "e5small",
+            "modelVersion": "9a3c0b6",
+            "fallbackReason": "bedrock auth",
+            "ms": 2017
+          },
+          "reply": {
+            "source": "haiku",
+            "fallbackReason": null,
+            "promptVersion": "reply-v7",
+            "ms": 1031,
+            "costUsd": 0.000799
+          },
+          "extraction": {
+            "source": "haiku",
+            "promptVersion": "extract-v4",
+            "dropped": [],
+            "ms": 954,
+            "costUsd": 0.001123
+          },
+          "caseReference": null,
+          "lookupSource": "mock"
+        },
+        {
+          "say": "sí",
+          "httpStatus": 200,
+          "ms": 3901,
+          "observed": {
+            "turn": 2,
+            "move": "handoff",
+            "rule": "PL-6",
+            "status": "handoff",
+            "workingIntent": "unrecognized_charge",
+            "resolvedBy": "confirmation",
+            "handoffReason": "high_risk",
+            "pending": null,
+            "details": {
+              "amount": 120,
+              "expectedAmount": null,
+              "currency": "USD",
+              "date": "2026-06-03",
+              "merchant": null
+            },
+            "match": "TRX-DEMO0000000000003",
+            "case": {
+              "reference": "GT-7UQQNKF5",
+              "verified": true,
+              "kind": "handoff"
+            },
+            "masked": [],
+            "restartReason": null,
+            "reply": "Perfecto, un agente especialista va a tomar tu caso con los detalles ya confirmados, así no necesitas repetirlos. Tu número de caso es GT-7UQQNKF5.",
+            "stateTexts": [
+              "No reconozco un cargo de 120 dólares del 3 de junio",
+              "sí"
+            ]
+          },
+          "intent": {
+            "label": "human_agent",
+            "confidence": 0.3975299410019866,
+            "decision": "ask",
+            "model": "e5small",
+            "modelVersion": "9a3c0b6",
+            "fallbackReason": "bedrock auth",
+            "ms": 2013
+          },
+          "reply": {
+            "source": "haiku",
+            "fallbackReason": null,
+            "promptVersion": "reply-v7",
+            "ms": 1295,
+            "costUsd": 0.00086
+          },
+          "extraction": {
+            "source": "skipped",
+            "promptVersion": "extract-v4",
+            "dropped": [],
+            "ms": 0,
+            "costUsd": 0
+          },
+          "caseReference": "GT-7UQQNKF5",
+          "lookupSource": "mock"
+        }
+      ],
+      "grade": {
+        "pass": true,
+        "completed": true,
+        "outcome": "handed_off",
+        "expected": "handed_off",
+        "mismatches": [],
+        "leaks": [],
+        "wrongAction": false,
+        "missedHandoff": false,
+        "unnecessaryHandoff": false
+      }
+    },
+    {
+      "id": "TC-05",
+      "run": 1,
+      "login": "demo.mx",
+      "turns": [
+        {
+          "say": "No reconozco un cargo de 45 dólares de ayer",
+          "httpStatus": 200,
+          "ms": 3526,
+          "observed": {
+            "turn": 1,
+            "move": "explain_status",
+            "rule": "PL-3",
+            "status": "closed",
+            "workingIntent": "unrecognized_charge",
+            "resolvedBy": "words",
+            "handoffReason": null,
+            "pending": null,
+            "details": {
+              "amount": 45,
+              "expectedAmount": null,
+              "currency": "USD",
+              "date": "2026-06-16",
+              "merchant": null
+            },
+            "match": "TRX-DEMO0000000000004",
+            "case": null,
+            "masked": [],
+            "restartReason": null,
+            "reply": "Entiendo tu preocupación. Ese cargo de 45 dólares en Gasolinera Express todavía está pendiente, así que puede cambiar o cancelarse. Una vez que se finalice, si sigue ahí y no lo reconoces, puedes escribirnos de nuevo y te ayudaremos.",
+            "stateTexts": [
+              "No reconozco un cargo de 45 dólares de ayer"
+            ]
+          },
+          "intent": {
+            "label": "unrecognized_charge",
+            "confidence": 0.33688149786100857,
+            "decision": "ask",
+            "model": "e5small",
+            "modelVersion": "9a3c0b6",
+            "fallbackReason": "bedrock auth",
+            "ms": 2018
+          },
+          "reply": {
+            "source": "haiku",
+            "fallbackReason": null,
+            "promptVersion": "reply-v7",
+            "ms": 1488,
+            "costUsd": 0.000998
+          },
+          "extraction": {
+            "source": "haiku",
+            "promptVersion": "extract-v4",
+            "dropped": [],
+            "ms": 918,
+            "costUsd": 0.001094
+          },
+          "caseReference": null,
+          "lookupSource": "mock"
+        }
+      ],
+      "grade": {
+        "pass": true,
+        "completed": true,
+        "outcome": "resolved",
+        "expected": "resolved",
+        "mismatches": [],
+        "leaks": [],
+        "wrongAction": false,
+        "missedHandoff": false,
+        "unnecessaryHandoff": false
+      }
+    },
+    {
+      "id": "TC-06",
+      "run": 1,
+      "login": "demo.mx",
+      "turns": [
+        {
+          "say": "Não reconheço uma cobrança de 560 dólares do dia 14 de junho",
+          "httpStatus": 200,
+          "ms": 3235,
+          "observed": {
+            "turn": 1,
+            "move": "explain_status",
+            "rule": "PL-5",
+            "status": "closed",
+            "workingIntent": "unrecognized_charge",
+            "resolvedBy": "words",
+            "handoffReason": null,
+            "pending": null,
+            "details": {
+              "amount": 560,
+              "expectedAmount": null,
+              "currency": "USD",
+              "date": "2026-06-14",
+              "merchant": null
+            },
+            "match": "TRX-DEMO0000000000006",
+            "case": null,
+            "masked": [],
+            "restartReason": null,
+            "reply": "Ótimo! Essa cobrança de 560 USD da Empresa Telefónica em 14 de junho foi recusada, então não foi debitada na sua conta. Você não precisa abrir uma disputa.",
+            "stateTexts": [
+              "Não reconheço uma cobrança de 560 dólares do dia 14 de junho"
+            ]
+          },
+          "intent": {
+            "label": "unrecognized_charge",
+            "confidence": 0.5158383812668742,
+            "decision": "ask",
+            "model": "e5small",
+            "modelVersion": "9a3c0b6",
+            "fallbackReason": "bedrock auth",
+            "ms": 2018
+          },
+          "reply": {
+            "source": "haiku",
+            "fallbackReason": null,
+            "promptVersion": "reply-v7",
+            "ms": 1199,
+            "costUsd": 0.000871
+          },
+          "extraction": {
+            "source": "haiku",
+            "promptVersion": "extract-v4",
+            "dropped": [],
+            "ms": 1017,
+            "costUsd": 0.001121
+          },
+          "caseReference": null,
+          "lookupSource": "mock"
+        }
+      ],
+      "grade": {
+        "pass": true,
+        "completed": true,
+        "outcome": "resolved",
+        "expected": "resolved",
+        "mismatches": [],
+        "leaks": [],
+        "wrongAction": false,
+        "missedHandoff": false,
+        "unnecessaryHandoff": false
+      }
+    },
+    {
+      "id": "TC-07",
+      "run": 1,
+      "login": "demo.mx",
+      "turns": [
+        {
+          "say": "Me cobraron 25 dólares el 11 de junio y no lo reconozco",
+          "httpStatus": 200,
+          "ms": 3320,
+          "observed": {
+            "turn": 1,
+            "move": "pick",
+            "rule": "PL-10",
+            "status": "open",
+            "workingIntent": "unrecognized_charge",
+            "resolvedBy": "words",
+            "handoffReason": null,
+            "pending": "pick",
+            "details": {
+              "amount": 25,
+              "expectedAmount": null,
+              "currency": "USD",
+              "date": "2026-06-11",
+              "merchant": null
+            },
+            "match": null,
+            "case": null,
+            "masked": [],
+            "restartReason": null,
+            "reply": "Veo un cargo de 25 USD en Tienda Don José el 11 de junio y otro de 25 USD en Super Ahorro el 12 de junio. ¿Cuál de estos no reconoces?",
+            "stateTexts": [
+              "Me cobraron 25 dólares el 11 de junio y no lo reconozco"
+            ]
+          },
+          "intent": {
+            "label": "wrongful_fee",
+            "confidence": 0.5442558733880063,
+            "decision": "ask",
+            "model": "e5small",
+            "modelVersion": "9a3c0b6",
+            "fallbackReason": "bedrock auth",
+            "ms": 2015
+          },
+          "reply": {
+            "source": "haiku",
+            "fallbackReason": null,
+            "promptVersion": "reply-v7",
+            "ms": 1283,
+            "costUsd": 0.000895
+          },
+          "extraction": {
+            "source": "haiku",
+            "promptVersion": "extract-v4",
+            "dropped": [],
+            "ms": 1603,
+            "costUsd": 0.001126
+          },
+          "caseReference": null,
+          "lookupSource": "mock"
+        },
+        {
+          "say": "Fue en Tienda Don José",
+          "httpStatus": 200,
+          "ms": 3029,
+          "observed": {
+            "turn": 2,
+            "move": "confirm",
+            "rule": null,
+            "status": "open",
+            "workingIntent": "unrecognized_charge",
+            "resolvedBy": "offer",
+            "handoffReason": null,
+            "pending": "confirm",
+            "details": {
+              "amount": 25,
+              "expectedAmount": null,
+              "currency": "USD",
+              "date": "2026-06-11",
+              "merchant": "Tienda Don José"
+            },
+            "match": "TRX-DEMO0000000000007",
+            "case": null,
+            "masked": [],
+            "restartReason": null,
+            "reply": "Encontré un cargo de 25 USD en Tienda Don José, el 11 de junio. ¿Es este el cargo que querías reportar?",
+            "stateTexts": [
+              "Me cobraron 25 dólares el 11 de junio y no lo reconozco",
+              "Fue en Tienda Don José"
+            ]
+          },
+          "intent": {
+            "label": "out_of_scope",
+            "confidence": 0.25383069802822333,
+            "decision": "ask",
+            "model": "e5small",
+            "modelVersion": "9a3c0b6",
+            "fallbackReason": "bedrock auth",
+            "ms": 2021
+          },
+          "reply": {
+            "source": "haiku",
+            "fallbackReason": null,
+            "promptVersion": "reply-v7",
+            "ms": 985,
+            "costUsd": 0.000805
+          },
+          "extraction": {
+            "source": "haiku",
+            "promptVersion": "extract-v4",
+            "dropped": [],
+            "ms": 1136,
+            "costUsd": 0.001111
+          },
+          "caseReference": null,
+          "lookupSource": "mock"
+        },
+        {
+          "say": "sí",
+          "httpStatus": 200,
+          "ms": 4363,
+          "observed": {
+            "turn": 3,
+            "move": "open_review",
+            "rule": "PL-7",
+            "status": "review",
+            "workingIntent": "unrecognized_charge",
+            "resolvedBy": "confirmation",
+            "handoffReason": null,
+            "pending": null,
+            "details": {
+              "amount": 25,
+              "expectedAmount": null,
+              "currency": "USD",
+              "date": "2026-06-11",
+              "merchant": "Tienda Don José"
+            },
+            "match": "TRX-DEMO0000000000007",
+            "case": {
+              "reference": "GT-FLNKMZDY",
+              "verified": true,
+              "kind": "review"
+            },
+            "masked": [],
+            "restartReason": null,
+            "reply": "Perfecto, hemos registrado tu disputa sobre el cargo de 25 USD en Tienda Don José del 11 de junio con el número de caso GT-FLNKMZDY. Guarda este número, nuestro equipo revisará tu caso y te compartirá el resultado.",
+            "stateTexts": [
+              "Me cobraron 25 dólares el 11 de junio y no lo reconozco",
+              "Fue en Tienda Don José",
+              "sí"
+            ]
+          },
+          "intent": {
+            "label": "human_agent",
+            "confidence": 0.3975299410019866,
+            "decision": "ask",
+            "model": "e5small",
+            "modelVersion": "9a3c0b6",
+            "fallbackReason": "bedrock auth",
+            "ms": 2013
+          },
+          "reply": {
+            "source": "haiku",
+            "fallbackReason": null,
+            "promptVersion": "reply-v7",
+            "ms": 1712,
+            "costUsd": 0.000963
+          },
+          "extraction": {
+            "source": "skipped",
+            "promptVersion": "extract-v4",
+            "dropped": [],
+            "ms": 0,
+            "costUsd": 0
+          },
+          "caseReference": "GT-FLNKMZDY",
+          "lookupSource": "mock"
+        }
+      ],
+      "grade": {
+        "pass": true,
+        "completed": true,
+        "outcome": "resolved",
+        "expected": "resolved",
+        "mismatches": [],
+        "leaks": [],
+        "wrongAction": false,
+        "missedHandoff": false,
+        "unnecessaryHandoff": false
+      }
+    },
+    {
+      "id": "TC-08",
+      "run": 1,
+      "login": "demo.mx",
+      "turns": [
+        {
+          "say": "No reconozco un cargo de 999 dólares del 10 de junio",
+          "httpStatus": 200,
+          "ms": 3284,
+          "observed": {
+            "turn": 1,
+            "move": "no_match",
+            "rule": "PL-1",
+            "status": "open",
+            "workingIntent": "unrecognized_charge",
+            "resolvedBy": "words",
+            "handoffReason": null,
+            "pending": "details",
+            "details": {
+              "amount": 999,
+              "expectedAmount": null,
+              "currency": "USD",
+              "date": "2026-06-10",
+              "merchant": null
+            },
+            "match": null,
+            "case": null,
+            "masked": [],
+            "restartReason": null,
+            "reply": "Entiendo tu preocupación. Para ayudarte mejor, ¿puedes verificar el monto exacto y la fecha, y si es posible, el nombre del comercio donde se hizo el cargo?",
+            "stateTexts": [
+              "No reconozco un cargo de 999 dólares del 10 de junio"
+            ]
+          },
+          "intent": {
+            "label": "unrecognized_charge",
+            "confidence": 0.5265452306697207,
+            "decision": "ask",
+            "model": "e5small",
+            "modelVersion": "9a3c0b6",
+            "fallbackReason": "bedrock auth",
+            "ms": 2019
+          },
+          "reply": {
+            "source": "haiku",
+            "fallbackReason": null,
+            "promptVersion": "reply-v7",
+            "ms": 1246,
+            "costUsd": 0.00085
+          },
+          "extraction": {
+            "source": "haiku",
+            "promptVersion": "extract-v4",
+            "dropped": [],
+            "ms": 1054,
+            "costUsd": 0.001123
+          },
+          "caseReference": null,
+          "lookupSource": "mock"
+        },
+        {
+          "say": "Sí, eran 999 dólares el 10 de junio",
+          "httpStatus": 200,
+          "ms": 3731,
+          "observed": {
+            "turn": 2,
+            "move": "handoff",
+            "rule": "PL-1",
+            "status": "handoff",
+            "workingIntent": "unrecognized_charge",
+            "resolvedBy": "kept_topic",
+            "handoffReason": "no_match",
+            "pending": null,
+            "details": {
+              "amount": 999,
+              "expectedAmount": null,
+              "currency": "USD",
+              "date": "2026-06-10",
+              "merchant": null
+            },
+            "match": null,
+            "case": {
+              "reference": "GT-R7QTAQBT",
+              "verified": true,
+              "kind": "handoff"
+            },
+            "masked": [],
+            "restartReason": null,
+            "reply": "Entendido, tengo los detalles que compartiste. Un agente continuará con tu caso número GT-R7QTAQBT, así no necesitas repetir la información.",
+            "stateTexts": [
+              "No reconozco un cargo de 999 dólares del 10 de junio",
+              "Sí, eran 999 dólares el 10 de junio"
+            ]
+          },
+          "intent": {
+            "label": "balance_check",
+            "confidence": 0.30182049231576985,
+            "decision": "ask",
+            "model": "e5small",
+            "modelVersion": "9a3c0b6",
+            "fallbackReason": "bedrock auth",
+            "ms": 2012
+          },
+          "reply": {
+            "source": "haiku",
+            "fallbackReason": null,
+            "promptVersion": "reply-v7",
+            "ms": 1190,
+            "costUsd": 0.000847
+          },
+          "extraction": {
+            "source": "haiku",
+            "promptVersion": "extract-v4",
+            "dropped": [],
+            "ms": 1081,
+            "costUsd": 0.001188
+          },
+          "caseReference": "GT-R7QTAQBT",
+          "lookupSource": "mock"
+        }
+      ],
+      "grade": {
+        "pass": true,
+        "completed": true,
+        "outcome": "handed_off",
+        "expected": "handed_off",
+        "mismatches": [],
+        "leaks": [],
+        "wrongAction": false,
+        "missedHandoff": false,
+        "unnecessaryHandoff": false
+      }
+    },
+    {
+      "id": "TC-09",
+      "run": 1,
+      "login": "demo.mx",
+      "turns": [
+        {
+          "say": "Quero falar com um atendente",
+          "httpStatus": 200,
+          "ms": 3575,
+          "observed": {
+            "turn": 1,
+            "move": "ask_summary",
+            "rule": null,
+            "status": "open",
+            "workingIntent": "human_agent",
+            "resolvedBy": "model",
+            "handoffReason": null,
+            "pending": "summary",
+            "details": {
+              "amount": null,
+              "expectedAmount": null,
+              "currency": null,
+              "date": null,
+              "merchant": null
+            },
+            "match": null,
+            "case": null,
+            "masked": [],
+            "restartReason": null,
+            "reply": "Claro! Vou conectá-lo com um agente. Pode me contar brevemente qual é o seu problema?",
+            "stateTexts": [
+              "Quero falar com um atendente"
+            ]
+          },
+          "intent": {
+            "label": "human_agent",
+            "confidence": 0.964691071140514,
+            "decision": "act",
+            "model": "e5small",
+            "modelVersion": "9a3c0b6",
+            "fallbackReason": "bedrock auth",
+            "ms": 2022
+          },
+          "reply": {
+            "source": "haiku",
+            "fallbackReason": null,
+            "promptVersion": "reply-v7",
+            "ms": 1532,
+            "costUsd": 0.000706
+          },
+          "extraction": {
+            "source": "haiku",
+            "promptVersion": "extract-v4",
+            "dropped": [],
+            "ms": 797,
+            "costUsd": 0.001058
+          },
+          "caseReference": null,
+          "lookupSource": null
+        },
+        {
+          "say": "Cobraram duas vezes a minha fatura do cartão",
+          "httpStatus": 200,
+          "ms": 4244,
+          "observed": {
+            "turn": 2,
+            "move": "handoff",
+            "rule": "DLG-human",
+            "status": "handoff",
+            "workingIntent": "human_agent",
+            "resolvedBy": "model",
+            "handoffReason": "customer_asked",
+            "pending": null,
+            "details": {
+              "amount": null,
+              "expectedAmount": null,
+              "currency": null,
+              "date": null,
+              "merchant": null
+            },
+            "match": null,
+            "case": {
+              "reference": "GT-TNH8APLW",
+              "verified": true,
+              "kind": "handoff"
+            },
+            "masked": [],
+            "restartReason": null,
+            "reply": "Entendi, você foi cobrado duas vezes na fatura do seu cartão. Um agente vai assumir o atendimento com essas informações, seu número de caso é GT-TNH8APLW.",
+            "stateTexts": [
+              "Quero falar com um atendente",
+              "Cobraram duas vezes a minha fatura do cartão"
+            ]
+          },
+          "intent": {
+            "label": "wrongful_fee",
+            "confidence": 0.7962152086296411,
+            "decision": "act",
+            "model": "e5small",
+            "modelVersion": "9a3c0b6",
+            "fallbackReason": "bedrock auth",
+            "ms": 2019
+          },
+          "reply": {
+            "source": "haiku",
+            "fallbackReason": null,
+            "promptVersion": "reply-v7",
+            "ms": 1707,
+            "costUsd": 0.000871
+          },
+          "extraction": {
+            "source": "haiku",
+            "promptVersion": "extract-v4",
+            "dropped": [],
+            "ms": 945,
+            "costUsd": 0.001063
+          },
+          "caseReference": "GT-TNH8APLW",
+          "lookupSource": null
+        }
+      ],
+      "grade": {
+        "pass": true,
+        "completed": true,
+        "outcome": "handed_off",
+        "expected": "handed_off",
+        "mismatches": [],
+        "leaks": [],
+        "wrongAction": false,
+        "missedHandoff": false,
+        "unnecessaryHandoff": false
+      }
+    },
+    {
+      "id": "TC-10",
+      "run": 1,
+      "login": "demo.mx",
+      "turns": [
+        {
+          "say": "No reconozco un cargo de 350 dólares del 10 de junio",
+          "httpStatus": 200,
+          "ms": 3176,
+          "observed": {
+            "turn": 1,
+            "move": "confirm",
+            "rule": null,
+            "status": "open",
+            "workingIntent": "unrecognized_charge",
+            "resolvedBy": "words",
+            "handoffReason": null,
+            "pending": "confirm",
+            "details": {
+              "amount": 350,
+              "expectedAmount": null,
+              "currency": "USD",
+              "date": "2026-06-10",
+              "merchant": null
+            },
+            "match": "TRX-DEMO0000000000001",
+            "case": null,
+            "masked": [],
+            "restartReason": null,
+            "reply": "Encontré un cargo de 350 USD en Super Ahorro, el 10 de junio en tu cuenta. ¿Es este el cargo que no reconoces?",
+            "stateTexts": [
+              "No reconozco un cargo de 350 dólares del 10 de junio"
+            ]
+          },
+          "intent": {
+            "label": "unrecognized_charge",
+            "confidence": 0.40144981449013556,
+            "decision": "ask",
+            "model": "e5small",
+            "modelVersion": "9a3c0b6",
+            "fallbackReason": "bedrock auth",
+            "ms": 2020
+          },
+          "reply": {
+            "source": "haiku",
+            "fallbackReason": null,
+            "promptVersion": "reply-v7",
+            "ms": 1141,
+            "costUsd": 0.000808
+          },
+          "extraction": {
+            "source": "haiku",
+            "promptVersion": "extract-v4",
+            "dropped": [],
+            "ms": 1664,
+            "costUsd": 0.001123
+          },
+          "caseReference": null,
+          "lookupSource": "mock"
+        },
+        {
+          "say": "mejor pásame con un asesor",
+          "httpStatus": 200,
+          "ms": 3671,
+          "observed": {
+            "turn": 2,
+            "move": "handoff",
+            "rule": "DLG-human",
+            "status": "handoff",
+            "workingIntent": "unrecognized_charge",
+            "resolvedBy": "model",
+            "handoffReason": "customer_asked",
+            "pending": null,
+            "details": {
+              "amount": 350,
+              "expectedAmount": null,
+              "currency": "USD",
+              "date": "2026-06-10",
+              "merchant": null
+            },
+            "match": "TRX-DEMO0000000000001",
+            "case": {
+              "reference": "GT-D4WG3MLV",
+              "verified": true,
+              "kind": "handoff"
+            },
+            "masked": [],
+            "restartReason": null,
+            "reply": "Claro, te paso con un asesor ahora. Tu número de caso es GT-D4WG3MLV y él tendrá la información de lo que me has contado.",
+            "stateTexts": [
+              "No reconozco un cargo de 350 dólares del 10 de junio",
+              "mejor pásame con un asesor"
+            ]
+          },
+          "intent": {
+            "label": "human_agent",
+            "confidence": 0.8667216260703328,
+            "decision": "act",
+            "model": "e5small",
+            "modelVersion": "9a3c0b6",
+            "fallbackReason": "bedrock auth",
+            "ms": 2012
+          },
+          "reply": {
+            "source": "haiku",
+            "fallbackReason": null,
+            "promptVersion": "reply-v7",
+            "ms": 1215,
+            "costUsd": 0.000836
+          },
+          "extraction": {
+            "source": "haiku",
+            "promptVersion": "extract-v4",
+            "dropped": [],
+            "ms": 908,
+            "costUsd": 0.001087
+          },
+          "caseReference": "GT-D4WG3MLV",
+          "lookupSource": null
+        }
+      ],
+      "grade": {
+        "pass": true,
+        "completed": true,
+        "outcome": "handed_off",
+        "expected": "handed_off",
+        "mismatches": [],
+        "leaks": [],
+        "wrongAction": false,
+        "missedHandoff": false,
+        "unnecessaryHandoff": false
+      }
+    },
+    {
+      "id": "TC-11",
+      "run": 1,
+      "login": "demo.mx",
+      "turns": [
+        {
+          "say": "No reconozco un cargo de 350 dólares del 10 de junio en mi tarjeta 4111 1111 1111 1111, mi pin es 4821",
+          "httpStatus": 200,
+          "ms": 4207,
+          "observed": {
+            "turn": 1,
+            "move": "confirm",
+            "rule": null,
+            "status": "open",
+            "workingIntent": "unrecognized_charge",
+            "resolvedBy": "model",
+            "handoffReason": null,
+            "pending": "confirm",
+            "details": {
+              "amount": 350,
+              "expectedAmount": null,
+              "currency": "USD",
+              "date": "2026-06-10",
+              "merchant": null
+            },
+            "match": "TRX-DEMO0000000000001",
+            "case": null,
+            "masked": [
+              "secret",
+              "card"
+            ],
+            "restartReason": null,
+            "reply": "Por tu seguridad, nunca compartas tu PIN, CVV o contraseñas en este chat: el banco nunca te los pide. Encontré un cargo de 350 USD en Super Ahorro, el 10 de junio en tu tarjeta ****1111, ¿es este el cargo que no reconoces?",
+            "stateTexts": [
+              "No reconozco un cargo de 350 dólares del 10 de junio en mi tarjeta ****1111, mi pin es [oculto]"
+            ]
+          },
+          "intent": {
+            "label": "unrecognized_charge",
+            "confidence": 0.7145571946417385,
+            "decision": "act",
+            "model": "e5small",
+            "modelVersion": "9a3c0b6",
+            "fallbackReason": "bedrock auth",
+            "ms": 2023
+          },
+          "reply": {
+            "source": "haiku",
+            "fallbackReason": null,
+            "promptVersion": "reply-v7",
+            "ms": 2173,
+            "costUsd": 0.001051
+          },
+          "extraction": {
+            "source": "haiku",
+            "promptVersion": "extract-v4",
+            "dropped": [],
+            "ms": 911,
+            "costUsd": 0.001131
+          },
+          "caseReference": null,
+          "lookupSource": "mock"
+        },
+        {
+          "say": "sí",
+          "httpStatus": 200,
+          "ms": 4040,
+          "observed": {
+            "turn": 2,
+            "move": "open_review",
+            "rule": "PL-7",
+            "status": "review",
+            "workingIntent": "unrecognized_charge",
+            "resolvedBy": "confirmation",
+            "handoffReason": null,
+            "pending": null,
+            "details": {
+              "amount": 350,
+              "expectedAmount": null,
+              "currency": "USD",
+              "date": "2026-06-10",
+              "merchant": null
+            },
+            "match": "TRX-DEMO0000000000001",
+            "case": {
+              "reference": "GT-5MKNV3KQ",
+              "verified": true,
+              "kind": "review"
+            },
+            "masked": [],
+            "restartReason": null,
+            "reply": "Perfecto, hemos registrado tu disputa con el número de caso GT-5MKNV3KQ. Guarda este número, ya que nuestro equipo de disputas lo revisará y te informará del resultado.",
+            "stateTexts": [
+              "No reconozco un cargo de 350 dólares del 10 de junio en mi tarjeta ****1111, mi pin es [oculto]",
+              "sí"
+            ]
+          },
+          "intent": {
+            "label": "human_agent",
+            "confidence": 0.3975299410019866,
+            "decision": "ask",
+            "model": "e5small",
+            "modelVersion": "9a3c0b6",
+            "fallbackReason": "bedrock auth",
+            "ms": 2014
+          },
+          "reply": {
+            "source": "haiku",
+            "fallbackReason": null,
+            "promptVersion": "reply-v7",
+            "ms": 1205,
+            "costUsd": 0.000884
+          },
+          "extraction": {
+            "source": "skipped",
+            "promptVersion": "extract-v4",
+            "dropped": [],
+            "ms": 0,
+            "costUsd": 0
+          },
+          "caseReference": "GT-5MKNV3KQ",
+          "lookupSource": "mock"
+        }
+      ],
+      "grade": {
+        "pass": true,
+        "completed": true,
+        "outcome": "resolved",
+        "expected": "resolved",
+        "mismatches": [],
+        "leaks": [],
+        "wrongAction": false,
+        "missedHandoff": false,
+        "unnecessaryHandoff": false
+      }
+    },
+    {
+      "id": "TC-12",
+      "run": 1,
+      "login": "demo.mx",
+      "turns": [
+        {
+          "say": "¿Por qué me rechazaron una compra de 560 dólares el 14 de junio?",
+          "httpStatus": 200,
+          "ms": 3290,
+          "observed": {
+            "turn": 1,
+            "move": "status_answer",
+            "rule": "PL-5",
+            "status": "closed",
+            "workingIntent": "transaction_status",
+            "resolvedBy": "model",
+            "handoffReason": null,
+            "pending": "offer_agent",
+            "details": {
+              "amount": 560,
+              "expectedAmount": null,
+              "currency": "USD",
+              "date": "2026-06-14",
+              "merchant": null
+            },
+            "match": "TRX-DEMO0000000000006",
+            "case": null,
+            "masked": [],
+            "restartReason": null,
+            "reply": "Veo que tu compra de 560 dólares en Empresa Telefónica el 14 de junio fue rechazada, pero no tengo el motivo específico del rechazo. ¿Te gustaría que un agente revise los detalles de tu cuenta?",
+            "stateTexts": [
+              "¿Por qué me rechazaron una compra de 560 dólares el 14 de junio?"
+            ]
+          },
+          "intent": {
+            "label": "transaction_status",
+            "confidence": 0.7280894824456396,
+            "decision": "act",
+            "model": "e5small",
+            "modelVersion": "9a3c0b6",
+            "fallbackReason": "bedrock auth",
+            "ms": 2024
+          },
+          "reply": {
+            "source": "haiku",
+            "fallbackReason": null,
+            "promptVersion": "reply-v7",
+            "ms": 1245,
+            "costUsd": 0.000977
+          },
+          "extraction": {
+            "source": "haiku",
+            "promptVersion": "extract-v4",
+            "dropped": [],
+            "ms": 958,
+            "costUsd": 0.00113
+          },
+          "caseReference": null,
+          "lookupSource": "mock"
+        }
+      ],
+      "grade": {
+        "pass": true,
+        "completed": true,
+        "outcome": "resolved",
+        "expected": "resolved",
+        "mismatches": [],
+        "leaks": [],
+        "wrongAction": false,
+        "missedHandoff": false,
+        "unnecessaryHandoff": false
+      }
+    },
+    {
+      "id": "TC-13",
+      "run": 1,
+      "login": "demo.mx",
+      "turns": [
+        {
+          "say": "O que aconteceu com minha compra de 45 dólares de ontem?",
+          "httpStatus": 200,
+          "ms": 3318,
+          "observed": {
+            "turn": 1,
+            "move": "status_answer",
+            "rule": "PL-3",
+            "status": "closed",
+            "workingIntent": "transaction_status",
+            "resolvedBy": "model",
+            "handoffReason": null,
+            "pending": null,
+            "details": {
+              "amount": 45,
+              "expectedAmount": null,
+              "currency": "USD",
+              "date": "2026-06-16",
+              "merchant": null
+            },
+            "match": "TRX-DEMO0000000000004",
+            "case": null,
+            "masked": [],
+            "restartReason": null,
+            "reply": "Sua cobrança de 45 USD na Gasolinera Express ainda está pendente no seu sistema e pode ainda mudar ou ser cancelada. Se tiver dúvidas, estou aqui para ajudar!",
+            "stateTexts": [
+              "O que aconteceu com minha compra de 45 dólares de ontem?"
+            ]
+          },
+          "intent": {
+            "label": "transaction_status",
+            "confidence": 0.6314935460316708,
+            "decision": "act",
+            "model": "e5small",
+            "modelVersion": "9a3c0b6",
+            "fallbackReason": "bedrock auth",
+            "ms": 2021
+          },
+          "reply": {
+            "source": "haiku",
+            "fallbackReason": null,
+            "promptVersion": "reply-v7",
+            "ms": 1275,
+            "costUsd": 0.000869
+          },
+          "extraction": {
+            "source": "haiku",
+            "promptVersion": "extract-v4",
+            "dropped": [],
+            "ms": 1671,
+            "costUsd": 0.001144
+          },
+          "caseReference": null,
+          "lookupSource": "mock"
+        }
+      ],
+      "grade": {
+        "pass": true,
+        "completed": true,
+        "outcome": "resolved",
+        "expected": "resolved",
+        "mismatches": [],
+        "leaks": [],
+        "wrongAction": false,
+        "missedHandoff": false,
+        "unnecessaryHandoff": false
+      }
+    },
+    {
+      "id": "TC-14",
+      "run": 1,
+      "login": "demo.mx",
+      "turns": [
+        {
+          "say": "¿Me dicen el estado de mi compra de 350 dólares del 10 de junio?",
+          "httpStatus": 200,
+          "ms": 3155,
+          "observed": {
+            "turn": 1,
+            "move": "ask_clarify",
+            "rule": null,
+            "status": "open",
+            "workingIntent": null,
+            "resolvedBy": "model",
+            "handoffReason": null,
+            "pending": "clarify",
+            "details": {
+              "amount": 350,
+              "expectedAmount": null,
+              "currency": "USD",
+              "date": "2026-06-10",
+              "merchant": null
+            },
+            "match": null,
+            "case": null,
+            "masked": [],
+            "restartReason": null,
+            "reply": "¡Hola! ¿Te gustaría conocer el estado de esa transacción específica, o prefieres revisar los movimientos de tu cuenta?",
+            "stateTexts": [
+              "¿Me dicen el estado de mi compra de 350 dólares del 10 de junio?"
+            ]
+          },
+          "intent": {
+            "label": "transaction_status",
+            "confidence": 0.4712485164779781,
+            "decision": "ask",
+            "model": "e5small",
+            "modelVersion": "9a3c0b6",
+            "fallbackReason": "bedrock auth",
+            "ms": 2022
+          },
+          "reply": {
+            "source": "haiku",
+            "fallbackReason": null,
+            "promptVersion": "reply-v7",
+            "ms": 1114,
+            "costUsd": 0.000775
+          },
+          "extraction": {
+            "source": "haiku",
+            "promptVersion": "extract-v4",
+            "dropped": [],
+            "ms": 1236,
+            "costUsd": 0.001129
+          },
+          "caseReference": null,
+          "lookupSource": null
+        },
+        {
+          "say": "no fui yo",
+          "httpStatus": 200,
+          "ms": 3242,
+          "observed": {
+            "turn": 2,
+            "move": "status_answer",
+            "rule": "PL-9",
+            "status": "closed",
+            "workingIntent": "transaction_status",
+            "resolvedBy": "clarification",
+            "handoffReason": null,
+            "pending": "offer_dispute",
+            "details": {
+              "amount": 350,
+              "expectedAmount": null,
+              "currency": "USD",
+              "date": "2026-06-10",
+              "merchant": null
+            },
+            "match": "TRX-DEMO0000000000001",
+            "case": null,
+            "masked": [],
+            "restartReason": null,
+            "reply": "Entiendo que no reconoces ese cargo de 350 USD en Super Ahorro del 10 de junio. ¿Quieres que abramos una revisión si crees que no es correcto o no lo reconoces?",
+            "stateTexts": [
+              "¿Me dicen el estado de mi compra de 350 dólares del 10 de junio?",
+              "no fui yo"
+            ]
+          },
+          "intent": {
+            "label": "human_agent",
+            "confidence": 0.47807947227726566,
+            "decision": "ask",
+            "model": "e5small",
+            "modelVersion": "9a3c0b6",
+            "fallbackReason": "bedrock auth",
+            "ms": 2008
+          },
+          "reply": {
+            "source": "haiku",
+            "fallbackReason": null,
+            "promptVersion": "reply-v7",
+            "ms": 1215,
+            "costUsd": 0.000897
+          },
+          "extraction": {
+            "source": "haiku",
+            "promptVersion": "extract-v4",
+            "dropped": [],
+            "ms": 979,
+            "costUsd": 0.001052
+          },
+          "caseReference": null,
+          "lookupSource": "mock"
+        },
+        {
+          "say": "sí",
+          "httpStatus": 200,
+          "ms": 3032,
+          "observed": {
+            "turn": 3,
+            "move": "confirm",
+            "rule": null,
+            "status": "open",
+            "workingIntent": "unrecognized_charge",
+            "resolvedBy": "offer",
+            "handoffReason": null,
+            "pending": "confirm",
+            "details": {
+              "amount": 350,
+              "expectedAmount": null,
+              "currency": "USD",
+              "date": "2026-06-10",
+              "merchant": null
+            },
+            "match": "TRX-DEMO0000000000001",
+            "case": null,
+            "masked": [],
+            "restartReason": null,
+            "reply": "Encontré un cargo de 350 USD en Super Ahorro, el 10 de junio. ¿Es este el cargo que querías reportar?",
+            "stateTexts": [
+              "¿Me dicen el estado de mi compra de 350 dólares del 10 de junio?",
+              "no fui yo",
+              "sí"
+            ]
+          },
+          "intent": {
+            "label": "human_agent",
+            "confidence": 0.3975299410019866,
+            "decision": "ask",
+            "model": "e5small",
+            "modelVersion": "9a3c0b6",
+            "fallbackReason": "bedrock auth",
+            "ms": 2017
+          },
+          "reply": {
+            "source": "haiku",
+            "fallbackReason": null,
+            "promptVersion": "reply-v7",
+            "ms": 990,
+            "costUsd": 0.000793
+          },
+          "extraction": {
+            "source": "haiku",
+            "promptVersion": "extract-v4",
+            "dropped": [],
+            "ms": 894,
+            "costUsd": 0.00108
+          },
+          "caseReference": null,
+          "lookupSource": "mock"
+        }
+      ],
+      "grade": {
+        "pass": false,
+        "completed": true,
+        "outcome": "asked",
+        "expected": "resolved",
+        "mismatches": [
+          {
+            "turn": 1,
+            "field": "move",
+            "expected": "status_answer",
+            "actual": "ask_clarify"
+          },
+          {
+            "turn": 1,
+            "field": "rule",
+            "expected": "PL-9",
+            "actual": null
+          },
+          {
+            "turn": 1,
+            "field": "pending",
+            "expected": "offer_dispute",
+            "actual": "clarify"
+          },
+          {
+            "turn": 1,
+            "field": "match",
+            "expected": "TRX-DEMO0000000000001",
+            "actual": null
+          },
+          {
+            "turn": 2,
+            "field": "move",
+            "expected": "confirm",
+            "actual": "status_answer"
+          },
+          {
+            "turn": 2,
+            "field": "workingIntent",
+            "expected": "unrecognized_charge",
+            "actual": "transaction_status"
+          },
+          {
+            "turn": 3,
+            "field": "move",
+            "expected": "open_review",
+            "actual": "confirm"
+          },
+          {
+            "turn": 3,
+            "field": "rule",
+            "expected": "PL-7",
+            "actual": null
+          },
+          {
+            "turn": 3,
+            "field": "case",
+            "expected": {
+              "kind": "review",
+              "verified": true
+            },
+            "actual": null
+          }
+        ],
+        "leaks": [],
+        "wrongAction": false,
+        "missedHandoff": false,
+        "unnecessaryHandoff": false
+      }
+    },
+    {
+      "id": "TC-15",
+      "run": 1,
+      "login": "demo.mx",
+      "turns": [
+        {
+          "say": "¿Por qué me rechazaron una compra de 560 dólares el 14 de junio?",
+          "httpStatus": 200,
+          "ms": 3211,
+          "observed": {
+            "turn": 1,
+            "move": "status_answer",
+            "rule": "PL-5",
+            "status": "closed",
+            "workingIntent": "transaction_status",
+            "resolvedBy": "model",
+            "handoffReason": null,
+            "pending": "offer_agent",
+            "details": {
+              "amount": 560,
+              "expectedAmount": null,
+              "currency": "USD",
+              "date": "2026-06-14",
+              "merchant": null
+            },
+            "match": "TRX-DEMO0000000000006",
+            "case": null,
+            "masked": [],
+            "restartReason": null,
+            "reply": "Veo que esa compra fue rechazada, pero no tengo el motivo del rechazo. ¿Te gustaría que un agente revise la razón por la que se declinó?",
+            "stateTexts": [
+              "¿Por qué me rechazaron una compra de 560 dólares el 14 de junio?"
+            ]
+          },
+          "intent": {
+            "label": "transaction_status",
+            "confidence": 0.7280894824456396,
+            "decision": "act",
+            "model": "e5small",
+            "modelVersion": "9a3c0b6",
+            "fallbackReason": "bedrock auth",
+            "ms": 2028
+          },
+          "reply": {
+            "source": "haiku",
+            "fallbackReason": null,
+            "promptVersion": "reply-v7",
+            "ms": 1158,
+            "costUsd": 0.000882
+          },
+          "extraction": {
+            "source": "haiku",
+            "promptVersion": "extract-v4",
+            "dropped": [],
+            "ms": 1089,
+            "costUsd": 0.00113
+          },
+          "caseReference": null,
+          "lookupSource": "mock"
+        },
+        {
+          "say": "sí, por favor",
+          "httpStatus": 200,
+          "ms": 4206,
+          "observed": {
+            "turn": 2,
+            "move": "handoff",
+            "rule": "DLG-human",
+            "status": "handoff",
+            "workingIntent": "transaction_status",
+            "resolvedBy": "model",
+            "handoffReason": "customer_asked",
+            "pending": null,
+            "details": {
+              "amount": 560,
+              "expectedAmount": null,
+              "currency": "USD",
+              "date": "2026-06-14",
+              "merchant": null
+            },
+            "match": "TRX-DEMO0000000000006",
+            "case": {
+              "reference": "GT-5HN4YGYK",
+              "verified": true,
+              "kind": "handoff"
+            },
+            "masked": [],
+            "restartReason": null,
+            "reply": "Perfecto, un agente tomará tu caso GT-5HN4YGYK y verá todo lo que me has contado. Gracias por tu paciencia.",
+            "stateTexts": [
+              "¿Por qué me rechazaron una compra de 560 dólares el 14 de junio?",
+              "sí, por favor"
+            ]
+          },
+          "intent": {
+            "label": "out_of_scope",
+            "confidence": 0.5207712206269939,
+            "decision": "ask",
+            "model": "e5small",
+            "modelVersion": "9a3c0b6",
+            "fallbackReason": "bedrock auth",
+            "ms": 2014
+          },
+          "reply": {
+            "source": "haiku",
+            "fallbackReason": null,
+            "promptVersion": "reply-v7",
+            "ms": 1121,
+            "costUsd": 0.000823
+          },
+          "extraction": {
+            "source": "haiku",
+            "promptVersion": "extract-v4",
+            "dropped": [],
+            "ms": 851,
+            "costUsd": 0.001083
+          },
+          "caseReference": "GT-5HN4YGYK",
+          "lookupSource": null
+        }
+      ],
+      "grade": {
+        "pass": true,
+        "completed": true,
+        "outcome": "handed_off",
+        "expected": "handed_off",
+        "mismatches": [],
+        "leaks": [],
+        "wrongAction": false,
+        "missedHandoff": false,
+        "unnecessaryHandoff": false
+      }
+    },
+    {
+      "id": "TC-16",
+      "run": 1,
+      "login": "demo.mx",
+      "turns": [
+        {
+          "say": "Por que recusaram minha compra de 560 dólares do dia 14 de junho?",
+          "httpStatus": 200,
+          "ms": 3975,
+          "observed": {
+            "turn": 1,
+            "move": "status_answer",
+            "rule": "PL-5",
+            "status": "closed",
+            "workingIntent": "transaction_status",
+            "resolvedBy": "model",
+            "handoffReason": null,
+            "pending": "offer_agent",
+            "details": {
+              "amount": 560,
+              "expectedAmount": null,
+              "currency": "USD",
+              "date": "2026-06-14",
+              "merchant": null
+            },
+            "match": "TRX-DEMO0000000000006",
+            "case": null,
+            "masked": [],
+            "restartReason": null,
+            "reply": "Entendo que sua compra de 560 dólares em 14 de junho foi recusada. Infelizmente, não tenho a informação sobre o motivo da recusa, mas posso conectar você com um agente para investigar — gostaria que ele verificasse isso?",
+            "stateTexts": [
+              "Por que recusaram minha compra de 560 dólares do dia 14 de junho?"
+            ]
+          },
+          "intent": {
+            "label": "transaction_status",
+            "confidence": 0.7175709765033528,
+            "decision": "act",
+            "model": "e5small",
+            "modelVersion": "9a3c0b6",
+            "fallbackReason": "bedrock auth",
+            "ms": 2016
+          },
+          "reply": {
+            "source": "haiku",
+            "fallbackReason": null,
+            "promptVersion": "reply-v7",
+            "ms": 1944,
+            "costUsd": 0.000975
+          },
+          "extraction": {
+            "source": "haiku",
+            "promptVersion": "extract-v4",
+            "dropped": [],
+            "ms": 907,
+            "costUsd": 0.001122
+          },
+          "caseReference": null,
+          "lookupSource": "mock"
+        },
+        {
+          "say": "não precisa",
+          "httpStatus": 200,
+          "ms": 3129,
+          "observed": {
+            "turn": 2,
+            "move": "status_update",
+            "rule": null,
+            "status": "closed",
+            "workingIntent": "transaction_status",
+            "resolvedBy": "offer",
+            "handoffReason": null,
+            "pending": null,
+            "details": {
+              "amount": 560,
+              "expectedAmount": null,
+              "currency": "USD",
+              "date": "2026-06-14",
+              "merchant": null
+            },
+            "match": "TRX-DEMO0000000000006",
+            "case": null,
+            "masked": [],
+            "restartReason": null,
+            "reply": "Entendi, sua dúvida sobre esse lançamento já foi respondida. Posso ajudar você com mais alguma coisa?",
+            "stateTexts": [
+              "Por que recusaram minha compra de 560 dólares do dia 14 de junho?",
+              "não precisa"
+            ]
+          },
+          "intent": {
+            "label": "human_agent",
+            "confidence": 0.32721002497103996,
+            "decision": "ask",
+            "model": "e5small",
+            "modelVersion": "9a3c0b6",
+            "fallbackReason": "bedrock auth",
+            "ms": 2017
+          },
+          "reply": {
+            "source": "haiku",
+            "fallbackReason": null,
+            "promptVersion": "reply-v7",
+            "ms": 1091,
+            "costUsd": 0.000743
+          },
+          "extraction": {
+            "source": "haiku",
+            "promptVersion": "extract-v4",
+            "dropped": [],
+            "ms": 1551,
+            "costUsd": 0.001051
+          },
+          "caseReference": null,
+          "lookupSource": null
+        }
+      ],
+      "grade": {
+        "pass": true,
+        "completed": true,
+        "outcome": "resolved",
+        "expected": "resolved",
+        "mismatches": [],
+        "leaks": [],
+        "wrongAction": false,
+        "missedHandoff": false,
+        "unnecessaryHandoff": false
+      }
+    },
+    {
+      "id": "TC-17",
+      "run": 1,
+      "login": "demo.mx",
+      "turns": [
+        {
+          "say": "¿Qué pasó con mi compra de 350 dólares?",
+          "httpStatus": 200,
+          "ms": 2976,
+          "observed": {
+            "turn": 1,
+            "move": "ask_details",
+            "rule": null,
+            "status": "open",
+            "workingIntent": "transaction_status",
+            "resolvedBy": "words",
+            "handoffReason": null,
+            "pending": "details",
+            "details": {
+              "amount": 350,
+              "expectedAmount": null,
+              "currency": "USD",
+              "date": null,
+              "merchant": null
+            },
+            "match": null,
+            "case": null,
+            "masked": [],
+            "restartReason": null,
+            "reply": "Veo que tienes un cargo de 350 USD. ¿Podrías decirme aproximadamente cuándo se realizó esta compra para poder ayudarte mejor?",
+            "stateTexts": [
+              "¿Qué pasó con mi compra de 350 dólares?"
+            ]
+          },
+          "intent": {
+            "label": "transaction_status",
+            "confidence": 0.48119248342093746,
+            "decision": "ask",
+            "model": "e5small",
+            "modelVersion": "9a3c0b6",
+            "fallbackReason": "bedrock auth",
+            "ms": 2016
+          },
+          "reply": {
+            "source": "haiku",
+            "fallbackReason": null,
+            "promptVersion": "reply-v7",
+            "ms": 937,
+            "costUsd": 0.000818
+          },
+          "extraction": {
+            "source": "haiku",
+            "promptVersion": "extract-v4",
+            "dropped": [],
+            "ms": 976,
+            "costUsd": 0.001102
+          },
+          "caseReference": null,
+          "lookupSource": null
+        },
+        {
+          "say": "no me acuerdo",
+          "httpStatus": 200,
+          "ms": 3978,
+          "observed": {
+            "turn": 2,
+            "move": "pick",
+            "rule": "PL-10",
+            "status": "open",
+            "workingIntent": "transaction_status",
+            "resolvedBy": "kept_topic",
+            "handoffReason": null,
+            "pending": "pick",
+            "details": {
+              "amount": 350,
+              "expectedAmount": null,
+              "currency": "USD",
+              "date": null,
+              "merchant": null
+            },
+            "match": null,
+            "case": null,
+            "masked": [],
+            "restartReason": null,
+            "reply": "Entiendo, no te preocupes. Veo un cargo de 350 USD en Super Ahorro el 10 de junio y otro cargo de 350 USD en Tienda Don José el 27 de febrero. ¿Cuál de estos dos es el que querías consultar?",
+            "stateTexts": [
+              "¿Qué pasó con mi compra de 350 dólares?",
+              "no me acuerdo"
+            ]
+          },
+          "intent": {
+            "label": "human_agent",
+            "confidence": 0.5430292049571304,
+            "decision": "ask",
+            "model": "e5small",
+            "modelVersion": "9a3c0b6",
+            "fallbackReason": "bedrock auth",
+            "ms": 2019
+          },
+          "reply": {
+            "source": "haiku",
+            "fallbackReason": null,
+            "promptVersion": "reply-v7",
+            "ms": 1936,
+            "costUsd": 0.000969
+          },
+          "extraction": {
+            "source": "haiku",
+            "promptVersion": "extract-v4",
+            "dropped": [],
+            "ms": 1011,
+            "costUsd": 0.001104
+          },
+          "caseReference": null,
+          "lookupSource": "mock"
+        },
+        {
+          "say": "la de Super Ahorro",
+          "httpStatus": 200,
+          "ms": 3262,
+          "observed": {
+            "turn": 3,
+            "move": "status_answer",
+            "rule": "PL-9",
+            "status": "closed",
+            "workingIntent": "transaction_status",
+            "resolvedBy": "offer",
+            "handoffReason": null,
+            "pending": "offer_dispute",
+            "details": {
+              "amount": 350,
+              "expectedAmount": null,
+              "currency": "USD",
+              "date": null,
+              "merchant": "Super Ahorro"
+            },
+            "match": "TRX-DEMO0000000000001",
+            "case": null,
+            "masked": [],
+            "restartReason": null,
+            "reply": "Veo que hay un cargo de 350 USD en Super Ahorro del 10 de junio que se procesó normalmente. ¿No lo reconoces o crees que el monto es incorrecto? Si es así, puedo abrir una revisión para ti.",
+            "stateTexts": [
+              "¿Qué pasó con mi compra de 350 dólares?",
+              "no me acuerdo",
+              "la de Super Ahorro"
+            ]
+          },
+          "intent": {
+            "label": "out_of_scope",
+            "confidence": 0.6928435155164927,
+            "decision": "act",
+            "model": "e5small",
+            "modelVersion": "9a3c0b6",
+            "fallbackReason": "bedrock auth",
+            "ms": 2017
+          },
+          "reply": {
+            "source": "haiku",
+            "fallbackReason": null,
+            "promptVersion": "reply-v7",
+            "ms": 1220,
+            "costUsd": 0.000944
+          },
+          "extraction": {
+            "source": "haiku",
+            "promptVersion": "extract-v4",
+            "dropped": [],
+            "ms": 851,
+            "costUsd": 0.001104
+          },
+          "caseReference": null,
+          "lookupSource": "mock"
+        }
+      ],
+      "grade": {
+        "pass": true,
+        "completed": true,
+        "outcome": "resolved",
+        "expected": "resolved",
+        "mismatches": [],
+        "leaks": [],
+        "wrongAction": false,
+        "missedHandoff": false,
+        "unnecessaryHandoff": false
+      }
+    },
+    {
+      "id": "TC-18",
+      "run": 1,
+      "login": "demo.mx",
+      "turns": [
+        {
+          "say": "No reconozco un cargo de 350 dólares del mes pasado",
+          "httpStatus": 200,
+          "ms": 3217,
+          "observed": {
+            "turn": 1,
+            "move": "no_match",
+            "rule": "PL-1",
+            "status": "open",
+            "workingIntent": "unrecognized_charge",
+            "resolvedBy": "words",
+            "handoffReason": null,
+            "pending": "details",
+            "details": {
+              "amount": 350,
+              "expectedAmount": null,
+              "currency": "USD",
+              "date": null,
+              "merchant": null
+            },
+            "match": null,
+            "case": null,
+            "masked": [],
+            "restartReason": null,
+            "reply": "Entiendo tu preocupación. Para ayudarte a encontrar ese cargo, ¿podrías verificar la fecha exacta y el nombre del comerciante si lo recuerdas?",
+            "stateTexts": [
+              "No reconozco un cargo de 350 dólares del mes pasado"
+            ]
+          },
+          "intent": {
+            "label": "unrecognized_charge",
+            "confidence": 0.366350083675143,
+            "decision": "ask",
+            "model": "e5small",
+            "modelVersion": "9a3c0b6",
+            "fallbackReason": "bedrock auth",
+            "ms": 2018
+          },
+          "reply": {
+            "source": "haiku",
+            "fallbackReason": null,
+            "promptVersion": "reply-v7",
+            "ms": 1179,
+            "costUsd": 0.000819
+          },
+          "extraction": {
+            "source": "haiku",
+            "promptVersion": "extract-v4",
+            "dropped": [],
+            "ms": 1017,
+            "costUsd": 0.00113
+          },
+          "caseReference": null,
+          "lookupSource": "mock"
+        },
+        {
+          "say": "el más reciente",
+          "httpStatus": 200,
+          "ms": 2978,
+          "observed": {
+            "turn": 2,
+            "move": "confirm",
+            "rule": null,
+            "status": "open",
+            "workingIntent": "unrecognized_charge",
+            "resolvedBy": "kept_topic",
+            "handoffReason": null,
+            "pending": "confirm",
+            "details": {
+              "amount": 350,
+              "expectedAmount": null,
+              "currency": "USD",
+              "date": null,
+              "merchant": null
+            },
+            "match": "TRX-DEMO0000000000001",
+            "case": null,
+            "masked": [],
+            "restartReason": null,
+            "reply": "Vi un cargo de 350 USD en Super Ahorro, el 10 de junio. ¿Es este el cargo que mencionas?",
+            "stateTexts": [
+              "No reconozco un cargo de 350 dólares del mes pasado",
+              "el más reciente"
+            ]
+          },
+          "intent": {
+            "label": "balance_check",
+            "confidence": 0.4346150140757128,
+            "decision": "ask",
+            "model": "e5small",
+            "modelVersion": "9a3c0b6",
+            "fallbackReason": "bedrock auth",
+            "ms": 2018
+          },
+          "reply": {
+            "source": "haiku",
+            "fallbackReason": null,
+            "promptVersion": "reply-v7",
+            "ms": 937,
+            "costUsd": 0.00078
+          },
+          "extraction": {
+            "source": "haiku",
+            "promptVersion": "extract-v4",
+            "dropped": [],
+            "ms": 866,
+            "costUsd": 0.001088
+          },
+          "caseReference": null,
+          "lookupSource": "mock"
+        },
+        {
+          "say": "sí",
+          "httpStatus": 200,
+          "ms": 3929,
+          "observed": {
+            "turn": 3,
+            "move": "open_review",
+            "rule": "PL-7",
+            "status": "review",
+            "workingIntent": "unrecognized_charge",
+            "resolvedBy": "confirmation",
+            "handoffReason": null,
+            "pending": null,
+            "details": {
+              "amount": 350,
+              "expectedAmount": null,
+              "currency": "USD",
+              "date": null,
+              "merchant": null
+            },
+            "match": "TRX-DEMO0000000000001",
+            "case": {
+              "reference": "GT-EVQLDTRJ",
+              "verified": true,
+              "kind": "review"
+            },
+            "masked": [],
+            "restartReason": null,
+            "reply": "Perfecto. Tu disputa por el cargo de 350 USD en Super Ahorro del 10 de junio ha sido registrada con el número de caso GT-EVQLDTRJ, que debes guardar. Nuestro equipo de disputas lo revisará y te informará del resultado.",
+            "stateTexts": [
+              "No reconozco un cargo de 350 dólares del mes pasado",
+              "el más reciente",
+              "sí"
+            ]
+          },
+          "intent": {
+            "label": "human_agent",
+            "confidence": 0.3975299410019866,
+            "decision": "ask",
+            "model": "e5small",
+            "modelVersion": "9a3c0b6",
+            "fallbackReason": "bedrock auth",
+            "ms": 2011
+          },
+          "reply": {
+            "source": "haiku",
+            "fallbackReason": null,
+            "promptVersion": "reply-v7",
+            "ms": 1275,
+            "costUsd": 0.000967
+          },
+          "extraction": {
+            "source": "skipped",
+            "promptVersion": "extract-v4",
+            "dropped": [],
+            "ms": 0,
+            "costUsd": 0
+          },
+          "caseReference": "GT-EVQLDTRJ",
+          "lookupSource": "mock"
+        }
+      ],
+      "grade": {
+        "pass": true,
+        "completed": true,
+        "outcome": "resolved",
+        "expected": "resolved",
+        "mismatches": [],
+        "leaks": [],
+        "wrongAction": false,
+        "missedHandoff": false,
+        "unnecessaryHandoff": false
+      }
+    },
+    {
+      "id": "TC-19",
+      "run": 1,
+      "login": "demo.mx",
+      "turns": [
+        {
+          "say": "O que aconteceu com minha compra de 25 dólares?",
+          "httpStatus": 200,
+          "ms": 3014,
+          "observed": {
+            "turn": 1,
+            "move": "ask_clarify",
+            "rule": null,
+            "status": "open",
+            "workingIntent": null,
+            "resolvedBy": "model",
+            "handoffReason": null,
+            "pending": "clarify",
+            "details": {
+              "amount": 25,
+              "expectedAmount": null,
+              "currency": "USD",
+              "date": null,
+              "merchant": null
+            },
+            "match": null,
+            "case": null,
+            "masked": [],
+            "restartReason": null,
+            "reply": "Oi! Você gostaria de saber o status dessa transação de 25 dólares, ou há algo mais que eu possa ajudar?",
+            "stateTexts": [
+              "O que aconteceu com minha compra de 25 dólares?"
+            ]
+          },
+          "intent": {
+            "label": "transaction_status",
+            "confidence": 0.5530997849855566,
+            "decision": "ask",
+            "model": "e5small",
+            "modelVersion": "9a3c0b6",
+            "fallbackReason": "bedrock auth",
+            "ms": 2021
+          },
+          "reply": {
+            "source": "haiku",
+            "fallbackReason": null,
+            "promptVersion": "reply-v7",
+            "ms": 974,
+            "costUsd": 0.000754
+          },
+          "extraction": {
+            "source": "haiku",
+            "promptVersion": "extract-v4",
+            "dropped": [],
+            "ms": 863,
+            "costUsd": 0.001101
+          },
+          "caseReference": null,
+          "lookupSource": null
+        },
+        {
+          "say": "foi na semana passada",
+          "httpStatus": 200,
+          "ms": 3109,
+          "observed": {
+            "turn": 2,
+            "move": "pick",
+            "rule": "PL-10",
+            "status": "open",
+            "workingIntent": "transaction_status",
+            "resolvedBy": "clarification",
+            "handoffReason": null,
+            "pending": "pick",
+            "details": {
+              "amount": 25,
+              "expectedAmount": null,
+              "currency": "USD",
+              "date": null,
+              "merchant": null
+            },
+            "match": null,
+            "case": null,
+            "masked": [],
+            "restartReason": null,
+            "reply": "Encontrei duas cobranças de 25 USD: uma em Super Ahorro no dia 12 de junho e outra em Tienda Don José no dia 11 de junho. Qual delas você gostaria de consultar?",
+            "stateTexts": [
+              "O que aconteceu com minha compra de 25 dólares?",
+              "foi na semana passada"
+            ]
+          },
+          "intent": {
+            "label": "transaction_status",
+            "confidence": 0.4781560464663264,
+            "decision": "ask",
+            "model": "e5small",
+            "modelVersion": "9a3c0b6",
+            "fallbackReason": "bedrock auth",
+            "ms": 2025
+          },
+          "reply": {
+            "source": "haiku",
+            "fallbackReason": null,
+            "promptVersion": "reply-v7",
+            "ms": 1061,
+            "costUsd": 0.000893
+          },
+          "extraction": {
+            "source": "haiku",
+            "promptVersion": "extract-v4",
+            "dropped": [],
+            "ms": 1030,
+            "costUsd": 0.001169
+          },
+          "caseReference": null,
+          "lookupSource": "mock"
+        },
+        {
+          "say": "a primeira",
+          "httpStatus": 200,
+          "ms": 3015,
+          "observed": {
+            "turn": 3,
+            "move": "status_answer",
+            "rule": "PL-9",
+            "status": "closed",
+            "workingIntent": "transaction_status",
+            "resolvedBy": "offer",
+            "handoffReason": null,
+            "pending": "offer_dispute",
+            "details": {
+              "amount": 25,
+              "expectedAmount": null,
+              "currency": "USD",
+              "date": null,
+              "merchant": null
+            },
+            "match": "TRX-DEMO0000000000008",
+            "case": null,
+            "masked": [],
+            "restartReason": null,
+            "reply": "Vi que uma cobrança de 25 USD em Super Ahorro foi aprovada e debitada normalmente. Você não reconhece essa transação ou acha o valor incorreto?",
+            "stateTexts": [
+              "O que aconteceu com minha compra de 25 dólares?",
+              "foi na semana passada",
+              "a primeira"
+            ]
+          },
+          "intent": {
+            "label": "out_of_scope",
+            "confidence": 0.4397364076280708,
+            "decision": "ask",
+            "model": "e5small",
+            "modelVersion": "9a3c0b6",
+            "fallbackReason": "bedrock auth",
+            "ms": 2020
+          },
+          "reply": {
+            "source": "haiku",
+            "fallbackReason": null,
+            "promptVersion": "reply-v7",
+            "ms": 976,
+            "costUsd": 0.000831
+          },
+          "extraction": {
+            "source": "haiku",
+            "promptVersion": "extract-v4",
+            "dropped": [],
+            "ms": 1021,
+            "costUsd": 0.00108
+          },
+          "caseReference": null,
+          "lookupSource": "mock"
+        }
+      ],
+      "grade": {
+        "pass": false,
+        "completed": true,
+        "outcome": "resolved",
+        "expected": "resolved",
+        "mismatches": [
+          {
+            "turn": 1,
+            "field": "move",
+            "expected": "ask_details",
+            "actual": "ask_clarify"
+          }
+        ],
+        "leaks": [],
+        "wrongAction": false,
+        "missedHandoff": false,
+        "unnecessaryHandoff": false
+      }
+    },
+    {
+      "id": "TC-20",
+      "run": 1,
+      "login": "demo.mx",
+      "turns": [
+        {
+          "say": "¿Qué pasó con un cobro de 89,90 dólares?",
+          "httpStatus": 200,
+          "ms": 3606,
+          "observed": {
+            "turn": 1,
+            "move": "ask_clarify",
+            "rule": null,
+            "status": "open",
+            "workingIntent": null,
+            "resolvedBy": "model",
+            "handoffReason": null,
+            "pending": "clarify",
+            "details": {
+              "amount": 89.9,
+              "expectedAmount": null,
+              "currency": "USD",
+              "date": null,
+              "merchant": null
+            },
+            "match": null,
+            "case": null,
+            "masked": [],
+            "restartReason": null,
+            "reply": "¿Te cobros un cargo que no reconoces o quieres verificar tus movimientos en cuenta? Cuéntame un poco más para ayudarte mejor.",
+            "stateTexts": [
+              "¿Qué pasó con un cobro de 89,90 dólares?"
+            ]
+          },
+          "intent": {
+            "label": "wrongful_fee",
+            "confidence": 0.43024791699056786,
+            "decision": "ask",
+            "model": "e5small",
+            "modelVersion": "9a3c0b6",
+            "fallbackReason": "bedrock auth",
+            "ms": 2023
+          },
+          "reply": {
+            "source": "haiku",
+            "fallbackReason": null,
+            "promptVersion": "reply-v7",
+            "ms": 1562,
+            "costUsd": 0.000773
+          },
+          "extraction": {
+            "source": "haiku",
+            "promptVersion": "extract-v4",
+            "dropped": [],
+            "ms": 1615,
+            "costUsd": 0.001114
+          },
+          "caseReference": null,
+          "lookupSource": null
+        },
+        {
+          "say": "ni idea",
+          "httpStatus": 200,
+          "ms": 3096,
+          "observed": {
+            "turn": 2,
+            "move": "answer",
+            "rule": null,
+            "status": "open",
+            "workingIntent": "balance_check",
+            "resolvedBy": "clarification",
+            "handoffReason": null,
+            "pending": null,
+            "details": {
+              "amount": 89.9,
+              "expectedAmount": null,
+              "currency": "USD",
+              "date": null,
+              "merchant": null
+            },
+            "match": null,
+            "case": null,
+            "masked": [],
+            "restartReason": null,
+            "reply": "Te puedo ayudar con eso. ¿Cuál es la cuenta o tarjeta que quieres consultar?",
+            "stateTexts": [
+              "¿Qué pasó con un cobro de 89,90 dólares?",
+              "ni idea"
+            ]
+          },
+          "intent": {
+            "label": "out_of_scope",
+            "confidence": 0.7263705876612591,
+            "decision": "act",
+            "model": "e5small",
+            "modelVersion": "9a3c0b6",
+            "fallbackReason": "bedrock auth",
+            "ms": 2015
+          },
+          "reply": {
+            "source": "haiku",
+            "fallbackReason": null,
+            "promptVersion": "reply-v7",
+            "ms": 1041,
+            "costUsd": 0.000717
+          },
+          "extraction": {
+            "source": "haiku",
+            "promptVersion": "extract-v4",
+            "dropped": [],
+            "ms": 960,
+            "costUsd": 0.00108
+          },
+          "caseReference": null,
+          "lookupSource": null
+        },
+        {
+          "say": "Cable TV",
+          "httpStatus": 200,
+          "ms": 3068,
+          "observed": {
+            "turn": 3,
+            "move": "ask_clarify",
+            "rule": null,
+            "status": "open",
+            "workingIntent": "balance_check",
+            "resolvedBy": "model",
+            "handoffReason": null,
+            "pending": "clarify",
+            "details": {
+              "amount": 89.9,
+              "expectedAmount": null,
+              "currency": "USD",
+              "date": null,
+              "merchant": "Cable TV"
+            },
+            "match": null,
+            "case": null,
+            "masked": [],
+            "restartReason": null,
+            "reply": "¿Necesitas ayuda con un pago de cable, o prefieres hablar con un agente?",
+            "stateTexts": [
+              "¿Qué pasó con un cobro de 89,90 dólares?",
+              "ni idea",
+              "Cable TV"
+            ]
+          },
+          "intent": {
+            "label": "out_of_scope",
+            "confidence": 0.5932593469226364,
+            "decision": "ask",
+            "model": "e5small",
+            "modelVersion": "9a3c0b6",
+            "fallbackReason": "bedrock auth",
+            "ms": 2044
+          },
+          "reply": {
+            "source": "haiku",
+            "fallbackReason": null,
+            "promptVersion": "reply-v7",
+            "ms": 1006,
+            "costUsd": 0.000695
+          },
+          "extraction": {
+            "source": "haiku",
+            "promptVersion": "extract-v4",
+            "dropped": [],
+            "ms": 879,
+            "costUsd": 0.001055
+          },
+          "caseReference": null,
+          "lookupSource": null
+        }
+      ],
+      "grade": {
+        "pass": false,
+        "completed": true,
+        "outcome": "asked",
+        "expected": "handed_off",
+        "mismatches": [
+          {
+            "turn": 1,
+            "field": "move",
+            "expected": "ask_details",
+            "actual": "ask_clarify"
+          },
+          {
+            "turn": 2,
+            "field": "move",
+            "expected": "ask_narrow",
+            "actual": "answer"
+          },
+          {
+            "turn": 2,
+            "field": "rule",
+            "expected": "PL-2",
+            "actual": null
+          },
+          {
+            "turn": 2,
+            "field": "pending",
+            "expected": "merchant",
+            "actual": null
+          },
+          {
+            "turn": 3,
+            "field": "move",
+            "expected": "handoff",
+            "actual": "ask_clarify"
+          },
+          {
+            "turn": 3,
+            "field": "rule",
+            "expected": "PL-2",
+            "actual": null
+          },
+          {
+            "turn": 3,
+            "field": "handoffReason",
+            "expected": "ambiguous",
+            "actual": null
+          },
+          {
+            "turn": 3,
+            "field": "case",
+            "expected": {
+              "kind": "handoff",
+              "verified": true
+            },
+            "actual": null
+          }
+        ],
+        "leaks": [],
+        "wrongAction": false,
+        "missedHandoff": true,
+        "unnecessaryHandoff": false
+      }
+    },
+    {
+      "id": "TC-21",
+      "run": 1,
+      "login": "demo.mx",
+      "turns": [
+        {
+          "say": "No reconozco un cargo de 350 dólares",
+          "httpStatus": 200,
+          "ms": 3039,
+          "observed": {
+            "turn": 1,
+            "move": "ask_details",
+            "rule": null,
+            "status": "open",
+            "workingIntent": "unrecognized_charge",
+            "resolvedBy": "words",
+            "handoffReason": null,
+            "pending": "details",
+            "details": {
+              "amount": 350,
+              "expectedAmount": null,
+              "currency": "USD",
+              "date": null,
+              "merchant": null
+            },
+            "match": null,
+            "case": null,
+            "masked": [],
+            "restartReason": null,
+            "reply": "Entiendo que no reconoces el cargo de 350 dólares. ¿Podrías decirme aproximadamente cuándo apareció ese cargo en tu cuenta?",
+            "stateTexts": [
+              "No reconozco un cargo de 350 dólares"
+            ]
+          },
+          "intent": {
+            "label": "unrecognized_charge",
+            "confidence": 0.3153261947469969,
+            "decision": "ask",
+            "model": "e5small",
+            "modelVersion": "9a3c0b6",
+            "fallbackReason": "bedrock auth",
+            "ms": 2023
+          },
+          "reply": {
+            "source": "haiku",
+            "fallbackReason": null,
+            "promptVersion": "reply-v7",
+            "ms": 997,
+            "costUsd": 0.000808
+          },
+          "extraction": {
+            "source": "haiku",
+            "promptVersion": "extract-v4",
+            "dropped": [],
+            "ms": 1661,
+            "costUsd": 0.001096
+          },
+          "caseReference": null,
+          "lookupSource": null
+        },
+        {
+          "say": "no me acuerdo",
+          "httpStatus": 200,
+          "ms": 4018,
+          "observed": {
+            "turn": 2,
+            "move": "pick",
+            "rule": "PL-10",
+            "status": "open",
+            "workingIntent": "unrecognized_charge",
+            "resolvedBy": "kept_topic",
+            "handoffReason": null,
+            "pending": "pick",
+            "details": {
+              "amount": 350,
+              "expectedAmount": null,
+              "currency": "USD",
+              "date": null,
+              "merchant": null
+            },
+            "match": null,
+            "case": null,
+            "masked": [],
+            "restartReason": null,
+            "reply": "Entiendo, no te preocupes. Veo un cargo de 350 USD en Super Ahorro del 10 de junio y otro de 350 USD en Tienda Don José del 27 de febrero. ¿Cuál de estos es el que querías consultar?",
+            "stateTexts": [
+              "No reconozco un cargo de 350 dólares",
+              "no me acuerdo"
+            ]
+          },
+          "intent": {
+            "label": "human_agent",
+            "confidence": 0.5430292049571304,
+            "decision": "ask",
+            "model": "e5small",
+            "modelVersion": "9a3c0b6",
+            "fallbackReason": "bedrock auth",
+            "ms": 2014
+          },
+          "reply": {
+            "source": "haiku",
+            "fallbackReason": null,
+            "promptVersion": "reply-v7",
+            "ms": 1979,
+            "costUsd": 0.000959
+          },
+          "extraction": {
+            "source": "haiku",
+            "promptVersion": "extract-v4",
+            "dropped": [],
+            "ms": 891,
+            "costUsd": 0.001104
+          },
+          "caseReference": null,
+          "lookupSource": "mock"
+        },
+        {
+          "say": "el de febrero",
+          "httpStatus": 200,
+          "ms": 3042,
+          "observed": {
+            "turn": 3,
+            "move": "confirm",
+            "rule": null,
+            "status": "open",
+            "workingIntent": "unrecognized_charge",
+            "resolvedBy": "offer",
+            "handoffReason": null,
+            "pending": "confirm",
+            "details": {
+              "amount": 350,
+              "expectedAmount": null,
+              "currency": "USD",
+              "date": null,
+              "merchant": null
+            },
+            "match": "TRX-DEMO0000000000009",
+            "case": null,
+            "masked": [],
+            "restartReason": null,
+            "reply": "¿Es el cargo de 350 USD en Tienda Don José, el 27 de febrero, el que querías consultar?",
+            "stateTexts": [
+              "No reconozco un cargo de 350 dólares",
+              "no me acuerdo",
+              "el de febrero"
+            ]
+          },
+          "intent": {
+            "label": "out_of_scope",
+            "confidence": 0.31137875467444287,
+            "decision": "ask",
+            "model": "e5small",
+            "modelVersion": "9a3c0b6",
+            "fallbackReason": "bedrock auth",
+            "ms": 2014
+          },
+          "reply": {
+            "source": "haiku",
+            "fallbackReason": null,
+            "promptVersion": "reply-v7",
+            "ms": 1007,
+            "costUsd": 0.000764
+          },
+          "extraction": {
+            "source": "haiku",
+            "promptVersion": "extract-v4",
+            "dropped": [],
+            "ms": 1316,
+            "costUsd": 0.001111
+          },
+          "caseReference": null,
+          "lookupSource": "mock"
+        },
+        {
+          "say": "sí",
+          "httpStatus": 200,
+          "ms": 4048,
+          "observed": {
+            "turn": 4,
+            "move": "open_review",
+            "rule": "PL-7",
+            "status": "review",
+            "workingIntent": "unrecognized_charge",
+            "resolvedBy": "confirmation",
+            "handoffReason": null,
+            "pending": null,
+            "details": {
+              "amount": 350,
+              "expectedAmount": null,
+              "currency": "USD",
+              "date": null,
+              "merchant": null
+            },
+            "match": "TRX-DEMO0000000000009",
+            "case": {
+              "reference": "GT-4EWJYV2E",
+              "verified": true,
+              "kind": "review"
+            },
+            "masked": [],
+            "restartReason": null,
+            "reply": "Perfecto, tu disputa por el cargo de 350 USD en Tienda Don José del 27 de febrero ha sido registrada con el número de caso GT-4EWJYV2E, que debes guardar. Nuestro equipo de disputas lo revisará y te informará del resultado.",
+            "stateTexts": [
+              "No reconozco un cargo de 350 dólares",
+              "no me acuerdo",
+              "el de febrero",
+              "sí"
+            ]
+          },
+          "intent": {
+            "label": "human_agent",
+            "confidence": 0.3975299410019866,
+            "decision": "ask",
+            "model": "e5small",
+            "modelVersion": "9a3c0b6",
+            "fallbackReason": "bedrock auth",
+            "ms": 2023
+          },
+          "reply": {
+            "source": "haiku",
+            "fallbackReason": null,
+            "promptVersion": "reply-v7",
+            "ms": 1319,
+            "costUsd": 0.000979
+          },
+          "extraction": {
+            "source": "skipped",
+            "promptVersion": "extract-v4",
+            "dropped": [],
+            "ms": 0,
+            "costUsd": 0
+          },
+          "caseReference": "GT-4EWJYV2E",
+          "lookupSource": "mock"
+        }
+      ],
+      "grade": {
+        "pass": true,
+        "completed": true,
+        "outcome": "resolved",
+        "expected": "resolved",
+        "mismatches": [],
+        "leaks": [],
+        "wrongAction": false,
+        "missedHandoff": false,
+        "unnecessaryHandoff": false
+      }
+    }
+  ],
+  "attacks": []
+}

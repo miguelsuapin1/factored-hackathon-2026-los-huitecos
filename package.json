@@ -10,7 +10,8 @@
     "start": "next start",
     "lint": "eslint",
     "test": "tsx --test 'src/**/*.test.ts' 'evals/**/*.test.ts'",
-    "eval": "tsx evals/run.ts"
+    "eval": "tsx evals/run.ts",
+    "eval:report": "tsx evals/report.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.129.0",
