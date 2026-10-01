@@ -3,7 +3,7 @@
 # Project context
 Factored AI & Data Hackathon 2026 (10-day sprint from 2026-09-25, deadline ~2026-10-05, to confirm). Team: Miguel (miguelsuapin1), lpcuellar, Carloscuellark.
 We build **transaction-dispute intake** (unrecognized charges + wrongful fees) for a **fictional bank, "GT Bank"**, in Spanish and Portuguese.
-Read first: [docs/phase-1-walkthrough.md](docs/phase-1-walkthrough.md) (what exists and why). Brief: docs/challenge.md. Decisions: docs/decisions.md, docs/intent-model.md (D1–D16), docs/reply-generation.md (R1–R7), docs/conversation.md (C1–, steps 9 + 11), docs/policy.md (PL-1–PL-8, step 12), docs/verification.md (V1–V5, step 13), docs/handoff.md (H1–H4, R8, step 14). Team interfaces: docs/contracts.md. Data findings: docs/contact-reason-analysis.md, docs/data-issues.md. What failed and was replaced: docs/lessons-learned.md (add new entries as they happen).
+Read first: [docs/phase-1-walkthrough.md](docs/phase-1-walkthrough.md) (what exists and why). Brief: docs/challenge.md. Decisions: docs/decisions.md, docs/intent-model.md (D1–D16), docs/reply-generation.md (R1–R7), docs/conversation.md (C1–, steps 9 + 11), docs/policy.md (PL-1–PL-8, step 12), docs/verification.md (V1–V5, step 13), docs/handoff.md (H1–H4, R8, step 14), docs/evaluation.md (EV-1–EV-6, steps 16–19; findings docs/evaluation-findings.md, team requests docs/evaluation-requests.md). Team interfaces: docs/contracts.md. Data findings: docs/contact-reason-analysis.md, docs/data-issues.md. What failed and was replaced: docs/lessons-learned.md (add new entries as they happen).
 
 ## Current state (end of Phase 1, 2026-09-29)
 - Live: https://latam-bank-service-sigma.vercel.app — `/` sign-in, `/app` chat. Every push to `main` deploys.
@@ -22,7 +22,8 @@ Read first: [docs/phase-1-walkthrough.md](docs/phase-1-walkthrough.md) (what exi
 - **Step 7 (branch `Phase2_Cuellar`, Carlos, 2026-10-01):** bronze/silver/gold in BigQuery (dbt, `pipeline/dbt`), gold serving slice loaded into Supabase (`customers`, `products`, `transactions`, `fx_rates`, `agent_pools`, `data_version`; server-only). Log: docs/phase-2-data-log.md.
 - **Step 8 (branch `Phase2_Cuellar`, Carlos, 2026-10-01):** per-customer login + RLS (see Auth above).
 - **Step 10 (branch `carlos/step-10-lookup`, Carlos, 2026-10-01):** Supabase lookup `src/lib/lookup/sql.ts` (K2), used when `SUPABASE_LOOKUP_DB_URL` is set, stand-in otherwise; same matching rules as the stand-in (`match.ts`), parity test `src/lib/lookup/sql.test.ts` (`LOOKUP_TEST_DB_URL=... npm test`).
-- Not built yet: eval harness, agent console.
+- **Evidence track (Luis Pedro, PRs #16–#20, 2026-10-01):** K5 demo/test customers in docs/contracts.md. Harness `evals/` (`npm run eval`): replays conversations against a running app and grades code-decided fields (EV-1); suites `tc` (TC-01…21), `step17` (personas), `break` (24 probes + 14 protocol attacks). `npm run eval:report` → `reports/eval_<name>.md` vs. a human-only baseline (EV-3); inputs kept in `evals/results/`. Step 16 scorer `pipeline/score_human.py` + `evals/human/` (messages not written yet). Findings EF-1 (premature hand-off, high) and EF-4 (PIN before its label not masked, high) await fixes. Runs so far used the e5-small fallback; Vercel previews are behind Vercel Authentication (request M8).
+- Not built yet: agent console.
 
 ## Phase 2 plan (build steps 7–21, see the published build plan)
 Data & access: 7 pipeline + Supabase load + labeled fixtures · 8 test login + row-level security · 9 extract amount/date/merchant · 10 transaction lookup tool.
@@ -57,6 +58,9 @@ uv run python pipeline/split.py               # verify the sealed split
 (cd pipeline/dbt && uv run python fixtures/build_fixture_bronze.py && DBT_DUCKDB_PATH=../../data/processed/fixture.duckdb uv run dbt build --profiles-dir . --target duckdb --vars '{fixtures: true}')  # offline
 (cd pipeline && uv run python compare_embeddings.py) # model selection by grouped CV (test untouched)
 (cd pipeline && uv run python train_intent.py --embedding cohere-mv3)  # validation only; --test is logged
+npm run eval -- --suite tc|step17|break       # evaluation harness against a running app (paced 15 turns/min)
+npm run eval:report -- --name <name>          # reports/eval_<name>.md from the newest runs
+uv run python pipeline/score_human.py         # step 16: intent model vs keyword rules on human-written messages
 ```
 
 ## Accounts & infrastructure
@@ -74,3 +78,4 @@ uv run python pipeline/split.py               # verify the sealed split
 - **Embedding parity:** `scripts/embed_phrases.mjs` currently embeds in one batch; q8 activations calibrate per batch, so serving (one message at a time) differs by ≤0.03 in confidence. Switch to one-at-a-time before the next e5 retrain.
 - **iCloud Desktop:** the repo lives on an iCloud-synced Desktop, which creates `"name 2.ext"` duplicates (tsconfig ignores `* 2.ts`). Moving the repo off the Desktop is recommended.
 - Portuguese regexes: JS `\b` doesn't treat accented letters as word characters.
+- **Evaluation runs:** without `SUPABASE_LOOKUP_DB_URL` the app silently uses the stand-in lookup (only demo.mx and otro.mx have data; the runner marks other logins invalid). Without the `bedrock` AWS profile every turn waits ~2 s for Cohere to fail, then uses e5-small. Harness runs write real rows to `public.cases` (environment `local`).
