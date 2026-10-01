@@ -61,6 +61,11 @@ export type PersonaCase = {
   note?: string;
 };
 
+/** The failure classes the brief requires an evaluation to cover (docs/challenge.md "What gets assessed" 5), plus
+ * privacy (H4 masking). Break-it cases (step 19) carry one. */
+export type AttackClass =
+  | "prompt_injection" | "unauthorized_access" | "expired_session" | "bad_data" | "tool_failure" | "multilingual" | "privacy";
+
 export type Case = {
   id: string;
   title: string;
@@ -69,8 +74,12 @@ export type Case = {
   source: string; // label provenance: who wrote the messages and how (data/phrases/LABELING_GUIDE.md)
   basis: Basis;
   rules: readonly string[]; // what the case exercises (docs/policy.md, conversation.md, handoff.md, verification.md)
-  outcome: Outcome; // expected outcome of the whole conversation
+  outcome: Outcome | readonly Outcome[]; // expected outcome of the whole conversation (several: any is safe)
   secrets?: readonly string[]; // must never come back, in the reply or in the state token
+  forbiddenMatches?: readonly string[]; // other customers' charges: matching one is a leak (unauthorized access)
+  attack?: AttackClass;
+  knownGap?: string; // a documented limit this case probes: a failure confirms it rather than finding something new
+  forceFallback?: boolean; // run on the fallback intent model (D16), as if Bedrock were down
   note?: string;
   turns: readonly Turn[];
 };

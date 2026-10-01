@@ -2,7 +2,7 @@
 // the state token from the previous answer, and grades every turn on the machine-readable fields of POST /api/chat
 // (docs/contracts.md K1), not on the reply wording.
 //
-// Usage: npm run eval -- [--base http://localhost:3000] [--suite tc|step17] [--case TC-01] [--repeat 3] [--fallback]
+// Usage: npm run eval -- [--base http://localhost:3000] [--suite tc|step17|break] [--case TC-01] [--repeat 3] [--fallback]
 //                        [--rate 15] [--out evals/runs/name.json]
 // Logins (docs/contracts.md K5): demo.mx uses DEMO_USERNAME / DEMO_PASSWORD from .env.local; the other logins are read
 // from the git-ignored test-users.local.md (pipeline/seed_test_users.py). A case whose login has no password is
@@ -14,7 +14,9 @@ import { execSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { parseArgs } from "node:util";
+import { ATTACKS, type AttackContext, type AttackResult, type Sent } from "./attacks";
 import type { Case, PersonaCase, Slot } from "./case";
+import { BREAK } from "./cases/break";
 import { STEP17 } from "./cases/step17";
 import { TC } from "./cases/tc";
 import {
@@ -22,7 +24,9 @@ import {
   type ChatResponse, type Grade, type Observed,
 } from "./grade";
 
-const SUITES: Record<string, readonly (Case | PersonaCase)[]> = { tc: TC, step17: STEP17 };
+const SUITES: Record<string, readonly (Case | PersonaCase)[]> = { tc: TC, step17: STEP17, break: BREAK };
+/** Logins whose customer has charges in the stand-in lookup (src/lib/lookup/mock.ts). */
+const STAND_IN_LOGINS = ["demo.mx", "otro.mx"];
 const ROOT = process.cwd();
 
 type Credential = { username: string; password: string };
@@ -81,7 +85,7 @@ function credentials(): Map<string, Credential> {
   return users;
 }
 
-async function login(base: string, cred: Credential): Promise<string> {
+async function signIn(base: string, cred: Credential): Promise<string> {
   const r = await fetch(`${base}/api/login`, {
     method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(cred), redirect: "manual",
   }).catch(() => {
@@ -115,7 +119,9 @@ async function main() {
   const suite = SUITES[values.suite];
   if (!suite) throw new Error(`unknown suite "${values.suite}"; known: ${Object.keys(SUITES).join(", ")}`);
   const cases = values.case ? suite.filter((c) => c.id === values.case) : suite;
-  if (!cases.length) throw new Error(`no case "${values.case}" in suite "${values.suite}"`);
+  // The break suite also runs the protocol attacks (evals/attacks.ts); --case can pick one of those too.
+  const attacks = values.suite !== "break" ? [] : values.case ? ATTACKS.filter((a) => a.id === values.case) : ATTACKS;
+  if (!cases.length && !attacks.length) throw new Error(`no case "${values.case}" in suite "${values.suite}"`);
   const repeat = Math.max(1, Number(values.repeat));
   const gapMs = 60_000 / Math.max(1, Number(values.rate));
   const base = values.base.replace(/\/$/, "");
@@ -136,7 +142,7 @@ async function main() {
         console.log(`- ${c.id.padEnd(8)} skipped: ${result.skipped}`);
         continue;
       }
-      if (!cookies.has(c.login)) cookies.set(c.login, await login(base, cred));
+      if (!cookies.has(c.login)) cookies.set(c.login, await signIn(base, cred));
 
       let state: string | null = null;
       const observed: Observed[] = [];
@@ -150,7 +156,7 @@ async function main() {
         try {
           const r: Response = await fetch(`${base}/api/chat`, {
             method: "POST", headers: { "Content-Type": "application/json", cookie: cookies.get(c.login)! },
-            body: JSON.stringify({ text: say, state, forceFallback: values.fallback }),
+            body: JSON.stringify({ text: say, state, forceFallback: values.fallback || ("turns" in c && c.forceFallback === true) }),
           });
           record.httpStatus = r.status;
           record.ms = Date.now() - lastTurnAt;
@@ -196,7 +202,7 @@ async function main() {
         result.grade = gradePersona(c, observed, result.turns.every((t) => !t.error));
       }
       // The stand-in lookup only has demo.mx's charges: any other login would just find nothing (PL-1).
-      if (c.login !== "demo.mx" && result.turns.some((t) => t.lookupSource === "mock")) {
+      if (!STAND_IN_LOGINS.includes(c.login) && result.turns.some((t) => t.lookupSource === "mock")) {
         result.invalid = `ran on the stand-in lookup, which has no data for ${c.login}: set SUPABASE_LOOKUP_DB_URL`;
         console.log(`! ${c.id.padEnd(8)} invalid: ${result.invalid}`);
         continue;
@@ -206,11 +212,50 @@ async function main() {
       const why = [
         ...g.mismatches.map((m) => `turn ${m.turn} ${m.field}: expected ${JSON.stringify(m.expected)}, got ${JSON.stringify(m.actual)}`),
         ...(g.completed ? [] : [`stopped at turn ${result.turns.length}: ${result.turns.at(-1)?.error}`]),
-        ...(g.outcome !== g.expected ? [`outcome ${g.outcome}, expected ${g.expected}`] : []),
+        ...(g.outcome !== null && ([] as string[]).concat(g.expected).includes(g.outcome) ? [] : [`outcome ${g.outcome}, expected ${([] as string[]).concat(g.expected).join(" or ")}`]),
         ...g.leaks.map((s) => `LEAK "${s}"`),
       ];
       console.log(`${g.pass ? "✓" : "✗"} ${c.id.padEnd(8)}${repeat > 1 ? ` #${run}` : ""} ${moves}`);
       for (const line of why) console.log(`    ${line}`);
+    }
+  }
+
+  const attackResults: AttackResult[] = [];
+  if (attacks.length) {
+    const env = { ...readEnvLocal(), ...process.env };
+    if (env.SESSION_SECRET && env.SESSION_SECRET.length >= 32) process.env.SESSION_SECRET = env.SESSION_SECRET;
+    const ctx: AttackContext = {
+      canSign: !!process.env.SESSION_SECRET && process.env.SESSION_SECRET.length >= 32,
+      async cookie(login) {
+        const cred = creds.get(login);
+        if (!cred) return null;
+        if (!cookies.has(login)) cookies.set(login, await signIn(base, cred));
+        return cookies.get(login)!;
+      },
+      async post(p, cookie, body): Promise<Sent> {
+        const wait = lastTurnAt + gapMs - Date.now();
+        if (wait > 0) await sleep(wait);
+        lastTurnAt = Date.now();
+        const r = await fetch(`${base}${p}`, {
+          method: "POST", redirect: "manual",
+          headers: { "Content-Type": "application/json", ...(cookie ? { cookie } : {}) },
+          body: typeof body === "string" ? body : JSON.stringify(body),
+        });
+        return { status: r.status, json: await r.json().catch(() => ({})) };
+      },
+    };
+    console.log("");
+    for (const a of attacks) {
+      let verdict;
+      try {
+        verdict = await a.run(ctx);
+      } catch (err) {
+        verdict = { pass: false, expected: "no error", actual: String(err) };
+      }
+      const r: AttackResult = { id: a.id, attack: a.attack, title: a.title, ...verdict };
+      attackResults.push(r);
+      if ("skipped" in r) console.log(`- ${a.id.padEnd(8)} skipped: ${r.skipped}`);
+      else console.log(`${r.pass ? "✓" : "✗"} ${a.id.padEnd(8)} ${a.title}${r.pass ? "" : `\n    expected ${r.expected}, got ${r.actual}`}`);
     }
   }
 
@@ -222,6 +267,9 @@ async function main() {
     failed: graded.filter((r) => !r.grade!.pass).length,
     skipped: results.filter((r) => r.skipped).length,
     invalid: results.filter((r) => r.invalid).length,
+    attacksPassed: attackResults.filter((a) => "pass" in a && a.pass).length,
+    attacksFailed: attackResults.filter((a) => "pass" in a && !a.pass).length,
+    attacksSkipped: attackResults.filter((a) => "skipped" in a).length,
     turns: turnMs.length,
     wrongActions: graded.filter((r) => r.grade!.wrongAction).length,
     leaks: graded.filter((r) => r.grade!.leaks.length).length,
@@ -243,13 +291,17 @@ async function main() {
       case: values.case ?? null, repeat, fallback: values.fallback, ratePerMin: Number(values.rate) },
     summary,
     results,
+    attacks: attackResults,
   }, null, 2));
 
   console.log(`\n${summary.passed} passed, ${summary.failed} failed, ${summary.skipped} skipped, ${summary.invalid} invalid; ${summary.turns} turns, ` +
     `p50 ${summary.turnMsP50} ms, p95 ${summary.turnMsP95} ms, $${summary.costUsd}; wrong actions ${summary.wrongActions}, ` +
     `leaks ${summary.leaks}, missed hand-offs ${summary.missedHandoffs}, unnecessary ${summary.unnecessaryHandoffs}`);
   console.log(`results: ${path.relative(ROOT, out)}`);
-  if (summary.failed) process.exitCode = 1;
+  if (attacks.length) {
+    console.log(`attacks: ${summary.attacksPassed} passed, ${summary.attacksFailed} failed, ${summary.attacksSkipped} skipped`);
+  }
+  if (summary.failed || summary.attacksFailed) process.exitCode = 1;
 }
 
 main().catch((err) => {
