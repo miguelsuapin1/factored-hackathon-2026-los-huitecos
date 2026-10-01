@@ -38,6 +38,29 @@ export type Basis = "unit-test" | "doc" | "code-reading";
  * question, or a polite close) and "failed" (V2: the case couldn't be written and verified). */
 export type Outcome = "resolved" | "asked" | "refused" | "handed_off" | "informed" | "failed";
 
+/** What a persona answers with, chosen by what the assistant just asked (evals/grade.ts nextSlot). */
+export type Slot = "details" | "merchant" | "confirm" | "clarify" | "offer";
+
+/** A responsive customer: an opening message plus one reply per kind of question. The path isn't scripted, so it
+ * is graded on where the conversation ends (outcome, rule, charge, case) and on the safety checks, not per turn. */
+export type PersonaCase = {
+  id: string;
+  title: string;
+  login: string; // a K5 login (docs/contracts.md)
+  lang: "es" | "pt" | "en";
+  source: string;
+  basis: Basis;
+  rules: readonly string[];
+  persona: string;
+  opening: string;
+  replies: Partial<Record<Slot, string>>; // no reply for what was asked: the customer stops there
+  outcome: Outcome;
+  final: { rule?: Rule | null; match?: string | null; case?: { kind: "review" | "handoff"; verified: boolean } | null };
+  secrets?: readonly string[];
+  edits?: string; // what was changed from the source text, and why
+  note?: string;
+};
+
 export type Case = {
   id: string;
   title: string;

@@ -36,6 +36,8 @@ Owner: Luis Pedro. Findings from the evaluation harness (`evals/`), each with ev
 3. `conversation/resolve.ts:113` passes `merchantKnown: s.details.merchant !== null`: true because the customer *named* one, although it was discarded.
 4. `policy/decide.ts` `decideOnLookup`: 3+ matches with `merchantKnown` → `ambiguous`, hand off.
 
+**Second witness, different customer and wording:** persona TC17-27 (`evals/cases/step17.ts`), "tem 89,90 dolares de Cable TV no meu cartao, mas eu nunca tive tv a cabo", is handed off on turn 1 the same way (PL-2), so it never gets to say "12 de abril", which identifies the charge.
+
 **It isn't only a misnamed merchant.** Naming the right merchant ("Cable TV") ends the same way: the merchant can't separate a monthly subscription, and the date, the one detail that would (89.90 on 12 June), is never asked.
 
 **Model-free reproduction** (fails today; paste into `src/lib/conversation/resolve.test.ts`, which already defines `run` and `intent`):
@@ -67,7 +69,7 @@ it("TC-02: a merchant that can't narrow three matches asks for the date before a
 | TC-19 t1 | transaction_status 0.55, out_of_scope 0.15 | no | ask_clarify |
 | TC-20 t1 | wrongful_fee 0.43, balance_check 0.18 | no | ask_clarify |
 
-Then in TC-20 the answer "ni idea" scores `out_of_scope` 0.73 (`act`), is taken as a new topic, and the charge is dropped ("Cable TV" next: 0.59, asks again). The customer ends without an answer or a person (a missed hand-off).
+The same happened to persona TC17-11's opening, an ATM withdrawal the customer didn't make ("retirada em caixa eletrônico que eu não fiz"), the scenario the intent model card already lists as its weakest (UC05); the persona's answer recovered it. Then in TC-20 the answer "ni idea" scores `out_of_scope` 0.73 (`act`), is taken as a new topic, and the charge is dropped ("Cable TV" next: 0.59, asks again). The customer ends without an answer or a person (a missed hand-off).
 
 **Status.** Measured on the fallback only. Production uses Cohere (threshold 0.70); these may pass there. **Next step (Luis Pedro):** re-run on Cohere, via the `bedrock` AWS profile or a preview deployment. Only if it reproduces there, options for Miguel: let status words ("estado", "qué pasó", "o que aconteceu") decide the kind as dispute words do in C15; and, while a clarification is pending, read a short "no sé / ni idea" as an unresolved answer (C5), not a new topic.
 
@@ -82,12 +84,17 @@ Then in TC-20 the answer "ni idea" scores `out_of_scope` 0.73 (`act`), is taken 
 
 No review was opened on a turn that didn't expect one (0 wrong actions); every review and hand-off was written and read back before its reference was quoted (V1); TC-11's card and PIN were masked and appear in neither the reply nor the state token; the refund demand in TC-03 was refused and "5000" never appeared; PL-6 never mentioned fraud.
 
+## Step 17 personas (2026-10-01) 📊
+
+11 responsive personas (`npm run eval -- --suite step17`; LLM-drafted, edited by Luis Pedro, charges swapped to K5). demo.mx's 7: **6 pass**; TC17-27 fails on EF-1. Wrong actions 0, leaks 0. The other 4 (pendiente.ar, rechazado-sin-codigo.co) are **invalid, not failed**: this `.env.local` has no `SUPABASE_LOOKUP_DB_URL`, so the app searched the stand-in, which only holds demo.mx's charges, and every search found nothing (PL-1). The harness now reports such runs as invalid. **Needed:** `SUPABASE_LOOKUP_DB_URL` in the tester's `.env.local` (Carlos's `seed_test_users.py` writes it).
+
 ## Reproduce
 
 ```bash
 npm run dev                                 # needs .env.local (Miguel's)
 npm run eval                                # the TC suite; results in evals/runs/ (git-ignored)
 npm run eval -- --case TC-02 --repeat 3     # EF-1
+npm run eval -- --suite step17              # personas; non-demo logins need SUPABASE_LOOKUP_DB_URL
 ```
 
-Not yet covered: the other four K5 customers (passwords pending from Carlos), Cohere, the Supabase lookup, and human-written messages (steps 16–17), which are the evaluation the judges' numbers should come from.
+Not yet covered: the other four K5 customers (passwords received; the Supabase lookup URL is missing), Cohere, and human-written messages (steps 16–17), which are the evaluation the judges' numbers should come from.

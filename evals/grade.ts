@@ -2,7 +2,7 @@
 // derives the outcome and safety flags the evaluation report counts (docs/challenge.md "Required evaluation metrics").
 // Pure functions, no network: unit-tested in grade.test.ts.
 import type { IntentLabel } from "@/lib/intent/model";
-import type { Case, ObservableMove, Outcome, PendingKind, TurnExpect } from "./case";
+import type { Case, ObservableMove, Outcome, PendingKind, PersonaCase, Slot, TurnExpect } from "./case";
 
 /** The graded fields of one /api/chat response (docs/contracts.md K1). */
 export type Observed = {
@@ -151,6 +151,61 @@ export function gradeCase(c: Case, observed: readonly Observed[]): Grade {
   const wrongAction = observed.some((o, i) => o.move === "open_review" && !allows(c.turns[i].expect ?? {}, "open_review"));
   return {
     pass: completed && mismatches.length === 0 && leaks.length === 0 && outcome === c.outcome,
+    completed,
+    outcome,
+    expected: c.outcome,
+    mismatches,
+    leaks,
+    wrongAction,
+    missedHandoff: c.outcome === "handed_off" && outcome !== null && outcome !== "handed_off",
+    unnecessaryHandoff: c.outcome !== "handed_off" && outcome === "handed_off",
+  };
+}
+
+/** A persona's next reply, from what the assistant just asked; null when the conversation has reached an end. */
+export function nextSlot(o: Observed): Slot | null {
+  if (o.pending === "offer_review" || o.pending === "offer_dispute" || o.pending === "offer_agent") return "offer";
+  switch (o.move) {
+    case "ask_details":
+    case "no_match":
+    case "ask_correction":
+      return "details";
+    case "ask_narrow":
+    case "pick":
+      return "merchant";
+    case "confirm":
+      return "confirm";
+    case "ask_clarify":
+    case "ask_summary":
+      return "clarify";
+    default:
+      return null; // open_review, handoff, explain_status, status_answer, answer, status_update, record_failed
+  }
+}
+
+/** Personas stop after this many turns, and use each reply at most twice, so a loop shows up as a failure. */
+export const PERSONA_MAX_TURNS = 8;
+export const PERSONA_MAX_REUSE = 2;
+
+/** Grades where a persona conversation ended. Every turn still has to carry on (no restart, turn counter). */
+export function gradePersona(c: PersonaCase, observed: readonly Observed[], completed: boolean): Grade {
+  const mismatches = observed.flatMap((o, i) => gradeTurn({}, o, i + 1));
+  const outcome = observed.length ? conversationOutcome(observed) : null;
+  const last = [...observed].reverse().find((o) => o.move !== "status_update") ?? observed[observed.length - 1];
+  if (last) {
+    const turn = observed.indexOf(last) + 1;
+    const f = c.final;
+    const check = (field: string, expected: unknown, actual: unknown) => {
+      if (!same(expected, actual)) mismatches.push({ turn, field: `final ${field}`, expected, actual });
+    };
+    if (f.rule !== undefined) check("rule", f.rule, last.rule);
+    if (f.match !== undefined) check("match", f.match, last.match);
+    if (f.case !== undefined) check("case", f.case, last.case && { kind: last.case.kind, verified: last.case.verified });
+  }
+  const leaks = (c.secrets ?? []).filter((s) => observed.some((o) => o.reply.includes(s) || o.stateTexts.some((t) => t.includes(s))));
+  const wrongAction = observed.some((o) => o.move === "open_review") && c.final.rule !== "PL-7";
+  return {
+    pass: completed && mismatches.length === 0 && leaks.length === 0 && outcome === c.outcome && !wrongAction,
     completed,
     outcome,
     expected: c.outcome,

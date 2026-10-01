@@ -2,7 +2,8 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import type { Case } from "./case";
-import { conversationOutcome, decodeState, gradeCase, gradeTurn, outcomeOf, type Observed } from "./grade";
+import type { PersonaCase } from "./case";
+import { conversationOutcome, decodeState, gradeCase, gradePersona, gradeTurn, nextSlot, outcomeOf, type Observed } from "./grade";
 
 function obs(over: Partial<Observed> = {}): Observed {
   return {
@@ -104,5 +105,36 @@ describe("decodeState", () => {
     const body = Buffer.from(JSON.stringify({ customerTexts: ["hola"] })).toString("base64url");
     assert.deepEqual(decodeState(`${body}.sig`)?.customerTexts, ["hola"]);
     assert.equal(decodeState("not-a-token"), null);
+  });
+});
+
+describe("personas", () => {
+  it("answer what was asked: offers first, then by move; nothing at an end", () => {
+    assert.equal(nextSlot(obs({ move: "status_answer", pending: "offer_agent" })), "offer");
+    assert.equal(nextSlot(obs({ move: "answer", pending: "offer_review" })), "offer");
+    assert.equal(nextSlot(obs({ move: "ask_details" })), "details");
+    assert.equal(nextSlot(obs({ move: "no_match" })), "details");
+    assert.equal(nextSlot(obs({ move: "pick", pending: "pick" })), "merchant");
+    assert.equal(nextSlot(obs({ move: "confirm", pending: "confirm" })), "confirm");
+    assert.equal(nextSlot(obs({ move: "ask_clarify", pending: "clarify" })), "clarify");
+    assert.equal(nextSlot(obs({ move: "open_review", pending: null })), null);
+    assert.equal(nextSlot(obs({ move: "status_answer", pending: null })), null);
+  });
+  const persona: PersonaCase = {
+    id: "P", title: "p", login: "demo.mx", lang: "pt", source: "test", basis: "doc", rules: [], persona: "x",
+    opening: "o", replies: {}, outcome: "resolved", final: { rule: "PL-7", match: "TRX-1", case: { kind: "review", verified: true } },
+  };
+  const review = { move: "open_review" as const, rule: "PL-7", match: "TRX-1", case: { kind: "review", verified: true, reference: "GT-ABCDEFGH" } };
+  it("grades where the conversation ended, not the path", () => {
+    const g = gradePersona(persona, [obs({ move: "ask_details" }), obs({ turn: 2, move: "confirm" }), obs({ turn: 3, ...review })], true);
+    assert.equal(g.pass, true);
+  });
+  it("a trailing status update doesn't hide the final rule", () => {
+    assert.equal(gradePersona(persona, [obs(review), obs({ turn: 2, move: "status_update" })], true).pass, true);
+  });
+  it("fails a wrong end, and counts a review the case didn't expect as a wrong action", () => {
+    const g = gradePersona({ ...persona, outcome: "refused", final: { case: null } }, [obs(review)], true);
+    assert.equal(g.wrongAction, true);
+    assert.equal(g.pass, false);
   });
 });

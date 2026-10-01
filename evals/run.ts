@@ -2,7 +2,7 @@
 // the state token from the previous answer, and grades every turn on the machine-readable fields of POST /api/chat
 // (docs/contracts.md K1), not on the reply wording.
 //
-// Usage: npm run eval -- [--base http://localhost:3000] [--suite tc] [--case TC-01] [--repeat 3] [--fallback]
+// Usage: npm run eval -- [--base http://localhost:3000] [--suite tc|step17] [--case TC-01] [--repeat 3] [--fallback]
 //                        [--rate 15] [--out evals/runs/name.json]
 // Logins (docs/contracts.md K5): demo.mx uses DEMO_USERNAME / DEMO_PASSWORD from .env.local; the other logins are read
 // from the git-ignored test-users.local.md (pipeline/seed_test_users.py). A case whose login has no password is
@@ -14,17 +14,22 @@ import { execSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { parseArgs } from "node:util";
-import type { Case } from "./case";
+import type { Case, PersonaCase, Slot } from "./case";
+import { STEP17 } from "./cases/step17";
 import { TC } from "./cases/tc";
-import { gradeCase, observe, type ChatResponse, type Grade, type Observed } from "./grade";
+import {
+  gradeCase, gradePersona, nextSlot, observe, PERSONA_MAX_REUSE, PERSONA_MAX_TURNS,
+  type ChatResponse, type Grade, type Observed,
+} from "./grade";
 
-const SUITES: Record<string, readonly Case[]> = { tc: TC };
+const SUITES: Record<string, readonly (Case | PersonaCase)[]> = { tc: TC, step17: STEP17 };
 const ROOT = process.cwd();
 
 type Credential = { username: string; password: string };
 
 type TurnRecord = {
   say: string;
+  slot?: Slot; // persona cases: which reply was used
   httpStatus: number;
   ms: number;
   error?: string;
@@ -33,6 +38,7 @@ type TurnRecord = {
   reply?: { source: string; fallbackReason: string | null; promptVersion: string; ms: number; costUsd: number };
   extraction?: { source: string; promptVersion: string; dropped: string[]; ms: number; costUsd: number };
   caseReference?: string | null;
+  lookupSource?: string | null; // "supabase", or "mock" (the stand-in, which only holds demo.mx's charges)
 };
 
 /** The /api/chat response fields the runner records, on top of what the grader reads. */
@@ -42,10 +48,11 @@ type ApiResponse = ChatResponse & {
   reply: ChatResponse["reply"] & { source: string; fallbackReason: string | null; promptVersion: string; ms: number; costUsd: number };
   conversation: ChatResponse["conversation"] & {
     extraction: { source: string; promptVersion: string; dropped: string[]; ms: number; costUsd: number };
+    policy: { rule: string | null; lookup: { source: string; count: number | null } | null };
   };
 };
 
-type CaseResult = { id: string; run: number; login: string; skipped?: string; grade?: Grade; turns: TurnRecord[] };
+type CaseResult = { id: string; run: number; login: string; skipped?: string; invalid?: string; grade?: Grade; turns: TurnRecord[] };
 
 function readEnvLocal(): Record<string, string> {
   const file = path.join(ROOT, ".env.local");
@@ -133,23 +140,24 @@ async function main() {
 
       let state: string | null = null;
       const observed: Observed[] = [];
-      for (const turn of c.turns) {
+      /** One turn, paced and recorded. Returns what the app did, or null after an HTTP or network error. */
+      const send = async (say: string, slot?: Slot): Promise<Observed | null> => {
         const wait = lastTurnAt + gapMs - Date.now();
         if (wait > 0) await sleep(wait);
         lastTurnAt = Date.now();
-        const record: TurnRecord = { say: turn.say, httpStatus: 0, ms: 0 };
+        const record: TurnRecord = { say, slot, httpStatus: 0, ms: 0 };
         result.turns.push(record);
         try {
           const r: Response = await fetch(`${base}/api/chat`, {
             method: "POST", headers: { "Content-Type": "application/json", cookie: cookies.get(c.login)! },
-            body: JSON.stringify({ text: turn.say, state, forceFallback: values.fallback }),
+            body: JSON.stringify({ text: say, state, forceFallback: values.fallback }),
           });
           record.httpStatus = r.status;
           record.ms = Date.now() - lastTurnAt;
           const j = (await r.json()) as ApiResponse;
           if (!r.ok) {
             record.error = j.error ?? `HTTP ${r.status}`;
-            break;
+            return null;
           }
           const o = observe(j);
           observed.push(o);
@@ -162,14 +170,37 @@ async function main() {
           const x = j.conversation.extraction;
           record.extraction = { source: x.source, promptVersion: x.promptVersion, dropped: x.dropped, ms: x.ms, costUsd: x.costUsd };
           record.caseReference = j.conversation.case?.reference ?? null;
+          record.lookupSource = j.conversation.policy.lookup?.source ?? null;
+          return o;
         } catch (err) {
           record.ms = Date.now() - lastTurnAt;
           record.error = String(err);
-          break;
+          return null;
         }
-      }
+      };
 
-      result.grade = gradeCase(c, observed);
+      if ("turns" in c) {
+        for (const turn of c.turns) if (!(await send(turn.say))) break;
+        result.grade = gradeCase(c, observed);
+      } else {
+        // A persona answers whatever was asked; it stops when it has no reply for it, or has used it twice.
+        const used = new Map<Slot, number>();
+        let o = await send(c.opening);
+        while (o && observed.length < PERSONA_MAX_TURNS) {
+          const slot = nextSlot(o);
+          const reply = slot ? c.replies[slot] : undefined;
+          if (!slot || !reply || (used.get(slot) ?? 0) >= PERSONA_MAX_REUSE) break;
+          used.set(slot, (used.get(slot) ?? 0) + 1);
+          o = await send(reply, slot);
+        }
+        result.grade = gradePersona(c, observed, result.turns.every((t) => !t.error));
+      }
+      // The stand-in lookup only has demo.mx's charges: any other login would just find nothing (PL-1).
+      if (c.login !== "demo.mx" && result.turns.some((t) => t.lookupSource === "mock")) {
+        result.invalid = `ran on the stand-in lookup, which has no data for ${c.login}: set SUPABASE_LOOKUP_DB_URL`;
+        console.log(`! ${c.id.padEnd(8)} invalid: ${result.invalid}`);
+        continue;
+      }
       const g = result.grade;
       const moves = observed.map((o) => o.move).join(" → ");
       const why = [
@@ -183,13 +214,14 @@ async function main() {
     }
   }
 
-  const graded = results.filter((r) => r.grade);
+  const graded = results.filter((r) => r.grade && !r.invalid);
   const turnMs = graded.flatMap((r) => r.turns.filter((t) => t.httpStatus === 200).map((t) => t.ms));
   const summary = {
     cases: results.length,
     passed: graded.filter((r) => r.grade!.pass).length,
     failed: graded.filter((r) => !r.grade!.pass).length,
     skipped: results.filter((r) => r.skipped).length,
+    invalid: results.filter((r) => r.invalid).length,
     turns: turnMs.length,
     wrongActions: graded.filter((r) => r.grade!.wrongAction).length,
     leaks: graded.filter((r) => r.grade!.leaks.length).length,
@@ -213,7 +245,7 @@ async function main() {
     results,
   }, null, 2));
 
-  console.log(`\n${summary.passed} passed, ${summary.failed} failed, ${summary.skipped} skipped; ${summary.turns} turns, ` +
+  console.log(`\n${summary.passed} passed, ${summary.failed} failed, ${summary.skipped} skipped, ${summary.invalid} invalid; ${summary.turns} turns, ` +
     `p50 ${summary.turnMsP50} ms, p95 ${summary.turnMsP95} ms, $${summary.costUsd}; wrong actions ${summary.wrongActions}, ` +
     `leaks ${summary.leaks}, missed hand-offs ${summary.missedHandoffs}, unnecessary ${summary.unnecessaryHandoffs}`);
   console.log(`results: ${path.relative(ROOT, out)}`);
