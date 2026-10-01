@@ -8,7 +8,7 @@ The interfaces where one person's work plugs into another's. Agree here first, t
 | K2 | Transaction lookup | Person 2 (step 10) → Miguel (steps 12–13) | types in `src/lib/lookup/types.ts`; stand-in used by step 12 (Miguel, 2026-09-30); Person 2 to confirm |
 | K3 | Case file (reviews and hand-offs) | Miguel (steps 13–14) → Person 2 (agent console, step 20) | table `public.cases` live (Miguel, 2026-09-30); see docs/verification.md |
 | K4 | Trace line | everyone → Person 3 (eval report) | Phase 1 shape + conversation fields |
-| K5 | Demo and test customers | Person 2 (slice + logins) → Person 3 (test conversations, steps 16–19) | proposed (Luis Pedro, 2026-10-01); Carlos to confirm |
+| K5 | Demo and test customers | Person 2 (slice + logins) → Person 3 (test conversations, steps 16–19) | agreed (Luis Pedro + Carlos, 2026-10-01) |
 
 ## K1. `POST /api/chat` v2
 
@@ -111,7 +111,7 @@ One JSON line per turn, `event: "turn"`, in Vercel runtime logs (Phase 1 fields 
 
 ## K5. Demo and test customers (Person 2 → Person 3)
 
-**Proposed (Luis Pedro, 2026-10-01); Carlos to confirm.** Test conversations (steps 17–19) quote only the charges below, so every expected outcome follows from data both sides agree on. Checked the same day against Supabase (`data_version` 1, commit `1112091`) and BigQuery `gold_serving`: same rows, counts and amount sums for all five customers, and `demo.mx` matches the stand-in in `src/lib/lookup/mock.ts`. Dates are the customer's local day (`transaction_date_local`) against the demo clock, 2026-06-17. Passwords stay in the git-ignored `test-users.local.md`, never in a test file.
+**Agreed (Luis Pedro + Carlos, 2026-10-01): the slice stays as loaded in Supabase.** Test conversations (steps 17–19) quote only the charges below, so every expected outcome follows from data both sides agree on. Checked the same day against Supabase (`data_version` 1, commit `1112091`) and BigQuery `gold_serving`: same rows, counts and amount sums for all five customers, and `demo.mx` matches the stand-in in `src/lib/lookup/mock.ts`. Dates are the customer's local day (`transaction_date_local`) against the demo clock, 2026-06-17. Passwords stay in the git-ignored `test-users.local.md`, never in a test file.
 
 | Login | Customer | Profile | Why this one |
 |---|---|---|---|
@@ -148,4 +148,4 @@ PL-1 needs no fixture: any amount the customer doesn't have (e.g. 999 USD on 10 
 ## Open questions for the team
 
 - **Supabase region (Person 2):** the build plan says `us-east-1`; the existing, empty project `paguvqqelfwadcolocaq` is in `sa-east-1`. Vercel functions and Bedrock run in `us-east-1`, so a `us-east-1` project avoids a cross-continent hop on every lookup. Decide before the first load.
-- **Demo customers (Person 2 + 3):** proposed in [K5](#k5-demo-and-test-customers-person-2--person-3) (Luis Pedro, 2026-10-01); closed once Carlos confirms.
+- ~~**Demo customers (Person 2 + 3)**~~ closed: see [K5](#k5-demo-and-test-customers-person-2--person-3) (Luis Pedro + Carlos, 2026-10-01).
