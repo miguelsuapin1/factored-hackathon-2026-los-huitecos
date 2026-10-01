@@ -1,15 +1,20 @@
-// Customer-scoped database access (step 8, D-006). The ONLY way the lookup (step 10) reads customer data.
+// Customer-scoped database access (step 8, D-006). The ONLY way the lookup reads customer data.
 //
 // It connects as the Postgres role lookup_reader (SUPABASE_LOOKUP_DB_URL), which row-level security applies to, and
-// opens a transaction that first sets app.customer_id to the signed-in customer. The policies in
+// opens a transaction that first sets app.customer_id to the signed-in customer (as-customer.ts). The policies in
 // supabase/migrations/20261001010000_step8_login_rls.sql then hide every other customer's rows, so even a query that
 // forgets its WHERE clause can't leak. The secret key (which skips RLS) is never used for customer data.
 import "server-only";
 import postgres from "postgres";
-import type { CustomerSession } from "@/lib/lookup/types";
+import { makeAsCustomer } from "./as-customer";
 
-const STATEMENT_TIMEOUT_MS = 4000;
+export type { AsCustomer, ScopedSql } from "./as-customer";
+
 let sql: postgres.Sql | null = null;
+
+export function lookupConfigured() {
+  return !!process.env.SUPABASE_LOOKUP_DB_URL;
+}
 
 function client() {
   const url = process.env.SUPABASE_LOOKUP_DB_URL;
@@ -19,16 +24,5 @@ function client() {
   return sql;
 }
 
-export type ScopedSql = postgres.TransactionSql;
-
 /** Runs `work` in one transaction that can only see `session.customerId`'s rows. */
-export async function asCustomer<T>(session: CustomerSession, work: (tx: ScopedSql) => Promise<T>): Promise<T> {
-  const customerId = session.customerId;
-  if (typeof customerId !== "string" || !customerId) throw new Error("no customer in session");
-  const result = await client().begin(async (tx) => {
-    await tx`select set_config('app.customer_id', ${customerId}, true),
-                    set_config('statement_timeout', ${String(STATEMENT_TIMEOUT_MS)}, true)`;
-    return work(tx);
-  });
-  return result as T;
-}
+export const asCustomer = makeAsCustomer(client);

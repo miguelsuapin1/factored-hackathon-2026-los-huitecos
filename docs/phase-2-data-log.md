@@ -101,9 +101,19 @@ Failures and fixes: [lessons-learned.md](lessons-learned.md) X1–X5.
   Created by `pipeline/seed_test_users.py` (tested end to end on a local Postgres 16, including the role login with
   a SCRAM verifier and the Python↔TypeScript hash check). Loader now refuses a reload that drops a test customer.
 
+### 2026-10-01: step 10, the transaction lookup on Supabase (K2)
+- Steps 7 + 8 merged to main (PR #14) and live; test logins work on production; `SUPABASE_LOOKUP_DB_URL` added in
+  Vercel by Miguel.
+- `src/lib/lookup/sql.ts`: amount (±1%) and local-date window in SQL, merchant/currency narrowing and score shared with
+  the stand-in (`match.ts`, the stand-in now uses it too), local timestamps, newest first, always through `asCustomer`.
+- Parity test (`src/lib/lookup/sql.test.ts`): 16 dialogue-shaped questions on Miguel's demo charges give identical
+  answers from the stand-in and the SQL lookup; scoping checks (other customer's id, other session, no customer, a query
+  with no customer filter). 22/22 on a local Postgres 16 with both migrations and the demo seeds.
+- Checked on Supabase as `lookup_reader`: `pendiente.ar`'s question (550.66 around 14 June) returns exactly its
+  pending ATM charge, local time 20:19.
+
 ## Next (step 7 finish, then 8 and 10)
 1. ~~Official `dbt build --target bq`~~ done 2026-10-01, 179/179.
 2. ~~Load the slice into Supabase~~ done 2026-10-01.
 3. ~~Step 8~~ built 2026-10-01; Carlos runs `pipeline/seed_test_users.py` and adds `SUPABASE_LOOKUP_DB_URL` to Vercel.
-4. Step 10: the Supabase `TransactionLookup` (K2) replacing `src/lib/lookup/mock.ts`, filtering dates on
-   `transaction_date_local`.
+4. ~~Step 10~~ built 2026-10-01 (branch `carlos/step-10-lookup`).

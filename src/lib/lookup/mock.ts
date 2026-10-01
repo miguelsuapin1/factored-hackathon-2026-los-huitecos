@@ -2,6 +2,7 @@
 // SYNTHETIC FIXTURES, team-generated (Miguel, 2026-09-30): one demo customer whose recent charges each exercise a
 // policy path in docs/policy.md. Merchant names, statuses and currencies follow the organizer data; the amounts,
 // dates and scores were chosen for the test conversations. Dates sit just before the demo clock (2026-06-17).
+import { inWindow, narrowAndScore } from "./match";
 import type { CustomerSession, LookupQuery, TransactionLookup, TransactionMatch } from "./types";
 
 type Row = Omit<TransactionMatch, "score"> & { customerId: string };
@@ -36,8 +37,6 @@ export const FIXTURES: Row[] = [
   row({ transactionId: "TRX-OTHER000000000001", customerId: "CLI-OTHER0000000001", date: "2026-06-10T10:00:00", amount: 350, currency: "USD", merchant: "Super Ahorro", status: "Approved", responseCode: "00", fraudScore: 5 }),
 ];
 
-const fold = (s: string) => s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").trim();
-
 function strip(r: Row, score: number): TransactionMatch {
   const { customerId, ...rest } = r;
   void customerId; // never leaves the lookup
@@ -48,31 +47,9 @@ export const mockLookup: TransactionLookup = {
   source: "mock",
   async findTransactions(session: CustomerSession, q: LookupQuery) {
     const own = FIXTURES.filter((r) => r.customerId === session.customerId);
-    const hits = own.filter((r) => {
-      const day = r.date.slice(0, 10);
-      if (q.amount !== undefined && Math.abs(r.amount - q.amount) > Math.max(0.01, q.amount * 0.01)) return false;
-      if (q.dateFrom && day < q.dateFrom) return false;
-      if (q.dateTo && day > q.dateTo) return false;
-      return true;
-    });
-    // Merchant and currency narrow the result only if something still matches: customers misname both.
-    const narrow = (list: Row[], keep: (r: Row) => boolean) => (list.some(keep) ? list.filter(keep) : list);
-    let result = hits;
-    let merchantHit = false;
-    let currencyHit = false;
-    if (q.merchant) {
-      const m = fold(q.merchant);
-      const keep = (r: Row) => !!r.merchant && (fold(r.merchant).includes(m) || m.includes(fold(r.merchant)));
-      merchantHit = result.some(keep);
-      result = narrow(result, keep);
-    }
-    if (q.currency) {
-      const keep = (r: Row) => r.currency === q.currency;
-      currencyHit = result.some(keep);
-      result = narrow(result, keep);
-    }
-    const score = 0.6 + (merchantHit ? 0.3 : 0) + (currencyHit ? 0.1 : 0);
-    return result.slice(0, q.limit ?? 5).map((r) => strip(r, score));
+    const hits = own.filter((r) => inWindow({ amount: r.amount, day: r.date.slice(0, 10) }, q));
+    // Same narrowing and scoring as the Supabase lookup (match.ts).
+    return narrowAndScore(hits, q).map(({ score, ...r }) => strip(r, score));
   },
   async getTransaction(session: CustomerSession, transactionId: string) {
     const r = FIXTURES.find((f) => f.transactionId === transactionId && f.customerId === session.customerId);
