@@ -61,7 +61,7 @@ export async function POST(request: Request) {
     const outcome = advance(prev, { text, intent, details: extraction.details, range: extraction.range });
     const language = prev.lang ?? guessLanguage(text);
     const { move, trace: policy } = await resolveTurn(outcome, {
-      session: customerFor(session.u),
+      session: customerFor(session),
       lookup,
       store: supabaseStore,
       language,

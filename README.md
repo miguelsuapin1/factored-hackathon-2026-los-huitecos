@@ -7,10 +7,11 @@ A bilingual (🇪🇸 Spanish / 🇧🇷 Portuguese) **banking customer-service 
 **Live:** https://latam-bank-service-sigma.vercel.app (auto-deploys from `main`)
 
 ## Demo access
-The app opens on a sign-in page. Credentials are shared with the judges in the submission; they're read from
-environment variables (`DEMO_USERNAME`, `DEMO_PASSWORD`, `SESSION_SECRET`) and never committed. Sessions last
-8 hours (signed, HttpOnly cookie). This gate protects the demo and the Bedrock quota; per-customer test login is
-a separate Phase 2 step.
+The app opens on a sign-in page. Each test login is one customer of the synthetic bank and can only see that
+customer's data: the session cookie (signed, HttpOnly, 8 hours) carries the customer id, and the database enforces it
+with row-level security (decision D-006). Test logins live in Supabase `public.app_users` as password hashes; the
+shared demo account (`DEMO_USERNAME`, `DEMO_PASSWORD`) signs in as the synthetic demo customer. Credentials are shared
+with the judges in the submission and never committed.
 
 ## Stack (provisional)
 | Layer | Choice |
@@ -46,6 +47,15 @@ uv sync                                   # Python deps (DuckDB, pandas)
 uv run python pipeline/bronze.py          # data/raw CSVs -> data/processed/bronze.duckdb (verbatim + lineage)
 (cd pipeline && uv run python dq_checks.py)   # -> reports/data_quality.md
 uv run python analysis/contact_reasons.py # -> reports/contact_reasons.md
+```
+
+#### BigQuery bronze (D-003, shared copy of all 13 tables incl. digital_events)
+Raw CSVs are copied S3 → `gs://factored_gt_latam_bank_raw/raw/` by a one-off Storage Transfer job, then:
+```bash
+gcloud auth application-default login                    # once, with an account on the GCP project
+uv run python pipeline/bigquery/bronze_bq.py --print     # show the SQL (no GCP access needed)
+uv run python pipeline/bigquery/bronze_bq.py             # raw_ext (external) + bronze (native) datasets, us-east1
+uv run python pipeline/bigquery/bronze_bq.py --verify    # row counts vs the DuckDB bronze numbers
 ```
 
 ### Intent phrase set (classifier data)

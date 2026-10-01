@@ -1,0 +1,109 @@
+# Phase 2 data log (step 7): Carlos
+
+What the data track (Person 2) did, in order, with the numbers each step produced. Everything runs in Google
+Cloud (project `project-d49391de-51c4-49bf-aae`, region `us-east1`); the code and every generated report are in
+this repo. Decisions: [decisions.md](decisions.md) D-003, D-005. Rules: [data-issues.md](data-issues.md).
+Failures and fixes: [lessons-learned.md](lessons-learned.md) X1–X5.
+
+## Where things are
+
+| Layer | Where | Built by |
+|---|---|---|
+| Source | Organizer S3 `data/` (read-only) | organizers |
+| Raw copy | `gs://factored_gt_latam_bank_raw/raw/` (7,671 CSVs, 13 tables, 5.3 GB) | Storage Transfer job, run once |
+| Raw, read in place | BigQuery `raw_ext` (external tables, hive partitions) | `pipeline/bigquery/bronze_bq.py` |
+| Bronze | BigQuery `bronze` (all STRING + `_source_file`, `_loaded_at`) | `pipeline/bigquery/bronze_bq.py` |
+| Staging | BigQuery `staging` (views: typed, `_cast_errors`, `_reject_reasons`) | `pipeline/dbt` |
+| Silver | BigQuery `silver` (13 tables) + `silver_quarantine.rejected_rows` | `pipeline/dbt` |
+| Gold | BigQuery `gold` (analytics) and `gold_serving` (the Supabase slice) | `pipeline/dbt` |
+| Quality | BigQuery `ops.ops_silver_quality` → `reports/silver_quality.md`; slice → `reports/serving_slice.md` | `pipeline/dbt/*_report.py` |
+
+## Log
+
+### 2026-09-29: bronze in BigQuery (D-003)
+- Copied the organizer bucket to Cloud Storage (Storage Transfer, cloud to cloud). 7,671 files, 13 tables.
+- Loaded every table verbatim into `bronze`. The 12 tables DuckDB already had match **row for row** (e.g.
+  transactions 4,425,008) and on four spot-checked null counts. `digital_events` loaded for the first time:
+  **15,620,994 rows** (dictionary: 10M).
+- Every daily file of a table has the same header (no schema drift in the real data).
+
+### 2026-09-30: silver, full population (D-005)
+- Tooling decision: dbt (options A–C and Dataform compared in D-005). Same models run on BigQuery and DuckDB.
+- Staging types every column: **0 cast failures** across 25.6M rows.
+- Silver applies the data-issue rules and flags each row it touches (`_rule_flags`). Counts per rule are in
+  `reports/silver_quality.md`, e.g. C1 44,570 wrong-owner product links removed, A5 99,477 USD amounts derived,
+  6,698 complaint subcategories derived from their category, E1 772, E2 62, E3 1,065, E5 3,274.
+- **Reconciliation: bronze = silver + quarantine for all 13 tables; 0 rows quarantined** (the real data has no
+  duplicate keys or missing required fields).
+- **84/84 silver tests pass** on BigQuery: keys, allowed values, foreign keys, ranges, USD derivation, the
+  privacy test (no complaint links to another customer's product) and reconciliation.
+- New findings: **A6** the delivered `amount_usd` uses fixed rates, not the daily table; **A7** 24% of digital
+  events are anonymous (first wrongly quarantined, fixed: X3); **E6** transcript durations can't be filled.
+
+### 2026-09-30: fixtures and offline run
+- `pipeline/dbt/fixtures/build_fixture_bronze.py` builds a tiny **team-generated synthetic** bronze in DuckDB
+  with the problems the organizer data lacks: a duplicate delivery, a late file (Pending → Reversed), a row
+  without an amount, and (with `--drift`) an extra column.
+- `dbt build --target duckdb`: **178/178 steps pass**, including 3 unit tests (USD derivation, local date,
+  wrong-owner complaint link) and the fixture expectations. With `--drift` the schema contract fails loudly.
+
+### 2026-09-30: gold
+- Analytics (full population): `gold_contact_reason_metrics` reproduces the briefing from cleaned data
+  (complaints: 17.1% of contacts, 43.6% first-contact resolution, 16.6 agent-min per resolution, 45.3% of
+  unresolved time); `gold_dispute_kpis`, `gold_baseline_human` (for the eval report, step 18),
+  `gold_digital_events_profile`.
+- Serving slice (`gold_serving.*`, docs/contracts.md K2): **2,040 customers** (2,002 stratified by
+  country × segment with a fixed seed, 5 per demo scenario, 2 synthetic demo customers), **23,052
+  transactions** over 12 months, **≈20 MB estimated** (budget 100 MB). Sample vs population within 0.05 pp on
+  country and segment, within 1.5 pp on transaction mix. Minimised: first name, hashed document number,
+  product last-4, no `is_fraud`.
+- The organizer data has no repeated charges, so the duplicate/ambiguous demo paths use Miguel's synthetic
+  charges, carried in unchanged as `data_source = 'team_synthetic'`.
+
+### 2026-09-30: Supabase tables
+- Kept the existing Supabase project (São Paulo) so Miguel's live `public.cases` is not moved; the region question in contracts.md stays open for the team.
+- Migration `supabase/migrations/20260930220000_serving_slice.sql` applied: `customers`, `products`, `transactions`, `fx_rates`, `agent_pools`, `data_version`; indexes for per-customer lookups; RLS on with no policies and browser roles revoked (anon can read nothing, checked). `cases` untouched.
+- Loader `pipeline/load_supabase.py`: reads BigQuery `gold_serving.*`, replaces the tables in one transaction, checks every count, records the load in `data_version`. Tested end to end on a local Postgres 16 with the fixture slice (two runs, identical counts).
+
+### 2026-10-01: gold slice loaded into Supabase (Carlos)
+- `pipeline/load_supabase.py` run from Carlos's laptop, BigQuery → Supabase, one transaction. `data_version` id 1:
+  source `bigquery:project-d49391de-51c4-49bf-aae.gold_serving`, demo_today 2026-06-17.
+- Checked afterwards in Supabase:
+  - Row counts equal BigQuery: customers 2,040 (2 team_synthetic), products 6,110, transactions 23,052
+    (12 team_synthetic), fx_rates 1,095, agent_pools 12. No transaction without its customer.
+  - Statuses: Approved 21,176, Declined 1,174, Pending 465, Reversed 237. Foreign 1,035. Fraud score ≥ 30: 26
+    (25 approved). Local dates 2025-06-18 to 2026-06-17 (12 months up to the demo clock).
+  - Size about 10 MB for the six tables (transactions 7.6 MB), half the 20 MB estimate and 2% of the 500 MB free tier.
+  - Access: RLS on, no policies, and anon/authenticated can't select any table (including `cases`). The advisor lists
+    only "RLS enabled, no policy" (INFO), which is intended until step 8.
+  - `public.cases` untouched: 144 rows, same structure.
+- Loader fix on the way: a `.env.local` saved by Windows editors (BOM / UTF-16) wasn't read; fixed in f2e6ac2.
+
+### 2026-10-01: official dbt build in BigQuery (Carlos)
+- `uv run dbt build --profiles-dir . --target bq` from Carlos's laptop, with his own Google login: 5 seeds, 26 views,
+  27 tables, 118 data tests and 3 unit tests; PASS=179, WARN=0, ERROR=0, in 104 s. Every check now runs as dbt's own
+  test, not the condensed SQL used for the first build (X1 closed).
+- The rebuilt `gold_serving` matches what's loaded in Supabase: same counts, and the same IDs for customers,
+  transactions and products (MD5 of the sorted IDs is identical in BigQuery and Supabase). The fixed seed keeps the
+  slice reproducible.
+
+### 2026-10-01: step 8, per-customer login + row-level security (D-006)
+- Migration `20261001010000_step8_login_rls.sql` applied: `public.app_users` (server-only), role `lookup_reader`
+  (read `customers`/`products`/`transactions` only), policies "own rows via `app.customer_id`". Browser roles still get
+  nothing; `cases` untouched.
+- `supabase/tests/step8_rls_check.sql` passed on Supabase: no customer → 0 rows; demo customer with no `WHERE` → only
+  own rows; another customer's id or transaction id → 0; empty or injection-shaped ids → 0; no access to `cases` or
+  `app_users`; no writes. Run without the role it fails (23,052 rows visible), so the check has teeth.
+- App: login checks `app_users` (PBKDF2) or the shared demo account; the session carries the customer id; customer
+  data goes through `src/lib/db/scoped.ts` as `lookup_reader`. 13 new unit tests; full suite 111/111.
+- 12 test logins chosen from the slice: Miguel's 2 synthetic customers, one per scenario (pending, reversed, declined
+  with/without code, fraud ≥ 30, foreign, MX in USD, ambiguous), a suspended customer and one with no recent charges.
+  Created by `pipeline/seed_test_users.py` (tested end to end on a local Postgres 16, including the role login with
+  a SCRAM verifier and the Python↔TypeScript hash check). Loader now refuses a reload that drops a test customer.
+
+## Next (step 7 finish, then 8 and 10)
+1. ~~Official `dbt build --target bq`~~ done 2026-10-01, 179/179.
+2. ~~Load the slice into Supabase~~ done 2026-10-01.
+3. ~~Step 8~~ built 2026-10-01; Carlos runs `pipeline/seed_test_users.py` and adds `SUPABASE_LOOKUP_DB_URL` to Vercel.
+4. Step 10: the Supabase `TransactionLookup` (K2) replacing `src/lib/lookup/mock.ts`, filtering dates on
+   `transaction_date_local`.

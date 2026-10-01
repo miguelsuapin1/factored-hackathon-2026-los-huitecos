@@ -10,7 +10,7 @@ Read first: [docs/phase-1-walkthrough.md](docs/phase-1-walkthrough.md) (what exi
 - One turn = `POST /api/chat`: intent (`src/lib/intent/`) → reply (`src/lib/reply/`). `POST /api/classify` = intent only (for evaluation).
 - **Intent:** Cohere Embed Multilingual v3 on Bedrock → softmax regression (`src/lib/intent-model-cohere-mv3.json`, threshold 0.70). Fallback: multilingual-e5-small bundled in the function (`src/lib/intent-model-e5small.json`, threshold 0.61). Test: 91.7% accuracy, 0 wrong actions.
 - **Reply:** Claude Haiku 4.5 (`claude-haiku-4-5`) phrases a code-chosen instruction; code rejects replies with numbers not in the customer message; ES/PT templates as fallback. `PROMPT_VERSION` in compose.ts.
-- **Auth:** demo gate only (`src/proxy.ts`, `src/lib/auth/session.ts`), env `DEMO_USERNAME`, `DEMO_PASSWORD`, `SESSION_SECRET`. Per-customer test login is Phase 2.
+- **Auth (step 8, D-006):** test logins in Supabase `public.app_users` (PBKDF2 hashes, `pipeline/seed_test_users.py`) + the shared demo account (env `DEMO_*` → demo customer). The session cookie carries the customer id; customer data is read only via `src/lib/db/scoped.ts` as role `lookup_reader` (env `SUPABASE_LOOKUP_DB_URL`) under RLS. Check: `supabase/tests/step8_rls_check.sql`.
 - Tracing: one JSON log line per turn (`event: "turn"`) in Vercel runtime logs. Not persisted yet.
 - **Steps 9 + 11 (branch `miguel/step-9-11-memory`, 2026-09-29):** conversation memory, extraction and confirmation in `src/lib/conversation/` (docs/conversation.md C1–C10). The state is a signed token the client sends back; dialogue rules are pure code with unit tests (`npm test`). TC-01 fixed.
 - **Step 12 (branch `miguel/step-12-policy`, 2026-09-30):** policy rules PL-1..PL-8 in `src/lib/policy/` (docs/policy.md); fraud-score cutoff 30 from `pipeline/fraud_threshold.py` (held-out 2026 check). Lookup is a stand-in (`src/lib/lookup/mock.ts`, synthetic) until Person 2's step 10; swap point `src/lib/lookup/index.ts`.
@@ -19,7 +19,9 @@ Read first: [docs/phase-1-walkthrough.md](docs/phase-1-walkthrough.md) (what exi
 - **Status answers (branch `miguel/status-answers`, 2026-09-30):** status questions use the lookup and are answered from the record (PL-9, S1–S2 in docs/policy.md); explain-only replies can't offer actions (R9).
 - **Vague dates + picking (branch `miguel/vague-dates-pick`, 2026-09-30):** Miguel's ladder (docs/policy.md "When the customer can't give an exact date", PL-10, C12b/c–C14).
 - **C15 (branch `miguel/skip-charge-clarify`, 2026-09-30):** no "A or B?" between two charge intents; words decide the kind, else status first (docs/conversation.md C15).
-- Not built yet: data cleaning layer (silver/gold), Supabase load of the gold slice, real lookup tool, eval harness, agent console.
+- **Step 7 (branch `Phase2_Cuellar`, Carlos, 2026-10-01):** bronze/silver/gold in BigQuery (dbt, `pipeline/dbt`), gold serving slice loaded into Supabase (`customers`, `products`, `transactions`, `fx_rates`, `agent_pools`, `data_version`; server-only). Log: docs/phase-2-data-log.md.
+- **Step 8 (branch `Phase2_Cuellar`, Carlos, 2026-10-01):** per-customer login + RLS (see Auth above).
+- Not built yet: real lookup tool (step 10 reads via `asCustomer`), eval harness, agent console.
 
 ## Phase 2 plan (build steps 7–21, see the published build plan)
 Data & access: 7 pipeline + Supabase load + labeled fixtures · 8 test login + row-level security · 9 extract amount/date/merchant · 10 transaction lookup tool.
@@ -50,6 +52,8 @@ uv run python pipeline/phrases.py             # validate phrase families -> phra
 node scripts/embed_phrases.mjs                # e5-small embeddings (same settings the app serves)
 uv run python pipeline/embed_bedrock.py cohere-mv3   # Cohere embeddings (AWS profile "bedrock"; quota 20 req/min)
 uv run python pipeline/split.py               # verify the sealed split
+(cd pipeline/dbt && uv run dbt build --profiles-dir . --target bq)   # silver + gold in BigQuery (gcloud login)
+(cd pipeline/dbt && uv run python fixtures/build_fixture_bronze.py && DBT_DUCKDB_PATH=../../data/processed/fixture.duckdb uv run dbt build --profiles-dir . --target duckdb --vars '{fixtures: true}')  # offline
 (cd pipeline && uv run python compare_embeddings.py) # model selection by grouped CV (test untouched)
 (cd pipeline && uv run python train_intent.py --embedding cohere-mv3)  # validation only; --test is logged
 ```
@@ -59,7 +63,8 @@ uv run python pipeline/split.py               # verify the sealed split
 - Vercel team `miguelsuapin-1909s-projects` (team_WtIAxy18QvOOQWBoFrcnidFW), project `latam-bank-service` (prj_gGZ6kb85SYj3GESHcr2pj3wqenvT). **The local `vercel` CLI is logged into a different account (publink): use the Vercel connector, not the CLI.**
 - Vercel env: `AWS_ROLE_ARN` (OIDC role `latam-bank-vercel`, keyless, can only invoke Cohere embed), `BEDROCK_REGION`, `DEMO_*`, `SESSION_SECRET`, `ANTHROPIC_API_KEY` (sensitive).
 - AWS account 082229155656 (Free plan, credits). Local profiles: `factored` (organizer's read-only S3 keys), `bedrock` (IAM user latam-bank-bedrock, embeddings only). IAM user `miguel` is read-only; IAM changes need root (Miguel does them).
-- Supabase project `paguvqqelfwadcolocaq` (org "hackathon", sa-east-1), empty so far. Schema changes go in supabase/migrations/.
+- GCP project `project-d49391de-51c4-49bf-aae` (Carlos): bucket `gs://factored_gt_latam_bank_raw/raw/` (S3 copy), BigQuery datasets in us-east1: `raw_ext` + `bronze` (D-003, `pipeline/bigquery/bronze_bq.py`), then `staging`, `silver`, `silver_quarantine`, `ref`, `ops`, `gold`, `gold_serving` (D-005, `pipeline/dbt`). Progress log: docs/phase-2-data-log.md.
+- Supabase project `paguvqqelfwadcolocaq` (org "hackathon", sa-east-1): `cases` (Miguel) + the serving slice (Carlos, loaded 2026-10-01 by `pipeline/load_supabase.py`, about 10 MB). Schema changes go in supabase/migrations/.
 
 ## Gotchas we already hit
 - **Next.js 16:** middleware is `src/proxy.ts`; read `node_modules/next/dist/docs/` before using an API (see AGENTS.md).

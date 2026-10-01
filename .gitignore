@@ -59,3 +59,13 @@ __pycache__/
 # external datasets (fetched by scripts/download_*.sh; Banking77 is training-only, D-004)
 /data/external/
 /data/processed/banking77_*
+
+# dbt
+/pipeline/dbt/target/
+/pipeline/dbt/logs/
+/pipeline/dbt/dbt_packages/
+/pipeline/dbt/.user.yml
+
+# step 8 test logins (plaintext passwords, written by pipeline/seed_test_users.py)
+test-users.local.md
+*.local.md

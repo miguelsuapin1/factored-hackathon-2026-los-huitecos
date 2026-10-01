@@ -48,6 +48,8 @@ Backward compatible: a request without `state` starts a new conversation, exactl
 
 Server-only, always scoped to the signed-in customer (row-level security enforces it in the database, step 8). The caller never passes someone else's id: the customer id comes from the session, not from the conversation.
 
+**Step 8 (Carlos, 2026-10-01, D-006):** `customerFor(session)` returns the customer id from the signed session cookie (`c`). The Supabase implementation must read through `asCustomer(session, tx => ...)` in `src/lib/db/scoped.ts` (role `lookup_reader`, env `SUPABASE_LOOKUP_DB_URL`), never with `SUPABASE_SECRET_KEY`: the policies then hide every other customer's rows even if a query has no `WHERE customer_id`.
+
 ```ts
 type LookupQuery = {
   amount?: number;          // matched with tolerance (e.g. ±1%), in the transaction's own currency
@@ -77,6 +79,8 @@ async function getTransaction(session: CustomerSession, transactionId: string): 
 ```
 
 **Now in code (Miguel, 2026-09-30):** the types are [src/lib/lookup/types.ts](../src/lib/lookup/types.ts); the stand-in with synthetic fixtures is `src/lib/lookup/mock.ts`. **Person 2:** implement `TransactionLookup` against Supabase and export it from `src/lib/lookup/index.ts`; the unit tests in `src/lib/policy/policy.test.ts` show the expected behaviour (scoping, ±1% amount, date window, merchant and currency narrow only when something still matches). There is deliberately **no `is_fraud` field** (docs/policy.md PL-6).
+
+**Data for K2 (Carlos, 2026-09-30):** BigQuery `gold_serving.serving_transactions` (+ `serving_customers`, `serving_products`) is the slice to load into Supabase: one row per transaction with exactly the K2 fields (`transaction_ts` UTC, `transaction_date_local` = the customer's calendar day, `amount`, `currency`, `merchant_name`, `transaction_status`, `response_code`, `channel`, `transaction_country` ISO, `fraud_score`), no `is_fraud`, and `data_source` (`organizer` | `team_synthetic`). Miguel's mock charges (`CLI-DEMO00000001`, `CLI-OTHER0000000001`) are included unchanged, so the test conversations keep working when the mock is replaced. **Filter dates on `transaction_date_local`.** In Supabase it is `public.transactions` (+ `customers`, `products`), created by migration `20260930220000_serving_slice.sql`, filled by `pipeline/load_supabase.py`; server-only until step 8. **Loaded 2026-10-01:** 2,040 customers, 23,052 transactions, about 10 MB (`public.data_version` records each load). Contents and size: [reports/serving_slice.md](../reports/serving_slice.md).
 
 Relative dates are resolved against the demo clock (`DEMO_TODAY`, default 2026-06-17; see [conversation.md](conversation.md) C4), so the gold slice must cover the weeks before it. Until K2 is live, Miguel uses a mock returning fixed fixtures with this shape.
 
