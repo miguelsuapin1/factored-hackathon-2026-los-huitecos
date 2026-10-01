@@ -10,6 +10,8 @@
 // --repeat: model-backed flows vary between runs (docs/lessons-learned.md P19: one bug showed up 1 run in 9).
 // --rate caps turns per minute: each turn makes one Cohere call, and Bedrock allows 20 per minute.
 // Every review or hand-off writes a real case, tagged environment "local" (or the deployment's VERCEL_ENV).
+// Protected Vercel previews: set VERCEL_AUTOMATION_BYPASS_SECRET in .env.local (Vercel → Deployment Protection →
+// Protection Bypass for Automation) and every request carries it.
 import { execSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
@@ -87,13 +89,22 @@ function credentials(): Map<string, Credential> {
 
 async function signIn(base: string, cred: Credential): Promise<string> {
   const r = await fetch(`${base}/api/login`, {
-    method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(cred), redirect: "manual",
+    method: "POST", headers: headers(), body: JSON.stringify(cred), redirect: "manual",
   }).catch(() => {
     throw new Error(`can't reach ${base}: is the app running (npm run dev)?`);
   });
   const cookie = (r.headers.get("set-cookie") ?? "").split(";")[0];
+  if (r.status === 401 && (await r.clone().text()).includes("vercel_auth_enabled")) {
+    throw new Error(`${base} is behind Vercel's login: set VERCEL_AUTOMATION_BYPASS_SECRET in .env.local`);
+  }
   if (!r.ok || !cookie) throw new Error(`login as ${cred.username} failed: HTTP ${r.status}`);
   return cookie;
+}
+
+/** Headers for every request: JSON, plus the Vercel protection bypass when configured. */
+function headers(extra: Record<string, string> = {}): Record<string, string> {
+  const bypass = process.env.VERCEL_AUTOMATION_BYPASS_SECRET ?? readEnvLocal().VERCEL_AUTOMATION_BYPASS_SECRET;
+  return { "Content-Type": "application/json", ...(bypass ? { "x-vercel-protection-bypass": bypass } : {}), ...extra };
 }
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -155,7 +166,7 @@ async function main() {
         result.turns.push(record);
         try {
           const r: Response = await fetch(`${base}/api/chat`, {
-            method: "POST", headers: { "Content-Type": "application/json", cookie: cookies.get(c.login)! },
+            method: "POST", headers: headers({ cookie: cookies.get(c.login)! }),
             body: JSON.stringify({ text: say, state, forceFallback: values.fallback || ("turns" in c && c.forceFallback === true) }),
           });
           record.httpStatus = r.status;
@@ -238,7 +249,7 @@ async function main() {
         lastTurnAt = Date.now();
         const r = await fetch(`${base}${p}`, {
           method: "POST", redirect: "manual",
-          headers: { "Content-Type": "application/json", ...(cookie ? { cookie } : {}) },
+          headers: headers(cookie ? { cookie } : {}),
           body: typeof body === "string" ? body : JSON.stringify(body),
         });
         return { status: r.status, json: await r.json().catch(() => ({})) };

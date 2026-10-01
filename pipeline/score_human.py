@@ -135,8 +135,10 @@ def classify_all(texts: list[str], base: str, rate: float) -> list[dict]:
     opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(jar))
 
     def post(path: str, body: dict) -> dict:
-        req = urllib.request.Request(f"{base}{path}", data=json.dumps(body).encode(), method="POST",
-                                     headers={"Content-Type": "application/json"})
+        headers = {"Content-Type": "application/json"}
+        if env.get("VERCEL_AUTOMATION_BYPASS_SECRET"):  # protected Vercel previews (see evals/run.ts)
+            headers["x-vercel-protection-bypass"] = env["VERCEL_AUTOMATION_BYPASS_SECRET"]
+        req = urllib.request.Request(f"{base}{path}", data=json.dumps(body).encode(), method="POST", headers=headers)
         with opener.open(req, timeout=30) as resp:
             return json.loads(resp.read())
 
