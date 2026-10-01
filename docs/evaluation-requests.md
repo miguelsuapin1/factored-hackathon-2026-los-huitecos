@@ -4,6 +4,12 @@ What the evidence track (Luis Pedro) needs from Miguel and Carlos, and what it f
 
 Opened 2026-10-01 (Luis Pedro).
 
+## For everyone
+
+| # | Request | Why | Done when | Priority |
+|---|---|---|---|---|
+| T1 | **Write human test messages** (step 16): each of us, plus friends or family, writes customer messages by hand in `evals/human/messages.csv`, following `evals/human/README.md`, without looking at `data/phrases/` first. A second person checks each label. A native Brazilian-Portuguese writer is the most valuable. | Every number so far comes from text written by us or an LLM; the judges' honest number is this one (docs/intent-model.md D1, D8). | 60+ messages, about half ES and half PT, every label, about 1 in 5 ambiguous; `uv run python pipeline/score_human.py` writes `reports/intent_eval_human.md`. | **High** |
+
 ## For Miguel
 
 | # | Request | Why | Done when | Priority |
@@ -34,6 +40,7 @@ Opened 2026-10-01 (Luis Pedro).
 | C1 (lookup URL) | Run the four invalid personas and BD-6 against the real data. |
 | M1, M2 (fixes) | Re-run TC-02, TC17-27 and PR-2 and mark EF-1 / EF-4 fixed in the findings. |
 | C3 (optional logins) | Add real-data PL-6 cases to K5 and the suites. |
+| T1 (human messages) | Score them on Cohere, report the honest intent numbers vs. keyword rules, re-run the Banking77 comparison on them. |
 
 ## How to run the evaluation
 
