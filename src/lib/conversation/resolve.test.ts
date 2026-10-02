@@ -364,15 +364,15 @@ describe("EF-1: a merchant that can't separate 3+ charges asks for the date befo
 
 describe("C17: dates we can't use don't loop", () => {
   const opening = { text: "no reconozco un cargo de 350 dólares", intent: intent("unrecognized_charge", 0.9), details: { amount: 350, currency: "USD" } };
-  it("a date older than the window → a person with a case that records the date (PL-11)", async () => {
+  it("a date older than the 12 months we hold → a person with a case that records the date (PL-11)", async () => {
     const store = memoryStore();
     const run1 = async () => {
       let state: ConversationState = newState("c1", "demo", 0);
       const out1 = advance(state, { ...opening, range: null });
       await resolveTurn(out1, { session: me, lookup: mockLookup, store, language: "es", promptVersions: {} });
       state = out1.state;
-      const out2 = advance(state, { text: "fue el 10 de octubre", intent: intent("out_of_scope", 0.38), details: {},
-        dateIssue: { kind: "too_old", date: "2025-10-10" } });
+      const out2 = advance(state, { text: "fue el 10 de mayo de 2025", intent: intent("out_of_scope", 0.38), details: {},
+        dateIssue: { kind: "too_old", date: "2025-05-10" } });
       return { out2, r2: await resolveTurn(out2, { session: me, lookup: mockLookup, store, language: "es", promptVersions: {} }) };
     };
     const { out2, r2 } = await run1();
@@ -380,7 +380,7 @@ describe("C17: dates we can't use don't loop", () => {
     assert.equal(r2.trace.rule, "PL-11");
     assert.equal(out2.state.handoffReason, "too_old");
     assert.equal(r2.trace.case?.verified, true);
-    assert.ok(store.rows[0].checksDone.some((c) => c.includes("2025-10-10")));
+    assert.ok(store.rows[0].checksDone.some((c) => c.includes("2025-05-10")));
   });
   it("answers that never give the date: ask, ask again, then a person (not forever)", async () => {
     const nothing = { text: "eso, el cargo", intent: intent("out_of_scope", 0.4) };

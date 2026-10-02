@@ -318,8 +318,8 @@ describe("C17: answers to 'A or B?' that carry a charge detail, and choosing a p
     const t1 = advance(state, opener);
     state = t1.state;
     assert.equal(t1.move, "ask_clarify");
-    const t2 = advance(state, { text: "fue el 10 de octubre", intent: intent({ human_agent: 0.45, unrecognized_charge: 0.25 }), details: {},
-      dateIssue: { kind: "too_old", date: "2025-10-10" } });
+    const t2 = advance(state, { text: "fue el 10 de mayo de 2025", intent: intent({ human_agent: 0.45, unrecognized_charge: 0.25 }), details: {},
+      dateIssue: { kind: "too_old", date: "2025-05-10" } });
     assert.equal(t2.state.workingIntent, "unrecognized_charge");
     assert.equal(t2.move, "handoff");
     assert.equal(t2.state.handoffReason, "too_old");

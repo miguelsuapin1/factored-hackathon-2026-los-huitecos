@@ -12,7 +12,7 @@ export const EXTRACT_PROMPT_VERSION = "extract-v4";
 const TIMEOUT_MS = 5000;
 const PRICE_PER_MTOK = { input: 1, output: 5 }; // Claude Haiku 4.5, USD
 
-import { demoToday, MAX_DAYS_BACK } from "./clock";
+import { demoToday, MAX_STATED_DAYS_BACK } from "./clock";
 export { demoToday } from "./clock";
 
 const Extracted = z.object({
@@ -92,7 +92,7 @@ export function ground(text: string, raw: z.infer<typeof Extracted>, today = dem
     if (valid && date > today && !YEAR.test(text)) date = `${Number(date.slice(0, 4)) - 1}${date.slice(4)}`;
     const age = valid ? daysBetween(date, today) : NaN;
     const quoted = !!raw.dateText && folded.includes(fold(raw.dateText));
-    if (valid && age >= 0 && age <= MAX_DAYS_BACK && quoted) details.date = date;
+    if (valid && age >= 0 && age <= MAX_STATED_DAYS_BACK && quoted) details.date = date;
     else {
       dropped.push("date");
       // C17: a real date the customer said, that we can't use: say why instead of asking again as if unheard.
@@ -110,7 +110,7 @@ export function ground(text: string, raw: z.infer<typeof Extracted>, today = dem
     // at most ~a month (anything wider isn't narrowing anything).
     const ok = [raw.dateFrom, raw.dateTo].every((d) => /^\d{4}-\d{2}-\d{2}$/.test(d) && !Number.isNaN(Date.parse(`${d}T00:00:00Z`)));
     const quoted = !!raw.dateText && folded.includes(fold(raw.dateText));
-    if (ok && quoted && raw.dateFrom <= raw.dateTo && raw.dateTo <= today && daysBetween(raw.dateFrom, today) <= MAX_DAYS_BACK
+    if (ok && quoted && raw.dateFrom <= raw.dateTo && raw.dateTo <= today && daysBetween(raw.dateFrom, today) <= MAX_STATED_DAYS_BACK
         && daysBetween(raw.dateFrom, raw.dateTo) <= MAX_RANGE_DAYS) {
       range = { from: raw.dateFrom, to: raw.dateTo };
     } else dropped.push("dateRange");

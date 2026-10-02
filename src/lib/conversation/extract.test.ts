@@ -16,10 +16,19 @@ describe("ground: dates (C3, C17)", () => {
     const g = ground("fue el 20 de diciembre", raw("2026-12-20", "20 de diciembre"), TODAY);
     assert.deepEqual([g.details.date, g.dateIssue], ["2025-12-20", null]);
   });
-  it("C17: '10 de octubre' (the live loop) is last October, too old to search: reported, not silently dropped", () => {
+  it("C17: '10 de octubre' (the live loop) is last October, within the 12 months we hold: kept", () => {
     const g = ground("fue el 10 de octubre", raw("2026-10-10", "10 de octubre"), TODAY);
+    assert.deepEqual([g.details.date, g.dateIssue], ["2025-10-10", null]);
+  });
+  it("C17: a date older than the 12 months we hold is reported, not silently dropped", () => {
+    const g = ground("fue el 10 de mayo de 2025", raw("2025-05-10", "10 de mayo de 2025"), TODAY);
     assert.equal(g.details.date, undefined);
-    assert.deepEqual(g.dateIssue, { kind: "too_old", date: "2025-10-10" });
+    assert.deepEqual(g.dateIssue, { kind: "too_old", date: "2025-05-10" });
+  });
+  it("a period may also reach back 12 months, but no further", () => {
+    const period = (from: string, to: string, text: string) => ({ ...raw(null, text), dateFrom: from, dateTo: to });
+    assert.deepEqual(ground("en octubre del año pasado", period("2025-10-01", "2025-10-31", "en octubre del año pasado"), TODAY).range, { from: "2025-10-01", to: "2025-10-31" });
+    assert.equal(ground("en mayo del año pasado", period("2025-05-01", "2025-05-31", "en mayo del año pasado"), TODAY).range, null);
   });
   it("C17: an explicit future year stays in the future", () => {
     const g = ground("fue el 10 de octubre de 2026", raw("2026-10-10", "10 de octubre de 2026"), TODAY);
