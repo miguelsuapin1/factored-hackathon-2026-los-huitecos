@@ -114,6 +114,7 @@ Each entry: what we chose, what else we considered, and why.
 - **Chose:** threshold 0.61, the value that minimizes mean cost on validation with **wrong action = 5, acting on an ambiguous message = 2, needless question = 1**.
 - **Why:** it turns "when should the bot ask?" into a stated business trade-off anyone can challenge. Raising the wrong-action cost pushes the threshold up (more questions); lowering it gives more automation.
 - **Caveat:** the weights are an assumption, not a measurement. With real traffic they'd come from the cost of a mistaken dispute vs the cost of one more message.
+- **Sensitivity (Luis Pedro, 2026-10-01):** re-running the choice over 15 weight combinations (wrong action 2–20, acting on an ambiguous message 1–3, validation only) picks only 0.51, 0.61 or 0.64 ([reports/cost_sensitivity_e5small.md](../reports/cost_sensitivity_e5small.md)). From a wrong-action weight of 3 up to 20 the choice stays at the shipped 0.61 with no wrong actions on validation, so it doesn't hinge on how costly a wrong action is, as long as it costs at least 3 questions; raising it further changes nothing. Only a weight of 2 drops it to 0.51 (4.8% wrong actions). The lever that moves it is the ambiguous weight: at 3 it rises to 0.64 (coverage 47.6% → 42.9%). e5-small (v1) only for now: the Cohere (v2) table needs its embeddings (`embed_bedrock.py`).
 
 ### D12. Confidence intervals by family bootstrap
 - **Chose:** resample whole families (not phrases) 2,000 times.
