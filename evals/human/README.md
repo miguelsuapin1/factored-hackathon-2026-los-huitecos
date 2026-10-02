@@ -1,5 +1,7 @@
 # Human-written test messages (build step 16)
 
+**Para quienes escriben los mensajes: [GUIA.md](GUIA.md)** (en español: qué escribir, las 32 tarjetas de situación en español y cómo entregar).
+
 The honest test of the intent model. Every other test set in this repo was written by the people (or the LLM) who wrote the rules and the training phrases, so its scores are an upper bound (docs/intent-model.md D1, D8). These messages are written **by people, by hand**, and are scored once, unseen ([docs/evaluation.md](../../docs/evaluation.md) EV-5).
 
 ## Who writes them
