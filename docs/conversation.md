@@ -32,7 +32,7 @@ Each entry says who decided it, so the team knows who to ask.
 - **Chose:** a Haiku call with a strict schema `{amount, currency, date, merchant}` runs in parallel with the intent model (no added latency). Code keeps each value only if:
   - **amount:** its digits appear in the customer's message;
   - **merchant:** it appears in the message (ignoring case and accents);
-  - **date:** it's a valid date, not after the demo date (C4) and not more than 180 days before it;
+  - **date:** it's a valid date, not after the demo date (C4) and not more than 180 days before it (**365 since 2026-10-02**, C17: the 180 had no recorded reason; 365 is the data we hold);
   - **currency:** only if the customer named it. Never assumed ([data issue A5](data-issues.md): Mexican customers transact in USD).
 - **Why:** the same principle as the reply number check (R4). The model reads; code decides what's believed. A dropped value only means we ask for it; it never breaks the turn. Every drop is recorded in the trace.
 
@@ -101,6 +101,17 @@ Each entry says who decided it, so the team knows who to ask.
 ### C16. "Debería ser 250" never overwrites the charged amount (Miguel, 2026-09-30)
 - **Found on the preview:** TC-01 ended in "no matching charge" once in 9 runs. The trace showed `detailsKnown: ["amount","date"]` with no expected amount: that run, Haiku returned "debería ser de 250" as the `amount`, overwriting 350, and the lookup searched for 250.
 - **Chose (code, not prompt):** once the charged amount is known, a different amount in a message that says what it *should* be ("debería ser", "tenía que ser", "deveria ser") becomes the expected amount. A correction at the confirmation step ("no, era de 125") still replaces it. Unit-tested both ways; `REPEAT=n` added to the smoke sweep to catch run-to-run variation.
+
+### C17. A date we can't use is said, not silently re-asked; re-asks are limited (Miguel, 2026-10-02)
+- **Found on the preview:** "fue el 10 de octubre" was asked for four times. Against the demo clock (17 June 2026), Haiku read it as 10 October 2026 (future); even as 2025 it's 250 days back, past the 180-day window (C3). C3 dropped it silently, the dialogue asked again, and Haiku's reply echoed the date back as if accepted ("¿confirmas el cargo del 10 de octubre?"). Nothing limited the re-asks.
+- **Chose (code):**
+  - A month and day **without a year** that lands in the future is the most recent one ("10 de octubre" in June 2026 → 10 October 2025). An explicit year is kept.
+  - **Two windows, each with a reason** (option 3, Miguel, 2026-10-02). The 180 days in C3 was set without a recorded reason, while the serving slice holds 12 months (docs/phase-2-data-log.md: local dates 2025-06-18 to 2026-06-17), so 10 October 2025 was in our data and still refused. Now: a date or period the customer **states** may reach back **365 days** (`MAX_STATED_DAYS_BACK`, what the data covers); a search **without** a date ("no me acuerdo", "el más reciente", only the merchant) still looks back **180 days** (`MAX_DAYS_BACK`), a product choice to keep open-ended searches from matching a year of charges, not a measurement.
+  - A date the customer stated (quoted) that we can't use is reported, not dropped silently: **older than 365 days → a person** with a case that records the date (PL-11, docs/policy.md); **in the future → say so** and ask again.
+  - Asking for details that the reply doesn't bring is limited: **ask, ask again (now offering "no me acuerdo" to search by amount), then a person** (`repeated_clarification`). Any answer that brings something new resets the count.
+  - An answer to "A or B?" that carries a charge detail (an amount, a date, a period, even an unusable date) picks the charge option. Seen in the same replay: "fue el 10 de octubre" to "¿revisar el cargo o hablar con un agente?" picked the agent.
+  - Choosing the agent in "A or B?" now hands off as H1/H2 do (with context → a case; without → ask for one line and remember it). Before, the reply asked for a summary the state didn't wait for.
+- **Verified live (local, Cohere + Haiku), 2026-10-02:** with the 180-day window, the screenshot conversation ended on turn 2 with PL-11 and a verified case; with 365 its date is searched like any other; "…de 2026" gets "esa fecha aún no ha ocurrido"; three answers without a date end with a person on the third. Unit tests in `extract.test.ts`, `dialogue.test.ts`, `resolve.test.ts`.
 
 ## What we verified (2026-09-29, local, Cohere + Haiku live)
 

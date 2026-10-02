@@ -11,5 +11,9 @@ export function shiftDays(iso: string, days: number) {
   return d.toISOString().slice(0, 10);
 }
 
-/** How far back a dispute can reach (C3); also the window searched when the customer doesn't remember the date. */
+/** The window searched when the customer gives no date ("no me acuerdo", "el más reciente", only the merchant): a
+ * product choice to keep open-ended searches short (C13), not a measurement. */
 export const MAX_DAYS_BACK = 180;
+/** How far back a date the customer states can be (C3, C17): the 12 months of transactions in the serving slice
+ * (docs/phase-2-data-log.md: local dates 2025-06-18 to 2026-06-17). Older than this → a person (PL-11). */
+export const MAX_STATED_DAYS_BACK = 365;

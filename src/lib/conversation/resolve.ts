@@ -6,7 +6,7 @@ import { buildCase, verifyCase } from "@/lib/cases/build";
 import type { CaseStore } from "@/lib/cases/types";
 import { decideOnConfirm, decideOnLookup, FRAUD_HANDOFF_SCORE, queryFor, single, type LookupDecision, type RuleId } from "@/lib/policy/decide";
 import type { CustomerSession, TransactionLookup, TransactionMatch } from "@/lib/lookup/types";
-import type { Move, TurnOutcome } from "./dialogue";
+import { dateGiven, type Move, type TurnOutcome } from "./dialogue";
 import { MAX_CHECKS, type HandoffReason, type MatchView } from "./state";
 
 const LOOKUP_TIMEOUT_MS = 3000;
@@ -83,6 +83,9 @@ export async function resolveTurn(outcome: TurnOutcome, ctx: ResolveContext): Pr
   if (move === "handoff" && s.handoffReason === "repeated_clarification") trace.rule = "DLG-clarify";
   // The customer asked for a person (H1/H2): also a hand-off with a case.
   if (move === "handoff" && s.handoffReason === "customer_asked") trace.rule = "DLG-human";
+  // C17: the customer's date is older than the window we can search: a person can look further back (PL-11).
+  if (move === "handoff" && s.handoffReason === "too_old") trace.rule = "PL-11";
+  if (outcome.dateIssue) note(`customer gave a date that can't be searched (${outcome.dateIssue.kind}): ${outcome.dateIssue.date}`);
   // The merchant step or the pick ended unresolved (C13, C14): PL-2's hand-off.
   if (move === "handoff" && s.handoffReason === "ambiguous" && trace.rule === null) trace.rule = "PL-2";
 
@@ -111,6 +114,7 @@ export async function resolveTurn(outcome: TurnOutcome, ctx: ResolveContext): Pr
         note(`lookup (${lookup.source}, ${where}${s.details.merchant ? ", with merchant" : ""}): ${found.result.length} match(es)`);
         decision = decideOnLookup(found.result, {
           retries: s.lookupRetries, latest: s.when.latest, merchantKnown: s.details.merchant !== null, merchantAsked: s.merchantAsked,
+          dateKnown: dateGiven(s), dateAsked: s.dateAsked,
         });
       }
     }
@@ -131,6 +135,12 @@ export async function resolveTurn(outcome: TurnOutcome, ctx: ResolveContext): Pr
           s.match = null;
           s.pending = { kind: "details" };
           return done("no_match");
+        case "ask_date":
+          // EF-1: the merchant couldn't separate the charges; the date will (merchant → date → a person).
+          s.dateAsked = true;
+          s.match = null;
+          s.pending = { kind: "details" };
+          return done("ask_details");
         case "ask_merchant":
           s.merchantAsked = true;
           s.match = null;

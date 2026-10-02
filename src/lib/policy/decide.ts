@@ -13,7 +13,7 @@ export const MAX_LOOKUP_RETRIES = 1;
 /** The customer's date is approximate: search this many days either side. */
 export const DATE_WINDOW_DAYS = 3;
 
-export type RuleId = "PL-1" | "PL-2" | "PL-3" | "PL-4" | "PL-5" | "PL-6" | "PL-7" | "PL-8" | "PL-9" | "PL-10";
+export type RuleId = "PL-1" | "PL-2" | "PL-3" | "PL-4" | "PL-5" | "PL-6" | "PL-7" | "PL-8" | "PL-9" | "PL-10" | "PL-11";
 /** PL-10: at most this many candidates are shown for the customer to pick from. */
 export const MAX_LISTED = 2;
 
@@ -21,6 +21,7 @@ export type LookupDecision =
   | { kind: "confirm_match"; rule: null; match: TransactionMatch }
   | { kind: "no_match"; rule: "PL-1"; handoff: boolean }
   | { kind: "ask_merchant"; rule: "PL-2"; count: number }
+  | { kind: "ask_date"; rule: "PL-2"; count: number }
   | { kind: "ambiguous"; rule: "PL-2"; handoff: true; count: number }
   | { kind: "pick"; rule: "PL-10"; options: TransactionMatch[] }
   | { kind: "explain_status"; rule: "PL-3" | "PL-4" | "PL-5"; match: TransactionMatch };
@@ -51,16 +52,20 @@ export function queryFor(details: Details, when: WhenHint = { from: null, to: nu
 }
 
 /** The ladder after a lookup (docs/policy.md): 0 → check once, then a person; 1 → that one; 2 → list them (PL-10);
- * 3+ → ask the merchant once, then a person (PL-2). "El más reciente" keeps only the latest. */
+ * 3+ → ask for what's still missing, the date (EF-1) then the merchant, each once, then a person (PL-2).
+ * "El más reciente" keeps only the latest. `dateKnown`: the customer gave a date or period, or said they don't know. */
 export function decideOnLookup(
   found: TransactionMatch[],
-  ctx: { retries: number; latest?: boolean; merchantKnown?: boolean; merchantAsked?: boolean } | number,
+  ctx: { retries: number; latest?: boolean; merchantKnown?: boolean; merchantAsked?: boolean; dateKnown?: boolean; dateAsked?: boolean } | number,
 ): LookupDecision {
   const c = typeof ctx === "number" ? { retries: ctx } : ctx;
   const byDate = [...found].sort((a, b) => b.date.localeCompare(a.date));
   const matches = c.latest ? byDate.slice(0, 1) : byDate;
   if (matches.length === 0) return { kind: "no_match", rule: "PL-1", handoff: c.retries >= MAX_LOOKUP_RETRIES };
   if (matches.length > MAX_LISTED) {
+    // EF-1: the merchant searched the whole window but couldn't separate the charges (a monthly subscription, or a
+    // name that matched nothing): the date is what tells them apart, so ask it before handing off.
+    if (!(c.dateKnown ?? true) && !c.dateAsked) return { kind: "ask_date", rule: "PL-2", count: matches.length };
     return c.merchantKnown || c.merchantAsked
       ? { kind: "ambiguous", rule: "PL-2", handoff: true, count: matches.length }
       : { kind: "ask_merchant", rule: "PL-2", count: matches.length };

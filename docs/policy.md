@@ -20,7 +20,7 @@ customer says yes → move "confirmed"
 | Rule | Situation | Decision | Why |
 |---|---|---|---|
 | **PL-1** | No transaction matches | Ask the customer to check the amount and date (and give the merchant), once. Still none → a person | Customers misremember; one retry is cheap. After that, guessing is worse than an agent |
-| **PL-2** | **Three or more** transactions match | Ask for the merchant, once. Still three or more, merchant unknown ("no sé") or no merchant given → a person, with a verified case | We never pick one for the customer, and never list more than two (updated 2026-09-30 with PL-10; Miguel's ladder) |
+| **PL-2** | **Three or more** transactions match | Ask for what's still missing, each once: the **date** if the customer gave none (EF-1), then the **merchant**. Still three or more, or "no sé" → a person, with a verified case | We never pick one for the customer, and never list more than two (updated 2026-09-30 with PL-10; Miguel's ladder). The date step (2026-10-02, EF-1): a merchant can't separate a monthly subscription, and a misnamed one ("Netflix") matches nothing, yet both sent the customer to a person on the first message (TC-02, 4/4 runs) |
 | **PL-10** | **Exactly two** transactions match (also after the merchant) | List both, as the records show them (amount, merchant, date), and let the customer pick; the pick is read by code (C14). Unclear → ask once more → a person; "ninguno" → ask the merchant | Showing two of the customer's own charges is faster than another question, and still safe: a dispute is confirmed with yes/no before anything opens |
 | **PL-3** | The match is **Pending** | Explain it isn't final and can still change; no dispute. Conversation closed | A pending charge can still be cancelled or adjusted; disputes apply to completed charges (common card practice; a policy choice, not from the data) |
 | **PL-4** | The match is **Reversed** | Explain the amount was returned; no dispute | Nothing left to dispute |
@@ -28,6 +28,7 @@ customer says yes → move "confirmed"
 | **PL-6** | Confirmed, approved, **fraud score ≥ 30** | A person takes the case | Data-backed cutoff, below. The customer is never told the score or the reason |
 | **PL-7** | Confirmed, approved, fraud score < 30 | The dispute goes to review | The normal path. Since step 13 a review case is written and read back before the reply gives its reference ([verification.md](verification.md)) |
 | **PL-9** | A **status question** ("¿qué pasó con mi compra?") matches one **approved** charge | Explain it was charged normally and offer a review; if the customer says it isn't theirs or isn't right, the dispute continues with the same charge (S2) | Approved is the one status where a dispute may still make sense; the offer is the only one a status answer may make (R9) |
+| **PL-11** | The customer dates the charge **more than 365 days back** (older than the 12 months of transactions we hold) | A person takes the case; the stated date goes into the case's checks | The assistant can't see it, so asking again only loops (C17); an agent can look at the full history. 365 = the serving slice's coverage (docs/phase-2-data-log.md) |
 | **PL-8** | The record can't be read (lookup failed or timed out, or the record changed) | A person takes the case | A tool failure must never break the turn or leave the customer without an answer |
 
 Wrongful fee and unrecognized charge follow the same rules; the intent only changes the wording.
@@ -39,12 +40,12 @@ The date is still asked for. What the answer can be, and where the search then l
 | The customer says | Search window |
 |---|---|
 | An exact day ("el 10 de junio", "10/06", "ayer") | ± 3 days |
-| A period ("la semana pasada", "a principios de mes", "el mes pasado") | That range: read by Haiku, then checked by code (quoted from the message, ends by the demo date, starts within 180 days, spans ≤ 35 days) |
+| A period ("la semana pasada", "a principios de mes", "el mes pasado") | That range: read by Haiku, then checked by code (quoted from the message, ends by the demo date, starts within 365 days, spans ≤ 35 days) |
 | "El más reciente" / "o mais recente" | The last 180 days, keeping only the latest charge of that amount |
 | "No me acuerdo" / "não sei" | The last 180 days |
 | The merchant instead of a date | The last 180 days, with the merchant |
 
-Then the ladder: **0** → check the details once (PL-1) · **1** → that charge (confirm, or explain its status) · **2** → list both (PL-10) · **3+** → ask the merchant once (PL-2) → still 3+ or "no sé" → a person. "El más reciente" and "no me acuerdo" replace any earlier date (after "el mes pasado" found nothing, "el más reciente" searches the whole window). Status questions (S1) use the same ladder. The stand-in customer has a second 350 charge (27 February, Tienda Don José) and a monthly Cable TV charge to exercise every step.
+Then the ladder: **0** → check the details once (PL-1) · **1** → that charge (confirm, or explain its status) · **2** → list both (PL-10) · **3+** → ask the date once if none was given (EF-1), then the merchant once (PL-2) → still 3+ or "no sé" → a person. A stated date or period may reach back 365 days (the data we hold); older → a person (PL-11). Searches without a date stay at 180 days (a product choice, C17); a month and day without a year means the most recent one (C17). "El más reciente" and "no me acuerdo" replace any earlier date (after "el mes pasado" found nothing, "el más reciente" searches the whole window). Status questions (S1) use the same ladder. The stand-in customer has a second 350 charge (27 February, Tienda Don José) and a monthly Cable TV charge to exercise every step.
 
 ## Status questions (S1–S2, Miguel, 2026-09-30)
 

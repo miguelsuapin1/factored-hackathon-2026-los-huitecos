@@ -30,6 +30,28 @@ describe("maskSensitive", () => {
     assert.equal(maskSensitive("minha senha é abc987").text, "minha senha é [oculto]");
     assert.deepEqual(maskSensitive("mi pin es 4821").masked, ["secret"]);
   });
+  it("EF-4: masks a PIN, password or CVV written before its label", () => {
+    assert.deepEqual(maskSensitive("4821 es mi pin, y no reconozco un cargo de 350 dólares del 10 de junio"), {
+      text: "[oculto] es mi pin, y no reconozco un cargo de 350 dólares del 10 de junio",
+      masked: ["secret"],
+    });
+    assert.equal(maskSensitive("mi nip es 4821").text, "mi nip es [oculto]");
+    assert.equal(maskSensitive("4821 é minha senha").text, "[oculto] é minha senha");
+    assert.equal(maskSensitive("minha senha é 4821").text, "minha senha é [oculto]");
+    assert.equal(maskSensitive("el cvv 987 de mi tarjeta").text, "el cvv [oculto] de mi tarjeta");
+    assert.equal(maskSensitive("987 es el cvv").text, "[oculto] es el cvv");
+    assert.equal(maskSensitive("abc987 es mi contraseña").text, "[oculto] es mi contraseña");
+  });
+  it("EF-4: amounts and questions about a PIN stay unmasked", () => {
+    for (const t of [
+      "350 es el monto",
+      "25 es lo que me cobraron",
+      "cuál es mi pin",
+      "olvidé cuál es mi nip",
+      "el cargo de 350 es mi problema",
+      "fueron 120 dólares, es mi tarjeta de crédito",
+    ]) assert.deepEqual(maskSensitive(t), { text: t, masked: [] }, t);
+  });
   it("masks emails", () => {
     assert.equal(maskSensitive("escríbanme a ana.perez+1@correo.com.mx").text, "escríbanme a [email]");
   });

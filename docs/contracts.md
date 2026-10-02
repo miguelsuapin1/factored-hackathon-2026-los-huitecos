@@ -35,7 +35,7 @@ Backward compatible: a request without `state` starts a new conversation, exactl
     "pending": { "kind": "details" },           // or { kind: "clarify", options: [a, b], attempts } | { kind: "offer_review", dispute } | { kind: "confirm" } | null
     "match": null,                              // the matched charge: { transactionId, date, amount, currency, merchant, status }
     "policy": { "rule": null, "decision": null, "lookup": null }, // e.g. { rule: "PL-7", decision: "open_review", lookup: { source: "mock", count: 1 } }
-    "handoffReason": null,                      // repeated_clarification | no_match | ambiguous | high_risk | record_unavailable | tool_failure
+    "handoffReason": null,                      // customer_asked | repeated_clarification | no_match | ambiguous | high_risk | record_unavailable | tool_failure | too_old (PL-11, 2026-10-02)
     "status": "open",                           // open | confirmed | review | handoff | closed
     "restartReason": null,                      // set when a sent state was rejected (invalid signature, expired, other user)
     "extraction": { "source": "haiku", "dropped": [], "error": null, "ms": 950, "promptVersion": "extract-v2", "costUsd": 0.0005 }

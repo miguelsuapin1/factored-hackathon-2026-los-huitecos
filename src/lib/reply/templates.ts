@@ -122,7 +122,7 @@ type DetailsView = {
 type MatchView = { date: string; amount: number; currency: string; merchant: string | null };
 export type { MatchView as ReplyMatch };
 
-type HandoffReason = "customer_asked" | "repeated_clarification" | "no_match" | "ambiguous" | "high_risk" | "record_unavailable" | "tool_failure";
+type HandoffReason = "customer_asked" | "repeated_clarification" | "no_match" | "ambiguous" | "high_risk" | "record_unavailable" | "tool_failure" | "too_old";
 
 const MONTHS: Record<Lang, string[]> = {
   es: ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"],
@@ -181,6 +181,8 @@ export type ReplyPlanInput = {
   options: MatchView[] | null; // PL-10: the two charges listed for the customer to pick
   intentGuessed?: boolean; // C15: the dispute kind wasn't stated: word it neutrally
   pickAttempts: number;
+  dateIssue?: { kind: "future" | "too_old"; date: string } | null; // C17: the date the customer gave and why it can't be used
+  detailAsks?: number; // C17: how many times the missing details were already asked without an answer
 };
 
 /** `explainOnly`: the reply only explains; offers of further action are rejected by code (R9). */
@@ -194,6 +196,7 @@ const HANDOFF_EN: Record<HandoffReason, string> = {
   high_risk: "Say that a specialist agent will take over this case, with the details already confirmed, so they don't need to repeat them. Do not mention fraud, scores, risk or why.",
   record_unavailable: "Say the charge can't be checked automatically right now, so an agent will continue with the details already confirmed.",
   tool_failure: "Say the account's movements can't be checked right now, so an agent will continue with the details already collected.",
+  too_old: "The date the customer gave is further back than you can check in this chat. Say so plainly (without saying how many days or months), and that an agent will continue with the details already collected, including that date, so they don't need to repeat them.",
 };
 
 const HANDOFF_LOCAL: Record<Lang, Record<HandoffReason, string>> = {
@@ -205,6 +208,7 @@ const HANDOFF_LOCAL: Record<Lang, Record<HandoffReason, string>> = {
     high_risk: "Un asesor especializado continuará con tu caso, con los datos que ya confirmaste; no necesitas repetirlos.",
     record_unavailable: "No puedo revisar ese cargo automáticamente en este momento. Un asesor continuará con los datos que ya confirmaste.",
     tool_failure: "No puedo consultar tus movimientos en este momento. Un asesor continuará con los datos que ya me diste.",
+    too_old: "Ese cargo es más antiguo de lo que puedo revisar por este chat. Un asesor continuará con tu caso con los datos que ya me diste, incluida la fecha, así no tienes que repetirlos.",
   },
   pt: {
     customer_asked: "Pronto, um atendente vai continuar com o seu caso com o que você já me contou, sem precisar repetir.",
@@ -214,6 +218,7 @@ const HANDOFF_LOCAL: Record<Lang, Record<HandoffReason, string>> = {
     high_risk: "Um atendente especializado vai continuar com o seu caso, com os dados que você já confirmou; não precisa repeti-los.",
     record_unavailable: "Não consigo verificar essa cobrança automaticamente agora. Um atendente vai continuar com os dados que você já confirmou.",
     tool_failure: "Não consigo consultar suas movimentações agora. Um atendente vai continuar com os dados que você já informou.",
+    too_old: "Essa cobrança é mais antiga do que consigo verificar por este chat. Um atendente vai continuar com o seu caso com os dados que você já informou, incluindo a data, sem precisar repetir.",
   },
 };
 
@@ -254,17 +259,31 @@ function planMove(input: ReplyPlanInput, lang: Lang): ReplyPlan {
       };
     }
     case "lookup_status": // always turned into a status answer by resolve.ts; falls back to asking for details
-    case "ask_details":
+    case "ask_details": {
+      // C17: a date we couldn't use is named as such (never echoed back as if accepted); a repeated ask offers the
+      // way out ("no me acuerdo" searches by amount, C13).
+      const future = p.dateIssue?.kind === "future" && p.missing.includes("date");
+      const again = (p.detailAsks ?? 0) > 0;
+      const dateOut = p.missing.includes("date")
+        ? " If they don't remember the date, they can say so and you'll search by the amount."
+        : "";
       return {
-        instruction: `The customer is asking about ${about(p.intent)}. Already known: ${knownText}. Briefly acknowledge what's known (you may restate those details exactly as written here), then ask ONLY for: ${p.missing.map((m) => MISSING_EN[m]).join(" and ")}. Do not ask again for anything already known. Do not promise a refund.`,
+        instruction: (future ? `The date the customer gave (${day(p.dateIssue!.date, lang)}) hasn't happened yet, so it can't be the charge's date: say so briefly. Do not repeat that date as if it were accepted. ` : "")
+          + (again ? "You already asked for this and the last answer didn't include it. " : "")
+          + `The customer is asking about ${about(p.intent)}. Already known: ${knownText}. Briefly acknowledge what's known (you may restate those details exactly as written here), then ask ONLY for: ${p.missing.map((m) => MISSING_EN[m]).join(" and ")}.${again ? dateOut : ""} Do not ask again for anything already known. Do not ask the customer to confirm anything. Do not promise a refund.`,
         templates: both((l) => {
           const k = knownParts(p.details, l);
           const ask = join(p.missing.map((m) => MISSING_TEXT[l][m]), l);
+          const pre = future ? (l === "es" ? "Esa fecha todavía no ha pasado. " : "Essa data ainda não chegou. ") : "";
+          const out = again && p.missing.includes("date")
+            ? (l === "es" ? " Si no la recuerdas, dime \"no me acuerdo\" y lo busco por el monto." : " Se não lembrar, diga \"não lembro\" e eu procuro pelo valor.")
+            : "";
           return l === "es"
-            ? `${k.length ? `Anotado: ${k.join(", ")}. ` : ""}¿Me indicas ${ask}?`
-            : `${k.length ? `Anotado: ${k.join(", ")}. ` : ""}Pode me informar ${ask}?`;
+            ? `${pre}${k.length ? `Anotado: ${k.join(", ")}. ` : ""}¿Me indicas ${ask}?${out}`
+            : `${pre}${k.length ? `Anotado: ${k.join(", ")}. ` : ""}Pode me informar ${ask}?${out}`;
         }),
       };
+    }
     case "confirm":
       if (p.match) {
         return {

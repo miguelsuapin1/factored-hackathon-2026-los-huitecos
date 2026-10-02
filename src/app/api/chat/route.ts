@@ -4,7 +4,7 @@
 import { after } from "next/server";
 import { cookies } from "next/headers";
 import { SESSION_COOKIE, verifySession } from "@/lib/auth/session";
-import { advance, readYesNo } from "@/lib/conversation/dialogue";
+import { advance, missingFor, readYesNo } from "@/lib/conversation/dialogue";
 import { extractDetails } from "@/lib/conversation/extract";
 import { numbersIn } from "@/lib/conversation/numbers";
 import { maskSensitive } from "@/lib/privacy/mask";
@@ -58,7 +58,7 @@ export async function POST(request: Request) {
       }),
     ]);
 
-    const outcome = advance(prev, { text, intent, details: extraction.details, range: extraction.range });
+    const outcome = advance(prev, { text, intent, details: extraction.details, range: extraction.range, dateIssue: extraction.dateIssue });
     const language = prev.lang ?? guessLanguage(text);
     const { move, trace: policy } = await resolveTurn(outcome, {
       session: customerFor(session),
@@ -71,6 +71,8 @@ export async function POST(request: Request) {
       },
     });
     const { state } = outcome;
+    // After the policy step: EF-1 can turn a search into a question for the date, which the dialogue didn't know about.
+    const missing = missingFor(state);
     const d = state.details;
     const m = state.match;
     const plan = planReply(
@@ -80,7 +82,7 @@ export async function POST(request: Request) {
         clarifyOptions: outcome.clarifyOptions,
         clarifyAttempts: state.pending?.kind === "clarify" ? state.pending.attempts : 0,
         details: d,
-        missing: outcome.missing.filter((k): k is "amount" | "date" => k === "amount" || k === "date"),
+        missing: missing.filter((k): k is "amount" | "date" => k === "amount" || k === "date"),
         match: m,
         explainRule: policy.rule === "PL-3" || policy.rule === "PL-4" || policy.rule === "PL-5" || policy.rule === "PL-9" ? policy.rule : null,
         handoffReason: state.handoffReason,
@@ -90,6 +92,8 @@ export async function POST(request: Request) {
         options: state.pending?.kind === "pick" ? state.pending.options : null,
         pickAttempts: state.pending?.kind === "pick" ? state.pending.attempts : 0,
         intentGuessed: state.intentGuessed,
+        dateIssue: outcome.dateIssue,
+        detailAsks: state.pending?.kind === "details" ? (state.pending.attempts ?? 0) : 0,
       },
       language,
     );
@@ -122,7 +126,7 @@ export async function POST(request: Request) {
       policy: { rule: policy.rule, decision: policy.decision, lookup: policy.lookup && { source: policy.lookup.source, count: policy.lookup.count } },
       handoffReason: state.handoffReason,
       case: policy.case && { reference: policy.case.reference, verified: policy.case.verified, kind: policy.case.kind },
-      missing: outcome.missing,
+      missing,
       pending: state.pending,
       status: state.status,
       restartReason,

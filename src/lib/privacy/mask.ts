@@ -23,7 +23,14 @@ function luhn(digits: string) {
 // after the number ("…1111, mi pin") must not stop the match: that bug let a card number through (lessons P14).
 const LONG_NUMBER = /(?<!\d|\d[.,])\d(?:[ -]?\d){12,18}(?!\d|[.,]\d)/g;
 // A PIN, CVV, password or code followed by its value: "mi pin es 1234", "cvv: 123", "senha 9876", "clave abc123".
-const SECRET = /\b(pin|nip|cvv2?|cvc|cv2|clave|contrase[ñn]a|password|senha|c[oó]digo de seguridad|c[oó]digo de seguran[çc]a|token|otp)\b(\s*(?:es|era|é|:|=|de)?\s*)([A-Za-z0-9]{3,12})/giu;
+const SECRET_LABELS = "pin|nip|cvv2?|cvc|cv2|clave|contrase[ñn]a|password|senha|c[oó]digo de seguridad|c[oó]digo de seguran[çc]a|token|otp";
+const SECRET = new RegExp(`\\b(${SECRET_LABELS})\\b(\\s*(?:es|era|é|:|=|de)?\\s*)([A-Za-z0-9]{3,12})`, "giu");
+// The same, value first: "4821 es mi pin", "4821 é minha senha", "987 es el cvv" (EF-4). The value must contain a digit
+// and the connector is required, so "350 es el monto" or "cuál es mi pin" stay as they are.
+const SECRET_BEFORE = new RegExp(
+  `(?<![\\p{L}\\p{N}])(?=[A-Za-z0-9]{3,12}(?![\\p{L}\\p{N}]))([A-Za-z]*\\d[A-Za-z0-9]*)(\\s*(?:es|era|é|is|:|=)\\s*(?:mi|meu|minha|my|el|la|o|a)?\\s*)(${SECRET_LABELS})(?![\\p{L}\\p{N}])`,
+  "giu",
+);
 const EMAIL = /[\w.+-]+@[\w-]+(?:\.[\w-]+)+/g;
 
 // National IDs, only in formats that can't be an amount or a reference (docs/handoff.md H5):
@@ -54,6 +61,10 @@ export function maskSensitive(text: string): { text: string; masked: MaskKind[] 
   let out = text.replace(SECRET, (_m, label: string, sep: string) => {
     masked.add("secret");
     return `${label}${sep}[oculto]`;
+  });
+  out = out.replace(SECRET_BEFORE, (_m, _value: string, sep: string, label: string) => {
+    masked.add("secret");
+    return `[oculto]${sep}${label}`;
   });
   // IDs and phones before card numbers, so a labelled 13+ digit ID isn't mistaken for a card.
   out = out.replace(LABELLED_PHONE, (_m, label: string, sep: string) => {

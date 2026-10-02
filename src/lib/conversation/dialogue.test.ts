@@ -310,3 +310,32 @@ describe("C16: 'debería ser 250' never overwrites the charged amount", () => {
   });
 });
 
+
+describe("C17: answers to 'A or B?' that carry a charge detail, and choosing a person", () => {
+  const opener = { text: "Hola, no reconozco un cargo de 581948.06", intent: intent({ unrecognized_charge: 0.5, human_agent: 0.3 }), details: { amount: 581948.06 } };
+  it("a date (even one we can't search) picks the charge option, not the agent", () => {
+    let state = newState("c1", "demo", 0);
+    const t1 = advance(state, opener);
+    state = t1.state;
+    assert.equal(t1.move, "ask_clarify");
+    const t2 = advance(state, { text: "fue el 10 de mayo de 2025", intent: intent({ human_agent: 0.45, unrecognized_charge: 0.25 }), details: {},
+      dateIssue: { kind: "too_old", date: "2025-05-10" } });
+    assert.equal(t2.state.workingIntent, "unrecognized_charge");
+    assert.equal(t2.move, "handoff");
+    assert.equal(t2.state.handoffReason, "too_old");
+  });
+  it("choosing the agent hands off with the context we have (no forgotten summary question)", () => {
+    let state = newState("c1", "demo", 0);
+    state = advance(state, opener).state;
+    const t2 = advance(state, { text: "con un agente", intent: intent({ human_agent: 0.8, unrecognized_charge: 0.1 }), details: {} });
+    assert.equal(t2.move, "handoff");
+    assert.equal(t2.state.handoffReason, "customer_asked");
+  });
+  it("choosing the agent with no context asks for one line, and remembers it asked", () => {
+    let state = newState("c1", "demo", 0);
+    state = advance(state, { text: "tengo un problema", intent: intent({ unrecognized_charge: 0.4, human_agent: 0.35 }), details: {} }).state;
+    const t2 = advance(state, { text: "con un agente", intent: intent({ human_agent: 0.8, unrecognized_charge: 0.1 }), details: {} });
+    assert.equal(t2.move, "ask_summary");
+    assert.deepEqual(t2.state.pending, { kind: "summary" });
+  });
+});

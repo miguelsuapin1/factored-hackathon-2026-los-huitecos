@@ -27,6 +27,7 @@ const OPEN_QUESTIONS: Record<HandoffReason, string> = {
   high_risk: "Possible fraud: confirm the customer has the card and whether others could use it; consider blocking.",
   record_unavailable: "The matched transaction could not be re-read or changed status before the decision. Recheck it.",
   tool_failure: "Transactions could not be checked (lookup failure). Nothing was verified automatically.",
+  too_old: "The customer dates the charge further back than the assistant can search (365 days); the date they gave is in the checks. Look it up in the full history.",
 };
 
 const money = (v: number, c: string | null) => `${v}${c ? ` ${c}` : ""}`;
