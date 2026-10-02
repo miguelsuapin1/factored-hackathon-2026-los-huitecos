@@ -2,6 +2,7 @@
 // decide what the conversation is about and the assistant's next move. Plain code, no model calls, so every rule is
 // testable (dialogue.test.ts) and explainable. Rules and their reasons: docs/conversation.md C5–C8.
 import type { IntentLabel, Scores } from "@/lib/intent/model";
+import type { DateIssue } from "./extract";
 import { EMPTY_DETAILS, FINISHED, MAX_TEXTS, NO_WHEN, type ConversationState, type Details, type MatchView } from "./state";
 
 export const DISPUTES: IntentLabel[] = ["unrecognized_charge", "wrongful_fee"];
@@ -12,6 +13,8 @@ const SAFETY: IntentLabel[] = ["move_money", "human_agent"];
 export const CLARIFY_SHARE = 0.6;
 /** C5: unresolved clarifications before offering a human. */
 const MAX_CLARIFY = 2;
+/** C17: re-asks for details that got nothing new before handing off (ask, ask again, then a person). */
+const MAX_DETAIL_ASKS = 2;
 /** C7: what a dispute needs before we can confirm it. */
 const REQUIRED: (keyof Details)[] = ["amount", "date"];
 
@@ -43,6 +46,7 @@ export type TurnInput = {
   intent: { intent: IntentLabel; decision: "act" | "ask"; scores: Scores };
   details: Partial<Details>; // only grounded values
   range?: { from: string; to: string } | null; // C13: a validated vague period ("la semana pasada")
+  dateIssue?: DateIssue | null; // C17: a date the customer stated that we can't use, and why
 };
 
 export type TurnOutcome = {
@@ -52,6 +56,7 @@ export type TurnOutcome = {
   missing: (keyof Details)[];
   clarifyOptions: [IntentLabel, IntentLabel] | null;
   pendingBefore: ConversationState["pending"];
+  dateIssue: DateIssue | null; // C17: passed to the reply so it says why the date couldn't be used
 };
 
 const YES = new Set(["si", "sim", "claro", "correcto", "correto", "exacto", "exato", "dale", "ok", "okay", "vale", "confirmo", "isso", "afirmativo", "perfecto", "perfeito", "yes", "listo", "certo"]);
@@ -196,9 +201,16 @@ export function advance(prev: ConversationState, input: TurnInput): TurnOutcome 
       state.when = { ...NO_WHEN, unknown: true };
     }
   }
+  const dateIssue = input.details.date ? null : (input.dateIssue ?? null);
   const done = (move: Move, resolvedBy: ResolvedBy, clarifyOptions: [IntentLabel, IntentLabel] | null = null): TurnOutcome => ({
-    state, move, resolvedBy, clarifyOptions, pendingBefore, missing: missingFor(state),
+    state, move, resolvedBy, clarifyOptions, pendingBefore, missing: missingFor(state), dateIssue,
   });
+  // C17: we asked for details and this reply brought nothing we can use: count it, so the question isn't repeated
+  // forever (seen live: "fue el 10 de octubre" asked four times).
+  const t0 = normalize(input.text);
+  const progress = merged.changed || !!input.range || LATEST.test(t0) || DONT_KNOW.test(t0);
+  const asks = prev.pending?.kind === "details" && !progress ? (prev.pending.attempts ?? 0) + 1 : 0;
+  const disputeMove = (st: ConversationState, d: typeof done, resolvedBy: ResolvedBy) => nextDisputeMove(st, d, resolvedBy, { asks, dateIssue });
 
   // 0. We asked for a one-line summary for the agent (H1): this message is it, whatever its intent.
   if (prev.pending?.kind === "summary") {
@@ -302,10 +314,20 @@ export function advance(prev: ConversationState, input: TurnInput): TurnOutcome 
     const total = p(a) + p(b);
     // C12: "revisen el cargo" picks the dispute option when one is offered (code-read, as in C10).
     const asksReview = REVIEW.test(normalize(input.text)) ? [a, b].find((o) => DISPUTES.includes(o)) : undefined;
-    const winner = asksReview ?? (p(a) >= p(b) ? a : b);
-    if (!bareAck && total > 0 && (asksReview || p(winner) / total >= CLARIFY_SHARE)) {
+    // C17: an answer that gives a detail of the charge (an amount, a date, a period, even one we can't search)
+    // picks the charge option (seen live: "fue el 10 de octubre" to "¿investigar el cargo o un agente?" picked the agent).
+    const givesDetail = merged.changed || !!input.range || !!input.dateIssue;
+    const byDetail = givesDetail ? [a, b].find((o) => CHARGE_INTENTS.includes(o)) : undefined;
+    const winner = asksReview ?? byDetail ?? (p(a) >= p(b) ? a : b);
+    if (!bareAck && total > 0 && (asksReview || byDetail || p(winner) / total >= CLARIFY_SHARE)) {
       state.workingIntent = winner;
       state.pending = null;
+      if (winner === "human_agent") {
+        // H1/H2, as when the model says it directly: hand off with the context we have, or ask for one line.
+        if (hasContext(prev)) return humanHandoff(state, done);
+        state.pending = { kind: "summary" };
+        return done("ask_summary", "clarification");
+      }
       return CHARGE_INTENTS.includes(winner) ? disputeMove(state, done, "clarification") : done("answer", "clarification");
     }
     const attempts = prev.pending.attempts + 1;
@@ -346,6 +368,7 @@ export function advance(prev: ConversationState, input: TurnInput): TurnOutcome 
       state.checks = [];
       state.when = { ...NO_WHEN };
       state.merchantAsked = false;
+      state.dateAsked = false;
       state.intentGuessed = false;
     }
     if (intent.intent === "human_agent") {
@@ -423,24 +446,46 @@ function stripNulls(details: Partial<Details>): Partial<Details> {
   return Object.fromEntries(Object.entries(details).filter(([, v]) => v !== null && v !== undefined));
 }
 
-function missingFor(state: ConversationState) {
+/** What the dispute still needs from the customer (C7, C13). Exported for the reply, after the policy step. */
+export function missingFor(state: ConversationState) {
   if (!state.workingIntent || !CHARGE_INTENTS.includes(state.workingIntent)) return [];
-  const w = state.when;
   // C13: an exact date, a period, "el más reciente", "no me acuerdo", or the merchant (amount + merchant identify a
-  // charge over the whole window) all let the search start.
-  const dateKnown = state.details.date !== null || (w.from !== null && w.to !== null) || w.latest || w.unknown
-    || state.details.merchant !== null;
+  // charge over the whole window) all let the search start. EF-1: once the merchant couldn't tell several charges
+  // apart and we asked for the date, the merchant no longer stands in for it.
+  const dateKnown = dateGiven(state) || (state.details.merchant !== null && !state.dateAsked);
   return REQUIRED.filter((k) => (k === "date" ? !dateKnown : state.details[k] === null));
 }
 
-/** C7 + C8: in a dispute, ask only for what's missing; once complete, confirm (unless already confirmed). */
-function disputeMove(
+/** The customer gave a date, a period, "el más reciente" or "no me acuerdo" (anything but the merchant). */
+export function dateGiven(state: ConversationState) {
+  const w = state.when;
+  return state.details.date !== null || (w.from !== null && w.to !== null) || w.latest || w.unknown;
+}
+
+/** C7 + C8: in a dispute, ask only for what's missing; once complete, confirm (unless already confirmed).
+ * C17: a date older than the window we can search goes to a person (PL-11); asking again without getting anything
+ * new is limited to MAX_DETAIL_ASKS, then a person. */
+function nextDisputeMove(
   state: ConversationState,
   done: (move: Move, resolvedBy: ResolvedBy) => TurnOutcome,
   resolvedBy: ResolvedBy,
+  opts: { asks: number; dateIssue: DateIssue | null },
 ): TurnOutcome {
-  if (missingFor(state).length) {
-    state.pending = { kind: "details" };
+  const missing = missingFor(state);
+  if (missing.includes("date") && opts.dateIssue?.kind === "too_old") {
+    state.pending = null;
+    state.status = "handoff";
+    state.handoffReason = "too_old";
+    return done("handoff", resolvedBy);
+  }
+  if (missing.length) {
+    if (opts.asks >= MAX_DETAIL_ASKS) {
+      state.pending = null;
+      state.status = "handoff";
+      state.handoffReason = "repeated_clarification";
+      return done("handoff", resolvedBy);
+    }
+    state.pending = { kind: "details", attempts: opts.asks };
     return done("ask_details", resolvedBy);
   }
   if (FINISHED.includes(state.status) && resolvedBy === "kept_topic") {

@@ -49,6 +49,13 @@ describe("decideOnLookup", () => {
     const latest = decideOnLookup(three, { retries: 0, latest: true });
     assert.equal(latest.kind === "confirm_match" && latest.match.date, "2026-06-12");
   });
+  it("PL-2 (EF-1): three or more with a merchant but no date → ask the date once, then a person", () => {
+    const tx = (d: string) => ({ transactionId: d, date: d, amount: 89.9, currency: "USD", merchant: "Cable TV", status: "Approved" as const, responseCode: "00", channel: null, country: null, fraudScore: 5, score: 1 });
+    const three = [tx("2026-04-12"), tx("2026-05-12"), tx("2026-06-12")];
+    assert.equal(decideOnLookup(three, { retries: 0, merchantKnown: true, dateKnown: false }).kind, "ask_date");
+    assert.equal(decideOnLookup(three, { retries: 0, merchantKnown: true, dateKnown: false, dateAsked: true }).kind, "ambiguous");
+    assert.equal(decideOnLookup(three, { retries: 0, merchantKnown: true, dateKnown: true }).kind, "ambiguous"); // "no sé" (TC-20)
+  });
   it("PL-3/4/5: pending, reversed and declined are explained, never disputed", async () => {
     assert.equal(decideOnLookup(await find({ amount: 45, date: "2026-06-16" }), 0).rule, "PL-3");
     assert.equal(decideOnLookup(await find({ amount: 230, date: "2026-06-05" }), 0).rule, "PL-4");

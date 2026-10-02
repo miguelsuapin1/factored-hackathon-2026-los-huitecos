@@ -330,3 +330,75 @@ describe("C15: a guessed dispute kind reaches the agent as an open question", ()
   });
 });
 
+
+describe("EF-1: a merchant that can't separate 3+ charges asks for the date before a person (PL-2)", () => {
+  it("TC-02: 'Netflix' or 'Cable TV' with 89.90 asks for the date instead of handing off", async () => {
+    for (const merchant of ["Netflix", "Cable TV"]) {
+      const [t1] = await run([{ text: `Tem uma cobrança de R$ 89,90 da ${merchant}`, intent: intent("unrecognized_charge", 0.9),
+        details: { amount: 89.9, currency: "BRL", merchant } }]);
+      assert.equal(t1.move, "ask_details", merchant);
+      assert.equal(t1.rule, "PL-2", merchant);
+      assert.equal(t1.state.dateAsked, true, merchant);
+      assert.equal(t1.case, null, merchant); // no hand-off case was written
+    }
+  });
+  it("the date then identifies the charge: 'dia 12' → the 12 June Cable TV charge to confirm", async () => {
+    const [, t2] = await run([
+      { text: "Tem uma cobrança de R$ 89,90 da Netflix", intent: intent("unrecognized_charge", 0.9), details: { amount: 89.9, currency: "BRL", merchant: "Netflix" } },
+      { text: "foi dia 12", intent: intent("out_of_scope", 0.5), details: { date: "2026-06-12" } },
+    ]);
+    assert.equal(t2.move, "confirm");
+    assert.equal(t2.state.match?.transactionId, "TRX-DEMO0000000000002");
+    assert.equal(t2.state.match?.merchant, "Cable TV");
+  });
+  it("'não sei' to the date question still ends with a person (TC-20 unchanged)", async () => {
+    const [, t2] = await run([
+      { text: "Tem uma cobrança de R$ 89,90 da Cable TV", intent: intent("unrecognized_charge", 0.9), details: { amount: 89.9, currency: "BRL", merchant: "Cable TV" } },
+      { text: "não sei", intent: intent("out_of_scope", 0.6) },
+    ]);
+    assert.equal(t2.move, "handoff");
+    assert.equal(t2.rule, "PL-2");
+    assert.equal(t2.state.handoffReason, "ambiguous");
+  });
+});
+
+describe("C17: dates we can't use don't loop", () => {
+  const opening = { text: "no reconozco un cargo de 350 dólares", intent: intent("unrecognized_charge", 0.9), details: { amount: 350, currency: "USD" } };
+  it("a date older than the window → a person with a case that records the date (PL-11)", async () => {
+    const store = memoryStore();
+    const run1 = async () => {
+      let state: ConversationState = newState("c1", "demo", 0);
+      const out1 = advance(state, { ...opening, range: null });
+      await resolveTurn(out1, { session: me, lookup: mockLookup, store, language: "es", promptVersions: {} });
+      state = out1.state;
+      const out2 = advance(state, { text: "fue el 10 de octubre", intent: intent("out_of_scope", 0.38), details: {},
+        dateIssue: { kind: "too_old", date: "2025-10-10" } });
+      return { out2, r2: await resolveTurn(out2, { session: me, lookup: mockLookup, store, language: "es", promptVersions: {} }) };
+    };
+    const { out2, r2 } = await run1();
+    assert.equal(r2.move, "handoff");
+    assert.equal(r2.trace.rule, "PL-11");
+    assert.equal(out2.state.handoffReason, "too_old");
+    assert.equal(r2.trace.case?.verified, true);
+    assert.ok(store.rows[0].checksDone.some((c) => c.includes("2025-10-10")));
+  });
+  it("answers that never give the date: ask, ask again, then a person (not forever)", async () => {
+    const nothing = { text: "eso, el cargo", intent: intent("out_of_scope", 0.4) };
+    const [t1, t2, t3] = await run([opening, nothing, nothing]);
+    assert.deepEqual([t1.move, t2.move], ["ask_details", "ask_details"]);
+    assert.deepEqual([t1.state.pending, t2.state.pending], [{ kind: "details", attempts: 0 }, { kind: "details", attempts: 1 }]);
+    assert.equal(t3.move, "handoff");
+    assert.equal(t3.state.handoffReason, "repeated_clarification");
+    assert.equal(t3.rule, "DLG-clarify");
+  });
+  it("an answer that brings something new resets the count", async () => {
+    const nothing = { text: "eso, el cargo", intent: intent("out_of_scope", 0.4) };
+    const [, t2, t3] = await run([
+      { text: "no reconozco un cargo", intent: intent("unrecognized_charge", 0.9) },
+      nothing,
+      { text: "de 350 dólares", intent: intent("out_of_scope", 0.4), details: { amount: 350, currency: "USD" } },
+    ]);
+    assert.deepEqual(t2.state.pending, { kind: "details", attempts: 1 });
+    assert.deepEqual([t3.move, t3.state.pending], ["ask_details", { kind: "details", attempts: 0 }]);
+  });
+});

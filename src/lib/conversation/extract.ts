@@ -83,12 +83,21 @@ export function ground(text: string, raw: z.infer<typeof Extracted>, today = dem
     if (v > 0 && said.has(v)) details[key] = v;
     else dropped.push(key);
   }
+  let dateIssue: DateIssue | null = null;
   if (raw.date !== null) {
-    const valid = /^\d{4}-\d{2}-\d{2}$/.test(raw.date) && !Number.isNaN(Date.parse(`${raw.date}T00:00:00Z`));
-    const age = valid ? daysBetween(raw.date, today) : NaN;
+    let date = raw.date;
+    const valid = /^\d{4}-\d{2}-\d{2}$/.test(date) && !Number.isNaN(Date.parse(`${date}T00:00:00Z`));
+    // C17: "el 10 de octubre" with no year is the most recent 10 October, never a future one (seen live: Haiku
+    // returned 2026-10-10 against a June demo clock, the date was dropped and the customer asked again, in a loop).
+    if (valid && date > today && !YEAR.test(text)) date = `${Number(date.slice(0, 4)) - 1}${date.slice(4)}`;
+    const age = valid ? daysBetween(date, today) : NaN;
     const quoted = !!raw.dateText && folded.includes(fold(raw.dateText));
-    if (valid && age >= 0 && age <= MAX_DAYS_BACK && quoted) details.date = raw.date;
-    else dropped.push("date");
+    if (valid && age >= 0 && age <= MAX_DAYS_BACK && quoted) details.date = date;
+    else {
+      dropped.push("date");
+      // C17: a real date the customer said, that we can't use: say why instead of asking again as if unheard.
+      if (valid && quoted) dateIssue = { kind: age < 0 ? "future" : "too_old", date };
+    }
   }
   if (raw.merchant !== null) {
     const m = raw.merchant.trim();
@@ -108,14 +117,20 @@ export function ground(text: string, raw: z.infer<typeof Extracted>, today = dem
   }
   const currency = currencyIn(text);
   if (currency) details.currency = currency;
-  return { details, dropped, range };
+  return { details, dropped, range, dateIssue };
 }
 
 const MAX_RANGE_DAYS = 35;
+/** An explicit year in the message ("2025"): then a future date really is in the future. */
+const YEAR = /\b(19|20)\d{2}\b/;
+
+/** C17: why a date the customer stated wasn't kept. */
+export type DateIssue = { kind: "future" | "too_old"; date: string };
 
 export type ExtractResult = {
   details: Partial<Details>;
   range: { from: string; to: string } | null; // C13: a validated vague period, when no exact date was given
+  dateIssue: DateIssue | null; // C17: the customer stated a date we can't use (future, or older than the window)
   dropped: string[];
   source: "haiku" | "skipped" | "failed";
   error: string | null;
@@ -131,7 +146,7 @@ export async function extractDetails(text: string, opts: { skip?: boolean; asked
   const base = { promptVersion: EXTRACT_PROMPT_VERSION, inputTokens: 0, outputTokens: 0, costUsd: 0, dropped: [] as string[] };
   const codeOnly = (source: "skipped" | "failed", error: string | null) => {
     const currency = currencyIn(text);
-    return { ...base, details: currency ? { currency } : {}, range: null, source, error, ms: performance.now() - started };
+    return { ...base, details: currency ? { currency } : {}, range: null, dateIssue: null, source, error, ms: performance.now() - started };
   };
   if (opts.skip) return codeOnly("skipped", null);
   if (!process.env.ANTHROPIC_API_KEY) return codeOnly("failed", "no ANTHROPIC_API_KEY configured");
@@ -156,8 +171,8 @@ export async function extractDetails(text: string, opts: { skip?: boolean; asked
     const usage = { inputTokens: response.usage.input_tokens, outputTokens: response.usage.output_tokens };
     const cost = (usage.inputTokens * PRICE_PER_MTOK.input + usage.outputTokens * PRICE_PER_MTOK.output) / 1e6;
     if (!response.parsed_output) return { ...codeOnly("failed", "output didn't match the schema"), ...usage, costUsd: cost };
-    const { details, dropped, range } = ground(text, response.parsed_output, today);
-    return { ...base, ...usage, costUsd: cost, details, dropped, range, source: "haiku", error: null, ms: performance.now() - started };
+    const { details, dropped, range, dateIssue } = ground(text, response.parsed_output, today);
+    return { ...base, ...usage, costUsd: cost, details, dropped, range, dateIssue, source: "haiku", error: null, ms: performance.now() - started };
   } catch (err) {
     const reason = err instanceof Anthropic.APIConnectionTimeoutError ? "Haiku timed out" : `Haiku unavailable: ${String(err)}`;
     console.error(JSON.stringify({ event: "extract_failed", reason }));

@@ -32,7 +32,7 @@ Every row is written and read back before the customer hears the case number (V1
 ### H4. Sensitive data is masked before anything sees it (Miguel, 2026-09-30)
 - **Chose:** the route masks each message first, before the intent model (Cohere on AWS), Haiku (Anthropic), the conversation state, the logs and the cases table:
   - card numbers: 13–19 digits (spaces/dashes allowed) that pass the **Luhn checksum**, and 18-digit CLABE accounts → `****1234`;
-  - a value after PIN / NIP / CVV / CVC / clave / contraseña / senha / código de seguridad / token / OTP → `[oculto]`;
+  - a value after PIN / NIP / CVV / CVC / clave / contraseña / senha / código de seguridad / token / OTP → `[oculto]`, and since 2026-10-02 (EF-4) the same **before** its label: "4821 es mi pin", "4821 é minha senha", "987 es el cvv" (the value must contain a digit and be joined by es / é / is / : / =, so "350 es el monto" and "cuál es mi pin" stay as written);
   - emails → `[email]`.
 - If a PIN, CVV or password was typed, the reply **starts with a safety reminder** ("nunca compartas tu PIN… el banco nunca te los pedirá"), decided by code.
 - **Why:** third-party models and logs should never receive card data; the brief asks for customer-record isolation. Luhn keeps amounts, dates and references intact (tested: "1.250,00", "10/06/2026", "referencia 123456" and a non-Luhn 13-digit folio are untouched).
