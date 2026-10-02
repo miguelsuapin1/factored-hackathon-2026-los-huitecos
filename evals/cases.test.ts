@@ -4,12 +4,13 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { DEMO_CUSTOMER_ID, FIXTURES } from "@/lib/lookup/mock";
 import type { Case } from "./case";
+import { BREAK } from "./cases/break";
 import { STEP17 } from "./cases/step17";
 import { TC } from "./cases/tc";
 
 /** docs/contracts.md K5. */
 const K5_LOGINS = ["demo.mx", "otro.mx", "pendiente.ar", "rechazado-sin-codigo.co", "ambiguo.mx"];
-const SUITES: Record<string, readonly Case[]> = { tc: TC };
+const SUITES: Record<string, readonly Case[]> = { tc: TC, break: BREAK };
 
 for (const [name, cases] of Object.entries(SUITES)) {
   describe(`suite ${name}`, () => {
