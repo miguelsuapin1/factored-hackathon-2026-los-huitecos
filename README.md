@@ -2,7 +2,7 @@
 
 A bilingual (🇪🇸 Spanish / 🇧🇷 Portuguese) **banking customer-service system** — not a chatbot. It understands the customer, uses the right tools, verifies that actions happened, knows when *not* to act, and hands off to a human with a structured summary.
 
-> Status: **scaffolding.** Official brief summarized in [docs/challenge.md](docs/challenge.md); dataset location pending. See [docs/meeting-notes.md](docs/meeting-notes.md) for kickoff notes and [docs/decisions.md](docs/decisions.md) for open decisions.
+> Status: **Phase 2, build steps 7–21.** What exists and why: [docs/phase-1-walkthrough.md](docs/phase-1-walkthrough.md). Brief: [docs/challenge.md](docs/challenge.md). Decisions: [docs/decisions.md](docs/decisions.md). How it's evaluated: [docs/evaluation.md](docs/evaluation.md).
 
 **Live:** https://latam-bank-service-sigma.vercel.app (auto-deploys from `main`)
 
@@ -13,12 +13,13 @@ with row-level security (decision D-006). Test logins live in Supabase `public.a
 shared demo account (`DEMO_USERNAME`, `DEMO_PASSWORD`) signs in as the synthetic demo customer. Credentials are shared
 with the judges in the submission and never committed.
 
-## Stack (provisional)
+## Stack
 | Layer | Choice |
 |---|---|
 | App / API | Next.js (App Router, TypeScript) on Vercel |
-| Data | Supabase Postgres — region `sa-east-1` (São Paulo) |
-| LLM | TBD |
+| Data | BigQuery (bronze/silver/gold, dbt) → serving slice in Supabase Postgres, `sa-east-1` (São Paulo), row-level security |
+| Intent | Cohere Embed Multilingual v3 on AWS Bedrock + softmax regression; multilingual-e5-small in the function as fallback |
+| LLM | Claude Haiku 4.5: extracts details and phrases code-chosen replies; code decides every action |
 
 Recommended platforms (Snowflake / AWS / Azure / Databricks) to be evaluated later — see D-001.
 
@@ -29,7 +30,7 @@ src/lib/        shared clients (supabase, ...)
 supabase/       SQL migrations (source of truth for schema + RLS)
 data/raw/       raw inputs — git-ignored, never commit customer data
 data/processed/ reproducible outputs of the prep pipeline
-evals/          baseline vs. system evaluation (strict train/eval isolation)
+evals/          evaluation harness, test conversations, break-it suite, report generator (docs/evaluation.md)
 docs/           meeting notes, decisions, honest "what's missing"
 ```
 
@@ -67,6 +68,18 @@ uv run python pipeline/split.py     # verify the sealed train/validation/test sp
 uv run python pipeline/embed_bedrock.py cohere-mv3   # Bedrock embeddings (AWS profile "bedrock")
 ```
 Labels and rules: [data/phrases/LABELING_GUIDE.md](data/phrases/LABELING_GUIDE.md)
+
+### Evaluation (steps 16–19, [docs/evaluation.md](docs/evaluation.md))
+```bash
+npm test                                    # unit tests: the app's rules and the harness itself
+npm run dev                                 # then, in another terminal:
+npm run eval                                # TC-01…TC-21 against the running app
+npm run eval -- --suite step17              # persona conversations
+npm run eval -- --suite break               # break-it cases and protocol attacks
+npm run eval:report -- --name <name>        # reports/eval_<name>.md from the newest runs
+uv run python pipeline/score_human.py       # intent model vs. keyword rules on human-written messages
+```
+Findings and fixes: [docs/evaluation-findings.md](docs/evaluation-findings.md) · what the evaluation needs from the team: [docs/evaluation-requests.md](docs/evaluation-requests.md)
 Findings: [docs/contact-reason-analysis.md](docs/contact-reason-analysis.md) · issue register: [docs/data-issues.md](docs/data-issues.md)
 
 ## What's missing (keep this honest)
@@ -77,5 +90,9 @@ Findings: [docs/contact-reason-analysis.md](docs/contact-reason-analysis.md) · 
 - [x] Intent classifier vs keyword baseline: [docs/intent-model.md](docs/intent-model.md) (offline, synthetic data)
 - [x] Phase 1 chat page: intent API with Cohere (Bedrock, keyless via Vercel OIDC) and in-app fallback
 - [x] Phase 1 replies: Claude Haiku phrases code-chosen content in ES/PT, validated, with template fallback ([docs/reply-generation.md](docs/reply-generation.md))
-- [ ] Full system, end-to-end evaluation harness
-- [ ] Observability, security (prompt-injection defenses, RLS), structured human handoff
+- [x] Per-customer login + row-level security (D-006), structured human hand-off ([docs/handoff.md](docs/handoff.md)), verified cases ([docs/verification.md](docs/verification.md))
+- [x] End-to-end evaluation harness, break-it suite and report generator ([docs/evaluation.md](docs/evaluation.md)); first report on the fallback model: [reports/eval_local-fallback.md](reports/eval_local-fallback.md)
+- [ ] Evaluation on the production model (Cohere), with repeats for run-to-run variance
+- [ ] Human-written test messages (step 16): scorer ready, messages not yet written ([evals/human/README.md](evals/human/README.md))
+- [ ] Fixes for evaluation findings EF-1 (premature hand-off) and EF-4 (PIN before its label not masked)
+- [ ] Observability: one trace line per turn in Vercel logs, not persisted

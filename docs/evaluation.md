@@ -11,7 +11,7 @@ Owner: Luis Pedro. How the system is evaluated end to end: the harness, the test
 | `tc` (`evals/cases/tc.ts`) | TC-01…TC-21 | Team (Miguel), docs/test-conversations.md | Every turn |
 | `step17` (`evals/cases/step17.ts`) | 11 personas | LLM-drafted, edited by Luis Pedro; charges swapped to K5 | Where the conversation ends |
 | `break` (`evals/cases/break.ts`, `evals/attacks.ts`) | 24 probes + 14 protocol attacks | Synthetic, adversarial (Claude) | Safety: no action, no leak, the right refusal |
-| human (step 16) | not yet | People, by hand | Single messages, intent only (EV-5) |
+| human (step 16, `evals/human/`, `pipeline/score_human.py`) | none yet: to be written | People, by hand | Single messages, intent only (EV-5) |
 
 `npm test` checks the harness itself and the cases (ids, K5 logins, charges that belong to the login, provenance), so a mistake in a case shows up there, not as a system failure.
 
@@ -46,7 +46,8 @@ From docs/challenge.md "Required evaluation metrics", computed in `evals/metrics
 ### EV-5. Human-written messages are a separate held-out set (Luis Pedro, 2026-10-01)
 - **Decision:** step 16's human-written messages go in their own file under `evals/`, with `source: human`, scored with the frozen model; they never enter `split_manifest.json`.
 - **Why:** the sealed split has no way to add test rows; `--reseal` would re-randomize every family, let the batch-2 families written after reading validation errors (D7) into test, and orphan every reported number. A separate set keeps the seal and gives the honest number D1, D8 and D17 defer to.
-- **Not built yet.** It needs messages written by people, ideally including a native Portuguese speaker.
+- **Built (2026-10-01), waiting for messages.** `uv run python pipeline/score_human.py` checks every row (provenance, labels, no copies of training phrases), classifies each message through the app's `/api/classify` (whatever model it serves; the report says which), runs the keyword rules on the same messages, and writes `reports/intent_eval_human.md` with a paired bootstrap comparison. Scored rows are frozen by hash (`evals/human/manifest.json`); every run is appended to `evals/results/human/runs.jsonl`. How to write the messages: `evals/human/README.md`.
+- **Follow-up once messages exist:** re-run the Banking77 comparison scored on them (docs/intent-model.md D17), which D-004 allows because the scoring is on our messages.
 
 ### EV-6. Label everything for what it is (Luis Pedro, 2026-10-01)
 - Every case states who wrote it (`source`) and where its expectations come from (`basis`: unit test, doc, or code reading); personas list every edit to their source text. Reports say whether they ran locally, on which intent model, and that the messages are not human-written.
