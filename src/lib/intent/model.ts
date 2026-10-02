@@ -12,7 +12,9 @@ export type IntentLabel =
   | "human_agent"
   | "out_of_scope";
 
-export type ModelId = "cohere-mv3" | "e5small";
+/** Embedding + softmax models (weights in src/lib); Jev is the experimental hosted model behind a toggle (D18). */
+export type EmbeddingModelId = "cohere-mv3" | "e5small";
+export type ModelId = EmbeddingModelId | "jev";
 
 type ExportedModel = {
   labels: string[];
@@ -23,14 +25,14 @@ type ExportedModel = {
   git_commit: string;
 };
 
-export const MODELS: Record<ModelId, ExportedModel> = {
+export const MODELS: Record<EmbeddingModelId, ExportedModel> = {
   "cohere-mv3": cohereModel as ExportedModel,
   e5small: e5Model as ExportedModel,
 };
 
 export type Scores = { label: IntentLabel; probability: number }[];
 
-export function classifyEmbedding(model: ModelId, embedding: Float32Array | number[]) {
+export function classifyEmbedding(model: EmbeddingModelId, embedding: Float32Array | number[]) {
   const m = MODELS[model];
   if (embedding.length !== m.weights[0].length) {
     throw new Error(`embedding has ${embedding.length} dims, ${model} expects ${m.weights[0].length}`);

@@ -14,6 +14,8 @@ The interfaces where one person's work plugs into another's. Agree here first, t
 
 Backward compatible: a request without `state` starts a new conversation, exactly like Phase 1.
 
+Optional request flags: `forceFallback: true` (outage simulation, skips Cohere) and, since 2026-10-02, `useJev: true` (the Jev experiment, docs/intent-model.md D18). `useJev` is honoured only where the server sets `JEV_TOGGLE=1` and a TypeSafe key (not Production); elsewhere it is ignored. With it, `intent.model` is `"jev"` (or the usual model if Jev failed, with `intent.fallbackReason` saying why). `/api/classify` accepts the same flags.
+
 ```jsonc
 // request
 { "text": "Error en el monto, debería ser de 250 pesos", "state": "<opaque token from the previous response>" }

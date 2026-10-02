@@ -12,4 +12,5 @@ export const INTENT_LABELS: Record<string, { en: string; es: string; pt: string 
 export const MODEL_LABELS: Record<string, { name: string; where: string }> = {
   "cohere-mv3": { name: "Cohere Embed Multilingual v3", where: "Amazon Bedrock · primary" },
   e5small: { name: "multilingual-e5-small", where: "In-app · fallback" },
+  jev: { name: "Jev 1.13 (TypeSafe)", where: "TypeSafe API · experiment" },
 };
