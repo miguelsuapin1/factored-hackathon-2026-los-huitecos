@@ -37,6 +37,7 @@ Every row is written and read back before the customer hears the case number (V1
 - If a PIN, CVV or password was typed, the reply **starts with a safety reminder** ("nunca compartas tu PIN… el banco nunca te los pedirá"), decided by code.
 - **Why:** third-party models and logs should never receive card data; the brief asks for customer-record isolation. Luhn keeps amounts, dates and references intact (tested: "1.250,00", "10/06/2026", "referencia 123456" and a non-Luhn 13-digit folio are untouched).
 - **Both endpoints that reach a model mask:** `/api/chat` and, since 2026-09-30, `/api/classify` (the evaluation endpoint also sends text to Cohere; it was missed in the first version).
+- **Third outside service, TypeSafe (Jev), since 2026-10-02 (D18):** only behind the experiment toggle, and only masked text. The routes mask first, and `src/lib/intent/jev.ts` masks again at its own boundary, so a future caller that forgets can't send a card number or PIN (tested in `jev.test.ts` with a card, a PIN before its label, an email and a phone). The key is server-only, sent only in the `Authorization` header. TypeSafe says it doesn't train on requests; zero data retention is only on its enterprise plans, so the toggle stays off in Production.
 - **Bug found and fixed before merge (P14):** a card number followed by a comma wasn't masked; the preview's trace showed it.
 - **Limit:** pattern-based. It won't catch a PIN written in words ("cuatro ocho dos uno") or a card number split across messages. The trace records which kinds were masked, never the values.
 

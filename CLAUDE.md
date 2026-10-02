@@ -24,6 +24,7 @@ Read first: [docs/phase-1-walkthrough.md](docs/phase-1-walkthrough.md) (what exi
 - **Step 10 (branch `carlos/step-10-lookup`, Carlos, 2026-10-01):** Supabase lookup `src/lib/lookup/sql.ts` (K2), used when `SUPABASE_LOOKUP_DB_URL` is set, stand-in otherwise; same matching rules as the stand-in (`match.ts`), parity test `src/lib/lookup/sql.test.ts` (`LOOKUP_TEST_DB_URL=... npm test`).
 - **Evidence track (Luis Pedro, PRs #16–#20, 2026-10-01):** K5 demo/test customers in docs/contracts.md. Harness `evals/` (`npm run eval`): replays conversations against a running app and grades code-decided fields (EV-1); suites `tc` (TC-01…21), `step17` (personas), `break` (24 probes + 14 protocol attacks). `npm run eval:report` → `reports/eval_<name>.md` vs. a human-only baseline (EV-3); inputs kept in `evals/results/`. Step 16 scorer `pipeline/score_human.py` + `evals/human/` (messages not written yet). Findings EF-1 (premature hand-off, high) and EF-4 (PIN before its label not masked, high) await fixes. Runs so far used the e5-small fallback; Vercel previews are behind Vercel Authentication (request M8).
 - **EF-1, EF-4, C17 (branch `miguel/fix-ef1-ef4-date-loop`, 2026-10-02):** PL-2 asks the date before the merchant (EF-1); PINs/CVVs masked before their label too (EF-4); unusable dates are said, not re-asked: year-less future → last year, stated dates up to 365 days (the slice's 12 months; older → a person, PL-11), searches without a date still 180 days, re-asks capped at two (C17, docs/conversation.md). State token v7.
+- **Jev experiment (branch `miguel/jev-validation`, 2026-10-02, D18):** `pipeline/jev_validation.py` compares Jev (TypeSafe) with Cohere on validation and exports question + threshold (0.99) to `src/lib/intent-model-jev.json`; a "Use Jev" toggle in the chat (`src/lib/intent/jev.ts`) only where `JEV_TOGGLE=1` + `TYPESAFE_API_KEY` (local/Preview, never Production). Masked text only, masked again at the Jev boundary.
 - Not built yet: agent console.
 
 ## Phase 2 plan (build steps 7–21, see the published build plan)
@@ -59,6 +60,7 @@ uv run python pipeline/split.py               # verify the sealed split
 (cd pipeline/dbt && uv run python fixtures/build_fixture_bronze.py && DBT_DUCKDB_PATH=../../data/processed/fixture.duckdb uv run dbt build --profiles-dir . --target duckdb --vars '{fixtures: true}')  # offline
 (cd pipeline && uv run python compare_embeddings.py) # model selection by grouped CV (test untouched)
 (cd pipeline && uv run python train_intent.py --embedding cohere-mv3)  # validation only; --test is logged
+(cd pipeline && uv run python jev_validation.py)    # Jev (TypeSafe) vs Cohere on validation (D18); needs TYPESAFE_API_KEY
 npm run eval -- --suite tc|step17|break       # evaluation harness against a running app (paced 15 turns/min)
 npm run eval:report -- --name <name>          # reports/eval_<name>.md from the newest runs
 uv run python pipeline/score_human.py         # step 16: intent model vs keyword rules on human-written messages

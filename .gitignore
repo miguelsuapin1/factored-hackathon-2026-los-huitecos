@@ -52,6 +52,7 @@ __pycache__/
 # local analytical DBs (rebuilt from data/raw)
 /data/processed/*.duckdb
 /data/processed/phrase_*
+/data/processed/jev_*
 
 # local fallback model, fetched at build time (scripts/fetch-model.mjs)
 /models/

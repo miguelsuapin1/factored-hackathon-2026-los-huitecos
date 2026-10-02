@@ -1,5 +1,6 @@
 import { after } from "next/server";
 import { classifyMessage, IntentUnavailableError } from "@/lib/intent/classify";
+import { jevEnabled } from "@/lib/intent/jev";
 import { maskSensitive } from "@/lib/privacy/mask";
 
 export const maxDuration = 30;
@@ -18,7 +19,7 @@ function warmFallback() {
 const MAX_CHARS = 500;
 
 export async function POST(request: Request) {
-  let body: { text?: unknown; forceFallback?: unknown };
+  let body: { text?: unknown; forceFallback?: unknown; useJev?: unknown };
   try {
     body = await request.json();
   } catch {
@@ -29,12 +30,12 @@ export async function POST(request: Request) {
   if (raw.length > MAX_CHARS) {
     return Response.json({ error: `text is longer than ${MAX_CHARS} characters` }, { status: 413 });
   }
-  // H4: this endpoint also sends text to Cohere, so it masks exactly like /api/chat.
+  // H4: this endpoint also sends text to Cohere (and Jev, D18), so it masks exactly like /api/chat.
   const { text } = maskSensitive(raw);
 
   warmFallback();
   try {
-    const result = await classifyMessage(text, { forceFallback: body.forceFallback === true });
+    const result = await classifyMessage(text, { forceFallback: body.forceFallback === true, useJev: body.useJev === true && jevEnabled() });
     // Structured trace line (tracing proper is build step 6). The message text is not logged.
     console.log(JSON.stringify({
       event: "intent_classified", traceId: result.traceId, model: result.model, intent: result.intent,

@@ -1,11 +1,14 @@
 // Understand step: intent + confidence for one customer message.
 // Primary: Cohere on Bedrock (1 bounded retry on timeout/unavailable). Fallback: local e5-small in-process.
+// Experiment (D18): with `useJev`, Jev (TypeSafe) answers first at its own validated threshold; if it fails, the usual
+// chain answers and the trace says why. Callers pass masked text; jev.ts masks again at its boundary.
 // The fallback module is imported lazily so a problem loading it (native runtime, model files) can never take
 // down the primary path. The decision rule (act vs ask) is the validation-chosen threshold of whichever model answered
 // (docs/intent-model.md D11, D15, D16). Every step's timing and outcome is returned for the trace.
 import { randomUUID } from "node:crypto";
 import { BedrockError, embedBedrock } from "./embed-bedrock";
-import { classifyEmbedding, MODELS, type IntentLabel, type ModelId, type Scores } from "./model";
+import { classifyJev, JEV, JevError } from "./jev";
+import { classifyEmbedding, MODELS, type EmbeddingModelId, type IntentLabel, type ModelId, type Scores } from "./model";
 
 export type Attempt = { model: ModelId; ok: boolean; ms: number; error?: string };
 
@@ -29,12 +32,33 @@ export class IntentUnavailableError extends Error {
   }
 }
 
-export async function classifyMessage(text: string, opts: { forceFallback?: boolean } = {}): Promise<IntentResult> {
+export async function classifyMessage(text: string, opts: { forceFallback?: boolean; useJev?: boolean } = {}): Promise<IntentResult> {
   const traceId = randomUUID();
   const started = performance.now();
   const attempts: Attempt[] = [];
+  let jevReason: string | null = null;
+
+  if (opts.useJev) {
+    const t0 = performance.now();
+    try {
+      const { scores, model: answered } = await classifyJev(text);
+      attempts.push({ model: "jev", ok: true, ms: performance.now() - t0 });
+      const top = scores[0];
+      return {
+        traceId, intent: top.label, confidence: top.probability, threshold: JEV.threshold,
+        decision: top.probability >= JEV.threshold ? "act" : "ask",
+        model: "jev", modelVersion: `${answered} · question ${JEV.questionVersion}`, fallbackReason: null,
+        scores, attempts, totalMs: performance.now() - started,
+      };
+    } catch (err) {
+      const kind = err instanceof JevError ? err.kind : "unavailable";
+      attempts.push({ model: "jev", ok: false, ms: performance.now() - t0, error: kind });
+      jevReason = `jev ${kind}`;
+    }
+  }
+
   let embedding: Float32Array | null = null;
-  let model: ModelId = "cohere-mv3";
+  let model: EmbeddingModelId = "cohere-mv3";
   let fallbackReason: string | null = opts.forceFallback ? "forced (outage simulation)" : null;
 
   if (!opts.forceFallback) {
@@ -66,6 +90,8 @@ export async function classifyMessage(text: string, opts: { forceFallback?: bool
   } else {
     fallbackReason = null;
   }
+  // The Jev experiment failed and the usual chain answered: say so (the toggle was on, so it isn't silent).
+  if (jevReason) fallbackReason = fallbackReason ? `${jevReason}; ${fallbackReason}` : jevReason;
 
   const { scores, top, threshold } = classifyEmbedding(model, embedding);
   return {
