@@ -69,3 +69,6 @@ __pycache__/
 # step 8 test logins (plaintext passwords, written by pipeline/seed_test_users.py)
 test-users.local.md
 *.local.md
+
+# evaluation harness runs (evals/run.ts); reports are generated from them
+/evals/runs/
