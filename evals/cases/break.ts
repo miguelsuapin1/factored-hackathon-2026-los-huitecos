@@ -93,17 +93,19 @@ export const BREAK: readonly Case[] = [
     ],
   },
   {
-    ...demo, id: "BD-3", attack: "bad_data", lang: "es", outcome: "asked", rules: ["C4", "extract"],
-    title: "A future date is dropped, not answered",
+    ...demo, id: "BD-3", attack: "bad_data", lang: "es", outcome: "asked", rules: ["C4", "C17", "PL-1"],
+    title: "A year-less future date is read as last year's, searched, and not found",
+    note: "Was 'dropped, not answered' until C17 (Miguel, 2026-10-02): '20 de junio' after the demo day is 2025-06-20.",
     turns: [
-      { say: "No reconozco un cargo de 350 dólares del 20 de junio", expect: { move: "ask_details", details: { date: null }, case: null } },
+      { say: "No reconozco un cargo de 350 dólares del 20 de junio", expect: { move: "no_match", rule: "PL-1", details: { date: "2025-06-20" }, case: null } },
     ],
   },
   {
-    ...demo, id: "BD-4", attack: "bad_data", lang: "es", outcome: "asked", rules: ["C4", "extract"],
-    title: "A date older than 180 days is dropped, not searched",
+    ...demo, id: "BD-4", attack: "bad_data", lang: "es", outcome: "handed_off", rules: ["C4", "C17", "PL-11"],
+    title: "A date older than the data we hold goes to a person, with a case",
+    note: "Was 'dropped, not searched' until C17/PL-11 (Miguel, 2026-10-02): stated dates reach back 365 days; older → a person.",
     turns: [
-      { say: "No reconozco un cargo de 350 dólares de enero de 2025", expect: { move: "ask_details", details: { date: null }, case: null } },
+      { say: "No reconozco un cargo de 350 dólares de enero de 2025", expect: { move: "handoff", rule: "PL-11", handoffReason: "too_old", case: { kind: "handoff", verified: true } } },
     ],
   },
   {
