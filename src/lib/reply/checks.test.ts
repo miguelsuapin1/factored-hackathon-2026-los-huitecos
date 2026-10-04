@@ -20,7 +20,7 @@ describe("every fixed template passes the reply checks", () => {
     const { planReply } = await import("./templates");
     const moves = ["ask_clarify", "ask_details", "confirm", "ask_correction", "confirmed", "status_update", "answer", "handoff",
       "no_match", "ask_narrow", "explain_status", "open_review", "record_failed", "ask_summary", "lookup_status", "status_answer", "pick", "picked"] as const;
-    const reasons = ["customer_asked", "repeated_clarification", "no_match", "ambiguous", "high_risk", "record_unavailable", "tool_failure"] as const;
+    const reasons = ["customer_asked", "repeated_clarification", "no_match", "ambiguous", "high_risk", "record_unavailable", "tool_failure", "too_old"] as const;
     const match = { date: "2026-06-10", amount: 350, currency: "USD", merchant: "Super Ahorro" };
     for (const move of moves) for (const handoffReason of reasons) for (const warnSensitive of [false, true]) {
       const plan = planReply({

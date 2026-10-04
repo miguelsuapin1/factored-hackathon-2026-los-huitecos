@@ -43,12 +43,13 @@ const EXAMPLES = [
 
 const pct = (v: number) => `${Math.round(v * 100)}%`;
 
-export function ChatDemo() {
+export function ChatDemo({ jevAvailable = false }: { jevAvailable?: boolean }) {
   const router = useRouter();
   const [messages, setMessages] = useState<Message[]>([]);
   const [draft, setDraft] = useState("");
   const [busy, setBusy] = useState(false);
   const [simulateOutage, setSimulateOutage] = useState(false);
+  const [useJev, setUseJev] = useState(false); // D18 experiment; only offered where the server enables it
   const [selected, setSelected] = useState<number | null>(null);
   const nextId = useRef(1);
   const stateToken = useRef<string | null>(null);
@@ -68,7 +69,7 @@ export function ChatDemo() {
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: clean, forceFallback: simulateOutage, state: stateToken.current }),
+        body: JSON.stringify({ text: clean, forceFallback: simulateOutage, useJev: jevAvailable && useJev, state: stateToken.current }),
       });
       if (res.status === 401) {
         // Session expired: back to sign-in, then return here.
@@ -111,6 +112,12 @@ export function ChatDemo() {
             <input id="outage" type="checkbox" checked={simulateOutage} onChange={(e) => setSimulateOutage(e.target.checked)} />
             Simulate AWS outage
           </label>
+          {jevAvailable && (
+            <label className="toggle" htmlFor="jev" title="Experiment: Jev (TypeSafe) classifies the intent instead of Cohere. Messages are masked first.">
+              <input id="jev" type="checkbox" checked={useJev} onChange={(e) => setUseJev(e.target.checked)} />
+              Use Jev
+            </label>
+          )}
         </div>
 
         <div className="messages" ref={listRef} aria-live="polite">
@@ -136,7 +143,7 @@ export function ChatDemo() {
                   {m.conversation.workingIntent ? INTENT_LABELS[m.conversation.workingIntent]?.en : "Topic not set"} ·{" "}
                   {MOVE_LABELS[m.conversation.move] ?? m.conversation.move}
                   {m.conversation.workingIntent !== m.result.intent ? ` · model alone: ${INTENT_LABELS[m.result.intent]?.en} ${pct(m.result.confidence)}` : ` · ${pct(m.result.confidence)}`}
-                  {m.result.model === "e5small" ? " · fallback model" : ""}
+                  {m.result.model === "e5small" ? " · fallback model" : m.result.model === "jev" ? " · Jev" : ""}
                   {m.reply.source === "template" ? " · template reply" : ""} ·{" "}
                   <button className="link" onClick={() => setSelected(m.id)}>details</button>
                 </span>
@@ -304,7 +311,7 @@ function Inspector({ result, reply, conversation }: { result: IntentResult; repl
         <div className="pills">
           <span className={`pill ${act ? "act" : "ask"}`}><span className="dot" />{act ? "Would act" : "Would ask to clarify"}</span>
           <span className={`pill ${result.model === "e5small" ? "fallback" : "primary"}`}>
-            <span className="dot" />{result.model === "e5small" ? "Fallback model" : "Primary model"}
+            <span className="dot" />{result.model === "e5small" ? "Fallback model" : result.model === "jev" ? "Jev · experiment" : "Primary model"}
           </span>
         </div>
         <p className="explain">

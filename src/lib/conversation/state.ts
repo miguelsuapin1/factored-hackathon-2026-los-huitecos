@@ -17,7 +17,7 @@ export type Details = {
 export type Pending =
   | { kind: "clarify"; options: [IntentLabel, IntentLabel]; attempts: number }
   | { kind: "offer_review"; dispute: IntentLabel } // after refusing to move money we offered a review or an agent
-  | { kind: "details" }
+  | { kind: "details"; attempts?: number } // attempts: re-asks that got nothing new (C17: two, then a person)
   | { kind: "merchant" } // C13: several charges match; we asked for the merchant (once)
   | { kind: "pick"; options: MatchView[]; attempts: number } // C14: two candidates listed; the customer picks one
   | { kind: "summary" } // the customer asked for a person; we asked for a one-line summary (H1)
@@ -49,10 +49,10 @@ export type Status = "open" | "confirmed" | "review" | "handoff" | "closed";
 /** Statuses where the current dispute is finished: a new dispute starts a new case. */
 export const FINISHED: Status[] = ["confirmed", "review", "handoff", "closed"];
 
-export type HandoffReason = "customer_asked" | "repeated_clarification" | "no_match" | "ambiguous" | "high_risk" | "record_unavailable" | "tool_failure";
+export type HandoffReason = "customer_asked" | "repeated_clarification" | "no_match" | "ambiguous" | "high_risk" | "record_unavailable" | "tool_failure" | "too_old";
 
 export type ConversationState = {
-  v: 6; // bumped when the shape changes: older tokens restart the conversation
+  v: 7; // bumped when the shape changes: older tokens restart the conversation
   id: string;
   user: string; // the signed-in user the token belongs to
   exp: number; // unix seconds; the session's expiry
@@ -69,6 +69,7 @@ export type ConversationState = {
   caseId: string | null;
   when: When; // C13: what the customer said about the date when they didn't give an exact one
   merchantAsked: boolean; // C13: we already asked for the merchant once (PL-2)
+  dateAsked: boolean; // EF-1: several charges matched the merchant and we asked for the date (PL-2); a merchant no longer stands in for it
   intentGuessed: boolean; // C15: the dispute kind was guessed (neither the words nor a confident model said it)
   summary: string | null; // the customer's own one-line summary when they asked for a person (masked, ≤ 300 chars)
   checks: string[]; // what was checked across turns, for the case file (last MAX_CHECKS)
@@ -82,8 +83,8 @@ export const EMPTY_DETAILS: Details = { amount: null, expectedAmount: null, curr
 
 export function newState(id: string, user: string, exp: number): ConversationState {
   return {
-    v: 6, id, user, exp, turn: 0, lang: null, workingIntent: null,
+    v: 7, id, user, exp, turn: 0, lang: null, workingIntent: null,
     details: { ...EMPTY_DETAILS }, pending: null, status: "open", customerTexts: [],
-    match: null, lookupRetries: 0, handoffReason: null, caseRef: null, caseId: null, summary: null, checks: [], when: { ...NO_WHEN }, merchantAsked: false, intentGuessed: false,
+    match: null, lookupRetries: 0, handoffReason: null, caseRef: null, caseId: null, summary: null, checks: [], when: { ...NO_WHEN }, merchantAsked: false, dateAsked: false, intentGuessed: false,
   };
 }

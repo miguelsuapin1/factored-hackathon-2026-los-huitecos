@@ -1,0 +1,31 @@
+{
+  "model": "jev-1.13.0",
+  "question_version": "b7b95cab7c25",
+  "labels": [
+    "unrecognized_charge",
+    "wrongful_fee",
+    "transaction_status",
+    "balance_check",
+    "move_money",
+    "human_agent",
+    "out_of_scope"
+  ],
+  "instructions": "`message` is one message a customer of a bank in Latin America wrote to the bank's chat assistant, in Spanish or Portuguese. What does the customer want? Pick the one category that best describes the main request.",
+  "criteria": {
+    "unrecognized_charge": "The customer sees a charge, purchase, withdrawal or transfer they did NOT make or do not recognize at all: an unknown merchant, possible fraud, a cloned, lost or stolen card with charges on it.",
+    "wrongful_fee": "The customer recognizes the charge or the bank fee but says it is wrong: charged twice (duplicated), the wrong amount, a fee or bank product that should not apply (insurance, alerts, annual fee), or charged after cancelling.",
+    "transaction_status": "The customer asks what happened to a specific transaction or an existing claim: declined, pending, not arrived, when a refund arrives, what 'reversed' means, how their claim is going.",
+    "balance_check": "The customer asks for a balance, an amount owed, a limit or recent movements, with no problem attached.",
+    "move_money": "The main request is for the assistant itself to move money: refund it, reverse it, transfer, pay or credit a compensation now.",
+    "human_agent": "The customer asks to talk to a person: an advisor, a supervisor, a phone call, a phone number, an escalation.",
+    "out_of_scope": "Anything else: other products (loans, insurance sales, limit increases, blocking a card with no charges), app access, branch hours, greetings, thanks, or anything not about banking."
+  },
+  "threshold": 0.99,
+  "threshold_on": "top probability",
+  "threshold_band": [
+    0.95,
+    0.99
+  ],
+  "chosen_on": "validation (114 phrases), D11 cost weights",
+  "git_commit": "53263a5"
+}

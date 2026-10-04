@@ -14,6 +14,8 @@ The interfaces where one person's work plugs into another's. Agree here first, t
 
 Backward compatible: a request without `state` starts a new conversation, exactly like Phase 1.
 
+Optional request flags: `forceFallback: true` (outage simulation, skips Cohere) and, since 2026-10-02, `useJev: true` (the Jev experiment, docs/intent-model.md D18). `useJev` is honoured only where the server sets `JEV_TOGGLE=1` and a TypeSafe key (not Production); elsewhere it is ignored. With it, `intent.model` is `"jev"` (or the usual model if Jev failed, with `intent.fallbackReason` saying why). `/api/classify` accepts the same flags.
+
 ```jsonc
 // request
 { "text": "Error en el monto, debería ser de 250 pesos", "state": "<opaque token from the previous response>" }
@@ -27,15 +29,19 @@ Backward compatible: a request without `state` starts a new conversation, exactl
     "conversationId": "uuid",
     "turn": 2,
     "workingIntent": "wrongful_fee",            // what the conversation is about now (may differ from intent.intent)
-    "resolvedBy": "clarification",              // model | clarification | offer | kept_topic | confirmation | new_topic
-    "move": "ask_details",                      // ask_clarify | ask_details | confirm | ask_correction | no_match | ask_narrow
-                                                // | explain_status | open_review | handoff | status_update | answer
+    "resolvedBy": "clarification",              // model | clarification | offer | kept_topic | confirmation | new_topic | words (C15)
+    "move": "ask_details",                      // ask_clarify | ask_summary (H1) | ask_details | confirm | ask_correction | no_match
+                                                // | ask_narrow | pick (PL-10) | explain_status | status_answer (S1) | open_review
+                                                // | record_failed (V2) | handoff | status_update | answer
+                                                // (confirmed, picked, lookup_status are internal: resolve.ts replaces them)
     "details": { "amount": 350, "expectedAmount": 250, "currency": null, "date": null, "merchant": null },
     "missing": ["date"],
-    "pending": { "kind": "details" },           // or { kind: "clarify", options: [a, b], attempts } | { kind: "offer_review", dispute } | { kind: "confirm" } | null
+    "pending": { "kind": "details" },           // { kind: "details", attempts? } | { kind: "clarify", options: [a, b], attempts }
+                                                // | { kind: "offer_review", dispute } | { kind: "merchant" } | { kind: "pick", options, attempts }
+                                                // | { kind: "summary" } | { kind: "offer_dispute" } | { kind: "offer_agent" } | { kind: "confirm" } | null
     "match": null,                              // the matched charge: { transactionId, date, amount, currency, merchant, status }
     "policy": { "rule": null, "decision": null, "lookup": null }, // e.g. { rule: "PL-7", decision: "open_review", lookup: { source: "mock", count: 1 } }
-    "handoffReason": null,                      // repeated_clarification | no_match | ambiguous | high_risk | record_unavailable | tool_failure
+    "handoffReason": null,                      // customer_asked | repeated_clarification | no_match | ambiguous | high_risk | record_unavailable | tool_failure | too_old (PL-11, 2026-10-02)
     "status": "open",                           // open | confirmed | review | handoff | closed
     "restartReason": null,                      // set when a sent state was rejected (invalid signature, expired, other user)
     "extraction": { "source": "haiku", "dropped": [], "error": null, "ms": 950, "promptVersion": "extract-v2", "costUsd": 0.0005 }

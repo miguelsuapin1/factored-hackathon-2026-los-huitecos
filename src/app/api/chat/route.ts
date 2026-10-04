@@ -4,7 +4,7 @@
 import { after } from "next/server";
 import { cookies } from "next/headers";
 import { SESSION_COOKIE, verifySession } from "@/lib/auth/session";
-import { advance, readYesNo } from "@/lib/conversation/dialogue";
+import { advance, missingFor, readYesNo } from "@/lib/conversation/dialogue";
 import { extractDetails } from "@/lib/conversation/extract";
 import { numbersIn } from "@/lib/conversation/numbers";
 import { maskSensitive } from "@/lib/privacy/mask";
@@ -14,6 +14,7 @@ import { EXTRACT_PROMPT_VERSION } from "@/lib/conversation/extract";
 import { customerFor, lookup } from "@/lib/lookup";
 import { restoreState, sealState } from "@/lib/conversation/token";
 import { classifyMessage, IntentUnavailableError } from "@/lib/intent/classify";
+import { jevEnabled } from "@/lib/intent/jev";
 import { composeReply, PROMPT_VERSION } from "@/lib/reply/compose";
 import { guessLanguage, planReply } from "@/lib/reply/templates";
 
@@ -21,7 +22,7 @@ export const maxDuration = 30;
 const MAX_CHARS = 500;
 
 export async function POST(request: Request) {
-  let body: { text?: unknown; forceFallback?: unknown; state?: unknown };
+  let body: { text?: unknown; forceFallback?: unknown; useJev?: unknown; state?: unknown };
   try {
     body = await request.json();
   } catch {
@@ -50,7 +51,8 @@ export async function POST(request: Request) {
     // A plain "yes" to a confirmation carries no details: skip the extraction call.
     const skipExtract = prev.pending?.kind === "confirm" && readYesNo(text) === "yes";
     const [intent, extraction] = await Promise.all([
-      classifyMessage(text, { forceFallback: body.forceFallback === true }),
+      // D18: the Jev experiment only where the server switched it on (JEV_TOGGLE=1); otherwise the flag is ignored.
+      classifyMessage(text, { forceFallback: body.forceFallback === true, useJev: body.useJev === true && jevEnabled() }),
       extractDetails(text, {
         skip: skipExtract,
         asked: prev.pending?.kind === "merchant" ? ["the merchant or store"]
@@ -58,7 +60,7 @@ export async function POST(request: Request) {
       }),
     ]);
 
-    const outcome = advance(prev, { text, intent, details: extraction.details, range: extraction.range });
+    const outcome = advance(prev, { text, intent, details: extraction.details, range: extraction.range, dateIssue: extraction.dateIssue });
     const language = prev.lang ?? guessLanguage(text);
     const { move, trace: policy } = await resolveTurn(outcome, {
       session: customerFor(session),
@@ -71,6 +73,8 @@ export async function POST(request: Request) {
       },
     });
     const { state } = outcome;
+    // After the policy step: EF-1 can turn a search into a question for the date, which the dialogue didn't know about.
+    const missing = missingFor(state);
     const d = state.details;
     const m = state.match;
     const plan = planReply(
@@ -80,7 +84,7 @@ export async function POST(request: Request) {
         clarifyOptions: outcome.clarifyOptions,
         clarifyAttempts: state.pending?.kind === "clarify" ? state.pending.attempts : 0,
         details: d,
-        missing: outcome.missing.filter((k): k is "amount" | "date" => k === "amount" || k === "date"),
+        missing: missing.filter((k): k is "amount" | "date" => k === "amount" || k === "date"),
         match: m,
         explainRule: policy.rule === "PL-3" || policy.rule === "PL-4" || policy.rule === "PL-5" || policy.rule === "PL-9" ? policy.rule : null,
         handoffReason: state.handoffReason,
@@ -90,6 +94,8 @@ export async function POST(request: Request) {
         options: state.pending?.kind === "pick" ? state.pending.options : null,
         pickAttempts: state.pending?.kind === "pick" ? state.pending.attempts : 0,
         intentGuessed: state.intentGuessed,
+        dateIssue: outcome.dateIssue,
+        detailAsks: state.pending?.kind === "details" ? (state.pending.attempts ?? 0) : 0,
       },
       language,
     );
@@ -122,7 +128,7 @@ export async function POST(request: Request) {
       policy: { rule: policy.rule, decision: policy.decision, lookup: policy.lookup && { source: policy.lookup.source, count: policy.lookup.count } },
       handoffReason: state.handoffReason,
       case: policy.case && { reference: policy.case.reference, verified: policy.case.verified, kind: policy.case.kind },
-      missing: outcome.missing,
+      missing,
       pending: state.pending,
       status: state.status,
       restartReason,
