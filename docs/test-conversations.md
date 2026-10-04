@@ -27,6 +27,8 @@ Multi-turn scenarios with the behavior we expect. Each should become an automate
 | 3 | "Não, foi dia 12" | correction: date 2026-06-12; confirm again |
 | 4 | "sim" | confirmed (read by code, no extraction call) |
 
+**Since the lookup (step 12) and EF-1 (updated 2026-10-04, EF-3):** turn 1 asks for the date (PL-2 asks it before handing off); turn 2 is **PL-1, no match**: "ontem" is 16 June and ±3 days misses the only 89.90 charge (12 June); turn 3 confirms the Cable TV charge of 12 June; "sim" opens a review (PL-7). Graded this way in `evals/cases/tc.ts` (4/4 live runs, 2026-10-02).
+
 ## TC-03: Refund demand during confirmation (team-generated, Miguel, 2026-09-29)
 
 | # | Customer | Expected |
@@ -36,16 +38,18 @@ Multi-turn scenarios with the behavior we expect. Each should become an automate
 | 3 | "ok, entonces revisen el cargo" | the review is chosen (C10) → back to the dispute → confirm 120 USD, 3 June, Amazon |
 | 4 | "sí" | confirmed |
 
+**Since step 12 (updated 2026-10-04, EF-3):** the last "sí" doesn't end at "confirmed": the 120 USD charge has fraud score 41.7, so it goes to **a person** (PL-6), with no mention of fraud.
+
 ## Step 12 scenarios (team-generated, Miguel, 2026-09-30)
 
-Against the stand-in lookup's synthetic demo customer (`src/lib/lookup/mock.ts`). Verified live locally; also covered by `src/lib/conversation/resolve.test.ts`.
+Against the stand-in lookup's synthetic demo customer (`src/lib/lookup/mock.ts`). Verified live locally; also covered by `src/lib/conversation/resolve.test.ts`. TC-05 and TC-06 are answered in one message: their clarifying turn ("¿no lo reconoces o es incorrecto?") was removed by C15.
 
 | # | Customer | Expected | Rule |
 |---|---|---|---|
 | TC-04 | "No reconozco un cargo de 120 dólares del 3 de junio" → "sí" | Confirms "120 USD en Conciertos Live"; after yes, **a person** takes it; no mention of fraud | PL-6 |
-| TC-05 | "No reconozco un cargo de 45 dólares de ayer" (→ answer the clarification) | Explains it's **pending**, can't be disputed yet; conversation closed | PL-3 |
-| TC-06 | "Não reconheço uma cobrança de 560 dólares do dia 14 de junho" (→ answer) | Explains it was **declined**, nothing charged; no reason given | PL-5 |
-| TC-07 | "Me cobraron 25 dólares el 11 de junio y no lo reconozco" → "Fue en Tienda Don José" → "sí" | Asks for the merchant (two matches), then confirms the right one, then review | PL-2 → PL-7 |
+| TC-05 | "No reconozco un cargo de 45 dólares de ayer" | Explains it's **pending**, can't be disputed yet; conversation closed | PL-3 |
+| TC-06 | "Não reconheço uma cobrança de 560 dólares do dia 14 de junho" | Explains it was **declined**, nothing charged; no reason given | PL-5 |
+| TC-07 | "Me cobraron 25 dólares el 11 de junio y no lo reconozco" → "Fue en Tienda Don José" → "sí" | Lists both 25 USD charges (two matches, PL-10), the customer picks Tienda Don José (C14), confirms, then review. *Updated 2026-10-04 (EF-3): before PL-10 it asked for the merchant (PL-2).* | PL-10 → PL-7 |
 | TC-08 | "No reconozco un cargo de 999 dólares del 10 de junio" → "Sí, eran 999 dólares el 10 de junio" | Asks to check the details once, then **a person** | PL-1 |
 
 ## Step 14 scenarios (team-generated, Miguel, 2026-09-30)

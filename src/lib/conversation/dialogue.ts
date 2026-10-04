@@ -102,8 +102,8 @@ export function readPick(text: string, options: MatchView[], merchant?: string |
 
 /** C16: the customer states what the amount should have been. */
 const SHOULD_BE = /\b(deberia (ser|haber sido)|tenia que ser|tendria que ser|deveria (ser|ter sido)|era para ser|tinha que ser)\b/;
-/** C15: words that say which kind of charge question it is. */
-const UNREC_WORDS = /\b(no (lo |la )?reconozco|desconozco|no fui yo|no (lo |la )?hice|no autorice|fraude|clonar\w*|me robaron|nao reconhec\w*|nao reconheco|nao fiz|nao fui eu|desconhec\w*|clonad\w*)\b/;
+/** C15: words that say which kind of charge question it is. UNREC includes withdrawals not made (EF-5). */
+const UNREC_WORDS = /\b(no (lo |la )?reconozco|desconozco|no fui yo|no (lo |la )?hice|no autorice|fraude|clonar\w*|me robaron|nao reconhec\w*|nao reconheco|nao fiz|nao fui eu|desconhec\w*|clonad\w*|nao saquei|no saque|no retire|no hice (ese |este |el |ningun )?retiro)\b/;
 const WRONG_WORDS = /\b(dos veces|duplicad\w*|doble|de mas|incorrect\w*|mal cobrad\w*|equivocad\w*|error en el monto|deberia (ser|haber sido)|duas vezes|a mais|errad\w*|deveria ser|comision\w*|anuidade|tarifa)\b/;
 const STATUS_WORDS = /\b(que paso|el estado|estatus|rechaz\w*|pendiente|no (ha )?llegad\w*|que aconteceu|status|recusad\w*|pendente|estornad\w*|revertid\w*|que houve)\b/;
 

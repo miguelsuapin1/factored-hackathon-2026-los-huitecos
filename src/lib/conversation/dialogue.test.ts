@@ -60,6 +60,13 @@ describe("C15: charge-only ambiguity", () => {
     const [t1] = run([{ text: "Me cobraron algo raro", intent: intent({ unrecognized_charge: 0.45, wrongful_fee: 0.4 }) }]);
     assert.deepEqual([t1.move, t1.state.workingIntent, t1.state.intentGuessed], ["ask_details", "unrecognized_charge", true]);
   });
+  it("a withdrawal the customer didn't make is a dispute, not a status question (EF-5)", () => {
+    for (const text of ["oi apareceu uma retirada de 72,05 dolares no app e eu nao saquei nada", "não fiz esse saque de 300",
+      "no saqué esos 500 del cajero", "yo no retiré 200", "no hice ese retiro de 150"]) {
+      const [t1] = run([{ text, intent: intent({ unrecognized_charge: 0.5, transaction_status: 0.3 }) }]);
+      assert.deepEqual([t1.state.workingIntent, t1.state.intentGuessed], ["unrecognized_charge", false], text);
+    }
+  });
   it("a refund vs dispute ambiguity still asks (not both charge questions)", () => {
     const [t1] = run([{ text: "quiero mi dinero del cargo", intent: intent({ move_money: 0.5, unrecognized_charge: 0.3 }) }]);
     assert.equal(t1.move, "ask_clarify");

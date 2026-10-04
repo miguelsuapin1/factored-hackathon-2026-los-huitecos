@@ -85,4 +85,4 @@ Then the ladder: **0** → check the details once (PL-1) · **1** → that charg
 - **The lookup is a stand-in** (one synthetic demo customer, labelled in `src/lib/lookup/mock.ts`). Person 2 swaps in the Supabase version in `src/lib/lookup/index.ts`.
 - ~~"Review" isn't a record yet.~~ Step 13: reviews and hand-offs are verified cases ([verification.md](verification.md)).
 - **Wording can still overstate.** Haiku once wrote "has been sent" for a review that didn't exist yet, and once promised an agent "right away". The instructions now forbid both (reply-v3), but code can't check tense the way it checks numbers. The trace has the reply source and prompt version for review.
-- **Proposal (not built):** when the intent model hesitates between the two dispute intents, the clarifying question changes nothing: both lead to the same lookup and rules. Skipping it would save a turn. Needs Person 3's conversations to confirm it doesn't hurt.
+- **Built as C15 (2026-09-30):** when the intent model hesitates between two charge intents, the "A or B?" question is skipped and the customer's words decide the kind (docs/conversation.md C15).

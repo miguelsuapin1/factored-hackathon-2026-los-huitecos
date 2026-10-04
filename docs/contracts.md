@@ -29,12 +29,16 @@ Optional request flags: `forceFallback: true` (outage simulation, skips Cohere) 
     "conversationId": "uuid",
     "turn": 2,
     "workingIntent": "wrongful_fee",            // what the conversation is about now (may differ from intent.intent)
-    "resolvedBy": "clarification",              // model | clarification | offer | kept_topic | confirmation | new_topic
-    "move": "ask_details",                      // ask_clarify | ask_details | confirm | ask_correction | no_match | ask_narrow
-                                                // | explain_status | open_review | handoff | status_update | answer
+    "resolvedBy": "clarification",              // model | clarification | offer | kept_topic | confirmation | new_topic | words (C15)
+    "move": "ask_details",                      // ask_clarify | ask_summary (H1) | ask_details | confirm | ask_correction | no_match
+                                                // | ask_narrow | pick (PL-10) | explain_status | status_answer (S1) | open_review
+                                                // | record_failed (V2) | handoff | status_update | answer
+                                                // (confirmed, picked, lookup_status are internal: resolve.ts replaces them)
     "details": { "amount": 350, "expectedAmount": 250, "currency": null, "date": null, "merchant": null },
     "missing": ["date"],
-    "pending": { "kind": "details" },           // or { kind: "clarify", options: [a, b], attempts } | { kind: "offer_review", dispute } | { kind: "confirm" } | null
+    "pending": { "kind": "details" },           // { kind: "details", attempts? } | { kind: "clarify", options: [a, b], attempts }
+                                                // | { kind: "offer_review", dispute } | { kind: "merchant" } | { kind: "pick", options, attempts }
+                                                // | { kind: "summary" } | { kind: "offer_dispute" } | { kind: "offer_agent" } | { kind: "confirm" } | null
     "match": null,                              // the matched charge: { transactionId, date, amount, currency, merchant, status }
     "policy": { "rule": null, "decision": null, "lookup": null }, // e.g. { rule: "PL-7", decision: "open_review", lookup: { source: "mock", count: 1 } }
     "handoffReason": null,                      // customer_asked | repeated_clarification | no_match | ambiguous | high_risk | record_unavailable | tool_failure | too_old (PL-11, 2026-10-02)
