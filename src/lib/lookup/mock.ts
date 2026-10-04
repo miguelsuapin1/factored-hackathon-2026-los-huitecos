@@ -25,7 +25,7 @@ export const FIXTURES: Row[] = [
   row({ transactionId: "TRX-DEMO0000000000005", date: "2026-06-05T18:11:27", amount: 230, currency: "USD", merchant: "Restaurante El Buen Sabor", status: "Reversed", responseCode: "14", fraudScore: 9.9 }),
   // Declined → nothing was charged (PL-5)
   row({ transactionId: "TRX-DEMO0000000000006", date: "2026-06-14T11:48:55", amount: 560, currency: "USD", merchant: "Empresa Telefónica", status: "Declined", responseCode: "51", fraudScore: 14.2 }),
-  // Two charges of 25 two days apart → ambiguous without the merchant (PL-2)
+  // Two charges of 25 a day apart → both listed for the customer to pick (PL-10, C14)
   row({ transactionId: "TRX-DEMO0000000000007", date: "2026-06-11T08:02:14", amount: 25, currency: "USD", merchant: "Tienda Don José", status: "Approved", responseCode: "00", fraudScore: 11.0 }),
   row({ transactionId: "TRX-DEMO0000000000008", date: "2026-06-12T08:15:40", amount: 25, currency: "USD", merchant: "Super Ahorro", status: "Approved", responseCode: "00", fraudScore: 13.5 }),
   // C13/PL-10: a second 350 months earlier, so "no me acuerdo" finds two and lists them (Miguel's example)
