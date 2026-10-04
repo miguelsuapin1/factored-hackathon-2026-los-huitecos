@@ -131,6 +131,40 @@ Cada tarjeta describe **lo que le pasó al cliente**, no lo que escribe. Escribe
 | EX30 | La cuota anual de este mes vino mucho más alta y preguntas cuánto estás pagando. | ambiguo: `wrongful_fee` o `balance_check` |
 | EX31 | Quieres que "alguien" revise un cargo. | ambiguo: `human_agent` o `unrecognized_charge` |
 | EX32 | Solo dos palabras sobre un cargo extraño. | ambiguo: `unrecognized_charge` o `wrongful_fee` |
+| EX33 | La app muestra un retiro en cajero hoy en la mañana. Estás en el trabajo y tu tarjeta está en tu cartera. Español de México. | `unrecognized_charge` |
+| EX34 | Un retiro de cajero que no hiciste, en tres o cuatro palabras, sin acentos. | `unrecognized_charge` |
+| EX35 | Ayer un cajero se quedó con tu tarjeta. Hoy ves dos retiros hechos con ella. | `unrecognized_charge` |
+| EX36 | Te despiertas y ves tres retiros de cajero hechos de madrugada. Crees que clonaron tu tarjeta. | `unrecognized_charge` |
+| EX37 | Aparece en tu tarjeta una suscripción mensual de una app que nunca has usado. | `unrecognized_charge` |
+| EX38 | Una compra en dólares en un país que nunca has visitado. Español de Colombia. | `unrecognized_charge` |
+| EX39 | Una compra que no hiciste, en tres o cuatro palabras, con abreviaturas. | `unrecognized_charge` |
+| EX40 | El banco te cobró por sobregiro, pero tu cuenta nunca quedó en negativo. | `wrongful_fee` |
+| EX41 | Sacaste efectivo en un cajero de tu propio banco, que debería ser gratis, y te cobraron comisión. | `wrongful_fee` |
+| EX42 | Cancelaste un servicio de streaming el mes pasado y te lo siguen cobrando. | `wrongful_fee` |
+| EX43 | Pagaste el total de la tarjeta a tiempo y aun así te cobraron intereses. | `wrongful_fee` |
+| EX44 | Un cobro por alertas SMS que crees que está mal. Dos o tres palabras. | `wrongful_fee` |
+| EX45 | Una tienda dice que te devolvió una compra hace diez días, pero no aparece nada en tu tarjeta. | `transaction_status` |
+| EX46 | Mandaste la renta por transferencia el viernes y sigue "en proceso". | `transaction_status` |
+| EX47 | Pagaste una factura ayer y todavía aparece como no pagada. | `transaction_status` |
+| EX48 | Pregunta por tu reclamo con la menor cantidad de palabras, un poco impaciente. | `transaction_status` |
+| EX49 | Quieres saber de cuánto es el resumen de la tarjeta de este mes. | `balance_check` |
+| EX50 | Pregunta cuánto debes, en dos palabras, sin acentos. | `balance_check` |
+| EX51 | Quieres saber tu fecha de corte y el pago mínimo. | `balance_check` |
+| EX52 | Pídele al asistente que le mande dinero a un amigo. | `move_money` |
+| EX53 | Hace un rato transferiste a la cuenta equivocada y quieres que lo reviertan. | `move_money` |
+| EX54 | Exiges un crédito en tu cuenta como compensación por las molestias. | `move_money` |
+| EX55 | Pide una persona, en dos palabras. | `human_agent` |
+| EX56 | Estás harto del chat y quieres una persona de verdad. | `human_agent` |
+| EX57 | Prefieres que alguien del banco te llame. | `human_agent` |
+| EX58 | Olvidaste la contraseña de la app y no puedes entrar. | `out_of_scope` |
+| EX59 | Quieres saber si una sucursal del centro abre el sábado. | `out_of_scope` |
+| EX60 | Solo saludas. | `out_of_scope` |
+| EX61 | El cajero no te dio el dinero, pero sí te lo descontaron. | ambiguo: `wrongful_fee` o `transaction_status` |
+| EX62 | Quieres que alguien te llame por una compra extraña. | ambiguo: `human_agent` o `unrecognized_charge` |
+| EX63 | Preguntas cuánto te cobraron de comisiones este mes y por qué tantas. | ambiguo: `balance_check` o `wrongful_fee` |
+| EX64 | Pregunta por tu devolución en dos o tres palabras. | ambiguo: `transaction_status` o `move_money` |
+| EX65 | Preguntas qué es un cargo con un nombre de empresa que no reconoces. | ambiguo: `unrecognized_charge` o `transaction_status` |
+| EX66 | Un cargo que no ubicas, pero crees que es una comisión del banco. | ambiguo: `wrongful_fee` o `unrecognized_charge` |
 
 ## Los ejemplos (léelos al final, solo para parafrasear)
 

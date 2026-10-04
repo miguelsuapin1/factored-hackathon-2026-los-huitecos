@@ -1,6 +1,6 @@
 # Human-written test messages (build step 16)
 
-**Para quienes escriben los mensajes: [GUIA.md](GUIA.md)** (en español: qué escribir, las 32 tarjetas de situación en español y cómo entregar).
+**Para quienes escriben los mensajes: [GUIA.md](GUIA.md)** (en español: qué escribir, las 66 tarjetas de situación en español y cómo entregar).
 
 The honest test of the intent model. Every other test set in this repo was written by the people (or the LLM) who wrote the rules and the training phrases, so its scores are an upper bound (docs/intent-model.md D1, D8). These messages are written **by people, by hand**, and are scored once, unseen ([docs/evaluation.md](../../docs/evaluation.md) EV-5).
 
@@ -16,7 +16,7 @@ Aim for **60+ messages**: about half Spanish and half Portuguese, every label be
 
 ### Starting points: `examples.csv`
 
-[`examples.csv`](examples.csv) has 32 **situation cards** (what happened to the customer, in neutral English) with the label, why it gets that label, and one example message. **The examples were written by Claude** to show the format and the label rules. They are never scored, and an exact copy is rejected.
+[`examples.csv`](examples.csv) has 66 **situation cards** (what happened to the customer, in neutral English) with the label, why it gets that label, and one example message. **The examples were written by Claude** to show the format and the label rules. They are never scored, and an exact copy is rejected.
 
 Two ways to use them, best first:
 
@@ -52,7 +52,7 @@ If two labels are equally right, mark the row `ambiguous=true` and put the secon
 | `written_on` | `YYYY-MM-DD` |
 | `source` | always `human` |
 | `method` | `fresh` (your own words) or `paraphrase` (a rewrite of an example); empty means `fresh` |
-| `seed` | for a paraphrase, the example's id (`EX01`…`EX32`); empty for fresh |
+| `seed` | for a paraphrase, the example's id (`EX01`…`EX66`); empty for fresh |
 | `text` | the message (quote it if it has commas; at most 500 characters) |
 
 ## Rules
