@@ -27,6 +27,6 @@ H025,pt,unrecognized_charge,false,,LP,2026-10-04,human,fresh,,"Estou nos Estados
 H026,es,unrecognized_charge,true,transaction_status,LP,2026-10-04,human,fresh,,"Hola, estoy viendo que tengo un cobro de esta semana de padel, pero no me recuerdo haber jugado esta semana"
 H027,pt,balance_check,true,unrecognized_charge,LP,2026-10-04,human,fresh,,"Estou verificando o saldo da minha conta e ele está bem menor do que eu me lembrava ou esperava; você pode me dizer por quê?"
 H028,es,unrecognized_charge,false,,LP,2026-10-04,human,fresh,,"no reconozco un el último retiro en un cajero"
-H029,es,wrongful_fee,false,,LP,2026-10-04,human,fresh,,"por qué el banco me cobro 15 pesos"
+H029,es,wrongful_fee,true,transaction_status,LP,2026-10-04,human,fresh,,"por qué el banco me cobro 15 pesos"
 H030,pt,move_money,false,,LP,2026-10-04,human,fresh,,"Deposite 50 dólares na minha conta."
 H031,es,human_agent,false,,LP,2026-10-04,human,fresh,,"pásame con un humano, no quiero hablar con AI"
