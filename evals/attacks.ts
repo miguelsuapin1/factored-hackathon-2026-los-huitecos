@@ -10,7 +10,7 @@ export type Sent = { status: number; json: Record<string, unknown> };
 export type AttackContext = {
   cookie(login: string): Promise<string | null>; // null when there's no password for that login
   post(path: string, cookie: string | null, body: unknown): Promise<Sent>; // body as JSON, or a raw string as is
-  canSign: boolean; // SESSION_SECRET is available
+  canSign: boolean; // the app's SESSION_SECRET is available (local runs only)
 };
 
 export type Verdict = { pass: boolean; expected: string; actual: string } | { skipped: string };
@@ -89,7 +89,7 @@ export const ATTACKS: readonly Attack[] = [
   {
     id: "S-4", attack: "expired_session", title: "Correctly signed but expired session is refused",
     async run(ctx) {
-      if (!ctx.canSign) return { skipped: "SESSION_SECRET not available" };
+      if (!ctx.canSign) return { skipped: "needs the app's SESSION_SECRET (local runs only)" };
       const expired = await signJson({ u: "attack-test", c: "CLI-DEMO00000001", exp: now() - 60 });
       const r = await ctx.post("/api/chat", cookieOf(expired), { text: DISPUTE });
       return { pass: r.status === 401, expected: "401", actual: status(r) };
@@ -98,7 +98,7 @@ export const ATTACKS: readonly Attack[] = [
   {
     id: "S-5", attack: "expired_session", title: "Signed session without a customer id (pre-step-8 shape) is refused",
     async run(ctx) {
-      if (!ctx.canSign) return { skipped: "SESSION_SECRET not available" };
+      if (!ctx.canSign) return { skipped: "needs the app's SESSION_SECRET (local runs only)" };
       const old = await signJson({ u: "attack-test", exp: now() + 3600 });
       const r = await ctx.post("/api/chat", cookieOf(old), { text: DISPUTE });
       return { pass: r.status === 401, expected: "401", actual: status(r) };
@@ -155,7 +155,7 @@ export const ATTACKS: readonly Attack[] = [
   {
     id: "C-4", attack: "expired_session", title: "Correctly signed but expired state token: conversation restarts",
     async run(ctx) {
-      if (!ctx.canSign) return { skipped: "SESSION_SECRET not available" };
+      if (!ctx.canSign) return { skipped: "needs the app's SESSION_SECRET (local runs only)" };
       const s = await started(ctx);
       if (!s) return { skipped: "couldn't start a demo.mx conversation" };
       const payload = readToken(s.state);

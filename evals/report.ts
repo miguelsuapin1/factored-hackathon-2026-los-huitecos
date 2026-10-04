@@ -104,8 +104,12 @@ function main() {
   const turnsAll = runs.flatMap((r) => r.data.results.filter((x) => !x.invalid && !x.skipped)
     .flatMap((x) => x.turns as { intent?: { model: string; ms: number; fallbackReason: string | null } }[]));
   const intentMs = turnsAll.flatMap((t) => (t.intent ? [t.intent.ms] : []));
-  const failedPrimary = turnsAll.filter((t) => t.intent?.fallbackReason && t.intent.fallbackReason !== "forced").length;
-  const fallbackTurns = turnsAll.filter((t) => t.intent?.model === "e5small").length;
+  // A forced fallback (TF-1's outage simulation, or --fallback) is by design: the app reports it as "forced (…)".
+  const forced = (t: (typeof turnsAll)[number]) => t.intent?.fallbackReason?.startsWith("forced") ?? false;
+  const failedPrimary = turnsAll.filter((t) => t.intent?.fallbackReason && !forced(t)).length;
+  const fallbackTurns = turnsAll.filter((t) => t.intent?.model === "e5small" && !forced(t)).length;
+  const forcedTurns = turnsAll.filter(forced).length;
+  const humanReport = fs.existsSync(path.join(ROOT, "reports/intent_eval_human.md"));
   const local = runs.every((r) => /localhost|127\.0\.0\.1/.test(r.data.run.base));
   const lines: string[] = [];
   const add = (...l: string[]) => lines.push(...l);
@@ -117,8 +121,8 @@ function main() {
 
   add("## Read this first", "",
     `- **${local ? "Offline" : "Deployed app"}, not production traffic.** ${local ? "Run against a local `npm run dev`." : ""} Label every number here as offline (docs/challenge.md).`,
-    `- **Intent model:** ${fallbackTurns ? `**${fallbackTurns} of ${turnsAll.length} turns ran on the e5-small fallback**, not production's Cohere model; results describe degraded mode.` : "production model (Cohere) on every turn."}`,
-    "- **Messages are not human-written.** TC cases are team-written, step-17 personas LLM-drafted and edited, break-it cases synthetic. The honest measure is the human-written set (step 16), not yet run.",
+    `- **Intent model:** ${fallbackTurns ? `**${fallbackTurns} of ${turnsAll.length} turns ran on the e5-small fallback**, not production's Cohere model; results describe degraded mode.` : "production model (Cohere) on every turn."}${forcedTurns ? ` ${forcedTurns} turn(s) used the fallback on purpose (forced outage simulation, e.g. TF-1).` : ""}`,
+    `- **Messages are not human-written.** TC cases are team-written, step-17 personas LLM-drafted and edited, break-it cases synthetic. The honest measure is the human-written set (step 16)${humanReport ? ", quoted under *Context*." : ", not yet run."}`,
     `- **Small samples:** ${all.graded} graded cases. Treat differences of a few cases as noise; breakdowns by language and segment even more so.`,
     ...(all.invalid ? [`- **${all.invalid} case(s) invalid** (run against the stand-in lookup for customers it has no data for) and excluded from every number.`] : []),
     ...(all.skipped ? [`- **${all.skipped} case(s) skipped** (no password for their login) and excluded.`] : []),
@@ -202,7 +206,9 @@ function main() {
     "**Historical human service, complaint contacts** (organizer data; different cases, live not offline). Quoted from `reports/contact_reasons.md`:", "",
     quoteTable("reports/contact_reasons.md", (row) => row.startsWith("| Queja")), "",
     "**Intent classifier vs. the keyword-rules baseline** on the sealed test set (single messages, not conversations). Quoted from `reports/intent_eval_cohere-mv3.md`:", "",
-    quoteTable("reports/intent_eval_cohere-mv3.md", (row) => /^\| (keyword|embed_lr) /.test(row)), "");
+    quoteTable("reports/intent_eval_cohere-mv3.md", (row) => /^\| (keyword|embed_lr) /.test(row)), "",
+    ...(humanReport ? ["**Intent classifier vs. the keyword-rules baseline on human-written messages** (step 16; single first messages, not conversations). Quoted from `reports/intent_eval_human.md`:", "",
+      quoteTable("reports/intent_eval_human.md", (row) => /^\| (Served model|Keyword rules) /.test(row)), ""] : []));
 
   const out = path.join(ROOT, "reports", `eval_${name}.md`);
   fs.writeFileSync(out, lines.join("\n"));
