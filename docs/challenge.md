@@ -62,6 +62,6 @@ Deliberate quality issues: ~2% duplicates, ~5% nulls, late-arriving partitions, 
 | campaign_sends | 2M | Internal | daily |
 | daily_exchange_rates | 3K | Reference | daily |
 
-**All text is Spanish.** There is **no Portuguese** in the data, so Portuguese coverage must come from us (team-generated/translated eval cases, labeled as such). This is a limitation to report.
+**All text is Spanish.** There is **no Portuguese** in the data, so Portuguese coverage comes from the team (team-generated phrases and test cases, labeled as such), and the README reports it as a limit.
 
-**Data location: not stated in any document yet.** Ask in Slack.
+**Data location:** the organizer's S3 bucket (read-only keys in the Data Dictionary); `scripts/download_data.sh` fetches it.

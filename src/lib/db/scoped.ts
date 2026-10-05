@@ -1,4 +1,4 @@
-// Customer-scoped database access (step 8, D-006). The ONLY way the lookup reads customer data.
+// Customer-scoped database access (D-006). The ONLY way the lookup reads customer data.
 //
 // It connects as the Postgres role lookup_reader (SUPABASE_LOOKUP_DB_URL), which row-level security applies to, and
 // opens a transaction that first sets app.customer_id to the signed-in customer (as-customer.ts). The policies in

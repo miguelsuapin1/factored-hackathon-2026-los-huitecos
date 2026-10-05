@@ -1,4 +1,4 @@
-// Session cookie: signed (HMAC-SHA256 with SESSION_SECRET), expiring, and since step 8 (D-006) bound to ONE customer.
+// Session cookie: signed (HMAC-SHA256 with SESSION_SECRET), expiring, and since D-006 bound to ONE customer.
 // `c` is the customer id the login resolved; the lookup scopes every query to it (row-level security in Supabase).
 // The customer id never comes from the conversation or the request body, only from this signed cookie.
 // Uses Web Crypto only, so it runs in the proxy and in route handlers alike.
@@ -55,14 +55,14 @@ export async function createSession(username: string, customerId: string) {
 }
 
 /** Returns the session if the signature is valid, it hasn't expired and it names a customer; otherwise null.
- *  Cookies from before step 8 have no customer, so those users sign in again once. */
+ *  Cookies without a customer are refused, so those users sign in again. */
 export async function verifySession(token: string | undefined): Promise<Payload | null> {
   const payload = await verifyJson<Payload>(token);
   if (!payload || typeof payload.c !== "string" || !payload.c || typeof payload.u !== "string") return null;
   return payload.exp > Date.now() / 1000 ? payload : null;
 }
 
-/** Constant-time check of the shared demo account (DEMO_USERNAME / DEMO_PASSWORD env vars). Since step 8 it signs in
+/** Constant-time check of the shared demo account (DEMO_USERNAME / DEMO_PASSWORD env vars). It signs in
  *  as the synthetic demo customer; per-customer test logins live in public.app_users (src/lib/auth/login.ts). */
 export async function checkCredentials(username: string, password: string) {
   const expectedUser = process.env.DEMO_USERNAME;

@@ -62,10 +62,10 @@ export type ConversationState = {
   details: Details;
   pending: Pending;
   status: Status;
-  match: MatchView | null; // the transaction the customer is being asked to confirm (step 12)
+  match: MatchView | null; // the transaction the customer is being asked to confirm
   lookupRetries: number; // no-match / ambiguous turns so far (PL-1, PL-2)
   handoffReason: HandoffReason | null;
-  caseRef: string | null; // reference of the verified case (step 13), shown to the customer
+  caseRef: string | null; // reference of the verified case, shown to the customer
   caseId: string | null;
   when: When; // C13: what the customer said about the date when they didn't give an exact one
   merchantAsked: boolean; // C13: we already asked for the merchant once (PL-2)

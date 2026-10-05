@@ -1,4 +1,4 @@
-// Sign-in (step 8, D-006): a test login from public.app_users, or the shared demo account. Either way the session
+// Sign-in (D-006): a test login from public.app_users, or the shared demo account. Either way the session
 // cookie is bound to exactly one customer id, which the lookup uses to scope every query (row-level security).
 import { authenticate, type LoginResult } from "@/lib/auth/login";
 import { checkCredentials, createSession, SESSION_COOKIE, SESSION_TTL_SECONDS } from "@/lib/auth/session";

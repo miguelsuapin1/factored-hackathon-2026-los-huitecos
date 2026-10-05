@@ -1,6 +1,6 @@
-# Evaluation (build steps 16–19)
+# Evaluation
 
-Owner: Luis Pedro. How the system is evaluated end to end: the harness, the test sets, what is measured and why. Results: `reports/eval_<name>.md` (generated). Findings and fixes: [evaluation-findings.md](evaluation-findings.md). Team requests (internal): [team/evaluation-requests.md](team/evaluation-requests.md).
+By Luis Pedro. How the system is evaluated end to end: the harness, the test sets, what is measured and why. Results: `reports/eval_<name>.md` (generated). Findings and fixes: [evaluation-findings.md](evaluation-findings.md).
 
 ## How it works
 
@@ -11,7 +11,7 @@ Owner: Luis Pedro. How the system is evaluated end to end: the harness, the test
 | `tc` (`evals/cases/tc.ts`) | TC-01…TC-21 | Team (Miguel), docs/test-conversations.md | Every turn |
 | `step17` (`evals/cases/step17.ts`) | 11 personas | LLM-drafted, edited by Luis Pedro; charges swapped to K5 | Where the conversation ends |
 | `break` (`evals/cases/break.ts`, `evals/attacks.ts`) | 24 probes + 14 protocol attacks | Synthetic, adversarial (Claude) | Safety: no action, no leak, the right refusal |
-| human (step 16, `evals/human/`, `pipeline/score_human.py`) | none yet: to be written | People, by hand | Single messages, intent only (EV-5) |
+| human (`evals/human/`, `pipeline/score_human.py`) | 31 messages (24 clear, 7 ambiguous) | People, by hand | Single messages, intent only (EV-5) |
 
 `npm test` checks the harness itself and the cases (ids, K5 logins, charges that belong to the login, provenance), so a mistake in a case shows up there, not as a system failure.
 
@@ -23,7 +23,7 @@ Owner: Luis Pedro. How the system is evaluated end to end: the harness, the test
 
 ### EV-2. Two kinds of case: scripts and personas (Luis Pedro, 2026-10-01)
 - **Scripts** (TC, break-it) fix every message and grade every turn: right for documented flows and attacks.
-- **Personas** (step 17) have an opening and one reply per kind of question (details, merchant, confirmation, clarification, offer); the harness answers whatever the assistant asked. Graded on the end: outcome, final rule, charge, case. Closer to a real customer, whose path depends on what they're asked.
+- **Personas** have an opening and one reply per kind of question (details, merchant, confirmation, clarification, offer); the harness answers whatever the assistant asked. Graded on the end: outcome, final rule, charge, case. Closer to a real customer, whose path depends on what they're asked.
 - A persona stops when it has no reply for the question or has used a reply twice; at most 8 turns, so a loop shows up as a failure.
 
 ### EV-3. The baseline is human-only service, on the same cases (Luis Pedro, 2026-10-01)
@@ -44,10 +44,9 @@ From docs/challenge.md "Required evaluation metrics", computed in `evals/metrics
 - Cases run against the stand-in lookup for a customer it has no data for are **invalid** and excluded; cases without a password are **skipped**.
 
 ### EV-5. Human-written messages are a separate held-out set (Luis Pedro, 2026-10-01)
-- **Decision:** step 16's human-written messages go in their own file under `evals/`, with `source: human`, scored with the frozen model; they never enter `split_manifest.json`.
+- **Decision:** human-written messages go in their own file under `evals/`, with `source: human`, scored with the frozen model; they never enter `split_manifest.json`.
 - **Why:** the sealed split has no way to add test rows; `--reseal` would re-randomize every family, let the batch-2 families written after reading validation errors (D7) into test, and orphan every reported number. A separate set keeps the seal and gives the honest number D1, D8 and D17 defer to.
-- **Built (2026-10-01), waiting for messages.** `uv run python pipeline/score_human.py` checks every row (provenance, labels, no copies of training phrases), classifies each message through the app's `/api/classify` (whatever model it serves; the report says which), runs the keyword rules on the same messages, and writes `reports/intent_eval_human.md` with a paired bootstrap comparison. Scored rows are frozen by hash (`evals/human/manifest.json`); every run is appended to `evals/results/human/runs.jsonl`. How to write the messages: `evals/human/README.md`.
-- **Follow-up once messages exist:** re-run the Banking77 comparison scored on them (docs/intent-model.md D17), which D-004 allows because the scoring is on our messages.
+- **How it runs.** `uv run python pipeline/score_human.py` checks every row (provenance, labels, no copies of training phrases), classifies each message through the app's `/api/classify` (whatever model it serves; the report says which), runs the keyword rules on the same messages, and writes `reports/intent_eval_human.md` with a paired bootstrap comparison. Scored rows are frozen by hash (`evals/human/manifest.json`); every run is appended to `evals/results/human/runs.jsonl`. How to write the messages: `evals/human/README.md`.
 
 ### EV-6. Label everything for what it is (Luis Pedro, 2026-10-01)
 - Every case states who wrote it (`source`) and where its expectations come from (`basis`: unit test, doc, or code reading); personas list every edit to their source text. Reports say whether they ran locally, on which intent model, and that the messages are not human-written.
@@ -55,8 +54,8 @@ From docs/challenge.md "Required evaluation metrics", computed in `evals/metrics
 
 ## Limits
 
-- No set is human-written yet (EV-5): every number is on team-written or synthetic messages, which favours the system (the same people wrote the rules).
-- The first runs used the fallback intent model; since 2026-10-04 runs use Cohere on the deployed app ([report](../reports/eval_production-cohere.md)).
+- Only the human-written set (EV-5) is written by people, and it is small (31 messages, one author). The conversation suites are team-written, LLM-drafted or synthetic, which favours the system (the same people wrote the rules).
+- The reported results run on the production model (Cohere) against the deployed app ([report](../reports/eval_production-cohere.md)); the earlier fallback-model runs are kept for comparison ([report](../reports/eval_local-fallback.md)).
 - Small samples: tens of cases. Differences of one or two cases are noise.
 - The harness can't see the `cases` table, so "no raw transcript in a case" (V5) and case contents aren't graded; a case is graded by kind and verification only.
 - Tool failures that need code changes to induce (lookup down, case store down) are covered by unit tests (PL-8, V2), not the harness.

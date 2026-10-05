@@ -1,4 +1,4 @@
-// Step 19 break-it cases, protocol level: forged or replayed cookies and state tokens, smuggled fields and malformed
+// Break-it cases, protocol level: forged or replayed cookies and state tokens, smuggled fields and malformed
 // requests, sent straight to the API. Conversation-level attacks are in evals/cases/break.ts.
 // Tampering is done as an outsider would: edit a real token and keep its old signature. Only the two expiry checks
 // sign a token with SESSION_SECRET (from .env.local), to test that the server enforces `exp`; they are skipped without it.

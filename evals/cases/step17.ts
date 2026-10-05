@@ -1,9 +1,9 @@
-// Step 17 test conversations: responsive Brazilian-Portuguese personas from evals/cases/step17_source.csv (the long
+// Persona test conversations: responsive Brazilian-Portuguese personas from evals/cases/step17_source.csv (the long
 // rows; the wide rows above them are an earlier draft of the same scenarios, with shifted columns).
 // Provenance: LLM-drafted, edited by Luis Pedro (2026-09-30). The source amounts, dates and merchants exist for no
 // customer with a login, so each was swapped for a real charge of an agreed customer (docs/contracts.md K5), keeping
 // the wording; replies missing for the confirmation were added as a plain "sim". Every change is listed in `edits`.
-// Synthetic, not human-written: these are not the judges' numbers (steps 16-17 human-written messages are).
+// Synthetic, not human-written: these are not the judges' numbers (the human-written messages are).
 import type { PersonaCase } from "../case";
 
 const SOURCE = "LLM-drafted, edited by Luis Pedro (2026-09-30); charges swapped to K5 by Claude (2026-10-01)";

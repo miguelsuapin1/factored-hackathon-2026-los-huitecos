@@ -1,4 +1,4 @@
-// Case records (docs/contracts.md K3, docs/verification.md). The shape the agent console (step 20) will read.
+// Case records (docs/contracts.md K3, docs/verification.md). The shape the agent console will read.
 
 export type CaseKind = "review" | "handoff";
 
@@ -26,7 +26,7 @@ export type CaseStore = {
   source: "supabase" | "memory";
   /** Creates the case, or returns the existing one with the same idempotency key. */
   create(input: CaseInput): Promise<CaseRecord>;
-  /** Reads a case back by id (step 13 verification). */
+  /** Reads a case back by id (V1 verification). */
   get(id: string): Promise<CaseRecord | null>;
 };
 

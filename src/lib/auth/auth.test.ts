@@ -1,4 +1,4 @@
-// Step 8 tests (D-006): password hashing, who a sign-in resolves to, and that a session always names one customer.
+// Login tests (D-006): password hashing, who a sign-in resolves to, and that a session always names one customer.
 // The database half (row-level security) is checked by supabase/tests/step8_rls_check.sql. Run: npm test
 import assert from "node:assert/strict";
 import { before, describe, it } from "node:test";
@@ -83,7 +83,7 @@ describe("session", () => {
     assert.equal(s?.c, "CLI-ET8RX4AC7A0W");
     assert.equal(s?.u, "mx.pending");
   });
-  it("refuses a cookie from before step 8 (no customer) and an expired one", async () => {
+  it("refuses a cookie without a customer and an expired one", async () => {
     const now = Math.floor(Date.now() / 1000);
     assert.equal(await verifySession(await signJson({ u: "demo", exp: now + 60 })), null);
     assert.equal(await verifySession(await signJson({ u: "demo", c: "", exp: now + 60 })), null);

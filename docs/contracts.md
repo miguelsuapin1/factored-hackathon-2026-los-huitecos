@@ -1,18 +1,18 @@
 # Contracts between our parts
 
-The interfaces where one person's work plugs into another's. Agree here first, then build against it in parallel: until the real piece exists, the consumer uses a mock with the same shape. **Changing a contract? Edit this file in your pull request and tell the owner of the other side.**
+The interfaces between the system's components. Each one has a producer and a consumer that were built in parallel against this shape; a contract changes only in a pull request that edits this file.
 
-| # | Contract | Producer → consumer | Status |
+| # | Contract | Producer → consumer | Where it lives |
 |---|---|---|---|
-| K1 | `POST /api/chat` v2 (multi-turn) | Miguel → Person 3 (eval harness, steps 17–18) | implemented on `miguel/step-9-11-memory` (Miguel, 2026-09-29) |
-| K2 | Transaction lookup | Person 2 (step 10) → Miguel (steps 12–13) | types in `src/lib/lookup/types.ts`; stand-in used by step 12 (Miguel, 2026-09-30); Person 2 to confirm |
-| K3 | Case file (reviews and hand-offs) | Miguel (steps 13–14) → Person 2 (agent console, step 20) | table `public.cases` live (Miguel, 2026-09-30); see docs/verification.md |
-| K4 | Trace line | everyone → Person 3 (eval report) | Phase 1 shape + conversation fields |
-| K5 | Demo and test customers | Person 2 (slice + logins) → Person 3 (test conversations, steps 16–19) | agreed (Luis Pedro + Carlos, 2026-10-01) |
+| K1 | `POST /api/chat` (multi-turn) | chat service → app and evaluation harness | `src/app/api/chat/route.ts` |
+| K2 | Transaction lookup | data layer → policy engine | `src/lib/lookup/` (types in `types.ts`, Supabase in `sql.ts`) |
+| K3 | Case file (reviews and hand-offs) | policy engine → agent console | table `public.cases`; see [verification.md](verification.md) |
+| K4 | Trace line | every turn → evaluation report | one JSON line per turn in the runtime logs |
+| K5 | Demo and test customers | serving slice → test conversations | Supabase serving slice; agreed by Luis Pedro and Carlos, 2026-10-01 |
 
-## K1. `POST /api/chat` v2
+## K1. `POST /api/chat`
 
-Backward compatible: a request without `state` starts a new conversation, exactly like Phase 1.
+Backward compatible: a request without `state` starts a new conversation, exactly like a single-message request.
 
 Optional request flags: `forceFallback: true` (outage simulation, skips Cohere) and, since 2026-10-02, `useJev: true` (the Jev experiment, docs/intent-model.md D18). `useJev` is honoured only where the server sets `JEV_TOGGLE=1` and a TypeSafe key (not Production); elsewhere it is ignored. With it, `intent.model` is `"jev"` (or the usual model if Jev failed, with `intent.fallbackReason` saying why). `/api/classify` accepts the same flags.
 
@@ -20,10 +20,10 @@ Optional request flags: `forceFallback: true` (outage simulation, skips Cohere) 
 // request
 { "text": "Error en el monto, debería ser de 250 pesos", "state": "<opaque token from the previous response>" }
 
-// response (Phase 1 fields unchanged, plus `conversation`)
+// response (single-message fields, plus `conversation`)
 {
-  "intent": { "intent": "move_money", "confidence": 0.54, "decision": "ask", "...": "same as Phase 1" },
-  "reply": { "text": "...", "language": "es", "source": "haiku", "...": "same as Phase 1" },
+  "intent": { "intent": "move_money", "confidence": 0.54, "decision": "ask", "...": "as in /api/classify" },
+  "reply": { "text": "...", "language": "es", "source": "haiku", "...": "as in /api/classify" },
   "conversation": {
     "state": "<opaque token: send it back with the next message>",
     "conversationId": "uuid",
@@ -51,11 +51,11 @@ Optional request flags: `forceFallback: true` (outage simulation, skips Cohere) 
 
 **For the harness:** replay a conversation by sending each customer message with the `state` from the previous response. Grade on `conversation.move`, `conversation.status`, `conversation.policy.rule`, `conversation.workingIntent` and `conversation.details`, not on the reply wording. The expected outcome per test conversation ("resolve, ask, refuse or hand off") maps to: `open_review` / `explain_status` = resolved, `ask_*`/`no_match`/`confirm` = asked, `answer` for move_money = refused, `handoff` = handed off. A tampered or expired `state` silently starts a new conversation (`turn: 1`).
 
-## K2. Transaction lookup (Person 2, step 10)
+## K2. Transaction lookup
 
-Server-only, always scoped to the signed-in customer (row-level security enforces it in the database, step 8). The caller never passes someone else's id: the customer id comes from the session, not from the conversation.
+Server-only, always scoped to the signed-in customer (row-level security enforces it in the database, D-006). The caller never passes someone else's id: the customer id comes from the session, not from the conversation.
 
-**Step 8 (Carlos, 2026-10-01, D-006):** `customerFor(session)` returns the customer id from the signed session cookie (`c`). The Supabase implementation must read through `asCustomer(session, tx => ...)` in `src/lib/db/scoped.ts` (role `lookup_reader`, env `SUPABASE_LOOKUP_DB_URL`), never with `SUPABASE_SECRET_KEY`: the policies then hide every other customer's rows even if a query has no `WHERE customer_id`.
+**Session to customer (Carlos, 2026-10-01, D-006):** `customerFor(session)` returns the customer id from the signed session cookie (`c`). The Supabase implementation must read through `asCustomer(session, tx => ...)` in `src/lib/db/scoped.ts` (role `lookup_reader`, env `SUPABASE_LOOKUP_DB_URL`), never with `SUPABASE_SECRET_KEY`: the policies then hide every other customer's rows even if a query has no `WHERE customer_id`.
 
 ```ts
 type LookupQuery = {
@@ -77,25 +77,25 @@ type TransactionMatch = {
   responseCode: string | null;    // null → "reason unavailable" (data issue E4)
   channel: string | null;
   country: string | null;         // ISO: MX, CO, AR
-  fraudScore: number | null;      // for the policy engine (step 12), never shown to the customer
+  fraudScore: number | null;      // for the policy engine, never shown to the customer
   score: number;                  // how well it matches the query, 0..1
 };
 
 async function findTransactions(session: CustomerSession, query: LookupQuery): Promise<TransactionMatch[]>;
-async function getTransaction(session: CustomerSession, transactionId: string): Promise<TransactionMatch | null>; // re-read before deciding (step 12)
+async function getTransaction(session: CustomerSession, transactionId: string): Promise<TransactionMatch | null>; // re-read before deciding (policy engine)
 ```
 
-**Live (Carlos, 2026-10-01, step 10):** `src/lib/lookup/sql.ts` implements `TransactionLookup` against Supabase (`source: "supabase"`), wired in `src/lib/lookup/index.ts` whenever `SUPABASE_LOOKUP_DB_URL` is set (the stand-in otherwise, e.g. a laptop without database credentials). Amount (±1%, min 0.01) and date window are SQL filters on `transaction_date_local`; merchant/currency narrowing and `score` are shared with the stand-in (`src/lib/lookup/match.ts`). `date` is the customer's **local** timestamp without zone (same shape as the stand-in), never UTC. Results are newest first. Every query runs through `asCustomer` (RLS, D-006). Parity with the stand-in on all demo charges + scoping: `src/lib/lookup/sql.test.ts` (runs with `LOOKUP_TEST_DB_URL`).
+**Implementation (Carlos, 2026-10-01):** `src/lib/lookup/sql.ts` implements `TransactionLookup` against Supabase (`source: "supabase"`), wired in `src/lib/lookup/index.ts` whenever `SUPABASE_LOOKUP_DB_URL` is set (the stand-in otherwise, e.g. a laptop without database credentials). Amount (±1%, min 0.01) and date window are SQL filters on `transaction_date_local`; merchant/currency narrowing and `score` are shared with the stand-in (`src/lib/lookup/match.ts`). `date` is the customer's **local** timestamp without zone (same shape as the stand-in), never UTC. Results are newest first. Every query runs through `asCustomer` (RLS, D-006). Parity with the stand-in on all demo charges + scoping: `src/lib/lookup/sql.test.ts` (runs with `LOOKUP_TEST_DB_URL`).
 
-**Now in code (Miguel, 2026-09-30):** the types are [src/lib/lookup/types.ts](../src/lib/lookup/types.ts); the stand-in with synthetic fixtures is `src/lib/lookup/mock.ts`. **Person 2:** implement `TransactionLookup` against Supabase and export it from `src/lib/lookup/index.ts`; the unit tests in `src/lib/policy/policy.test.ts` show the expected behaviour (scoping, ±1% amount, date window, merchant and currency narrow only when something still matches). There is deliberately **no `is_fraud` field** (docs/policy.md PL-6).
+**Now in code (Miguel, 2026-09-30):** the types are [src/lib/lookup/types.ts](../src/lib/lookup/types.ts); the stand-in with synthetic fixtures is `src/lib/lookup/mock.ts`. **Carlos:** implement `TransactionLookup` against Supabase and export it from `src/lib/lookup/index.ts`; the unit tests in `src/lib/policy/policy.test.ts` show the expected behaviour (scoping, ±1% amount, date window, merchant and currency narrow only when something still matches). There is deliberately **no `is_fraud` field** (docs/policy.md PL-6).
 
-**Data for K2 (Carlos, 2026-09-30):** BigQuery `gold_serving.serving_transactions` (+ `serving_customers`, `serving_products`) is the slice to load into Supabase: one row per transaction with exactly the K2 fields (`transaction_ts` UTC, `transaction_date_local` = the customer's calendar day, `amount`, `currency`, `merchant_name`, `transaction_status`, `response_code`, `channel`, `transaction_country` ISO, `fraud_score`), no `is_fraud`, and `data_source` (`organizer` | `team_synthetic`). Miguel's mock charges (`CLI-DEMO00000001`, `CLI-OTHER0000000001`) are included unchanged, so the test conversations keep working when the mock is replaced. **Filter dates on `transaction_date_local`.** In Supabase it is `public.transactions` (+ `customers`, `products`), created by migration `20260930220000_serving_slice.sql`, filled by `pipeline/load_supabase.py`; server-only until step 8. **Loaded 2026-10-01:** 2,040 customers, 23,052 transactions, about 10 MB (`public.data_version` records each load). Contents and size: [reports/serving_slice.md](../reports/serving_slice.md).
+**Data for K2 (Carlos, 2026-09-30):** BigQuery `gold_serving.serving_transactions` (+ `serving_customers`, `serving_products`) is the slice to load into Supabase: one row per transaction with exactly the K2 fields (`transaction_ts` UTC, `transaction_date_local` = the customer's calendar day, `amount`, `currency`, `merchant_name`, `transaction_status`, `response_code`, `channel`, `transaction_country` ISO, `fraud_score`), no `is_fraud`, and `data_source` (`organizer` | `team_synthetic`). Miguel's mock charges (`CLI-DEMO00000001`, `CLI-OTHER0000000001`) are included unchanged, so the test conversations keep working when the mock is replaced. **Filter dates on `transaction_date_local`.** In Supabase it is `public.transactions` (+ `customers`, `products`), created by migration `20260930220000_serving_slice.sql`, filled by `pipeline/load_supabase.py`; server-only, read through row-level security (D-006). **Loaded 2026-10-01:** 2,040 customers, 23,052 transactions, about 10 MB (`public.data_version` records each load). Contents and size: [reports/serving_slice.md](../reports/serving_slice.md).
 
 Relative dates are resolved against the demo clock (`DEMO_TODAY`, default 2026-06-17; see [conversation.md](conversation.md) C4), so the gold slice must cover the weeks before it. Until K2 is live, Miguel uses a mock returning fixed fixtures with this shape.
 
-## K3. Handoff case file (step 14 → agent console, step 20)
+## K3. Handoff case file (→ agent console)
 
-Stored in the Supabase table `public.cases` ([migration](../supabase/migrations/20260930050000_cases.sql), owned by Miguel, reviewed by Person 2). No raw transcript: verified facts and open questions only (the brief's "structured handoff"). **Now live (2026-09-30):** columns are the snake_case of the fields below plus `reference` (shown to the customer), `kind` (`review` | `handoff`), `rule`, `status`, `idempotency_key`, `prompt_versions` (includes `environment`). Server-only: the console must read it through a server route with the secret key, never from the browser. The draft below is kept for reference; the table is authoritative.
+Stored in the Supabase table `public.cases` ([migration](../supabase/migrations/20260930050000_cases.sql), owned by Miguel, reviewed by Carlos). No raw transcript: verified facts and open questions only (the brief's "structured handoff"). **Now live (2026-09-30):** columns are the snake_case of the fields below plus `reference` (shown to the customer), `kind` (`review` | `handoff`), `rule`, `status`, `idempotency_key`, `prompt_versions` (includes `environment`). Server-only: the console must read it through a server route with the secret key, never from the browser. The draft below is kept for reference; the table is authoritative.
 
 ```jsonc
 {
@@ -105,7 +105,7 @@ Stored in the Supabase table `public.cases` ([migration](../supabase/migrations/
   "verifiedFacts": [ { "fact": "Transaction TRX-... of 350.00 USD at X on 2026-06-10, status Approved", "source": "lookup" } ],
   "customerStatements": { "amount": 350, "date": "2026-06-10", "merchant": null },
   "checksDone": [ "lookup: 1 match", "confirmation: yes" ],
-  "actionsTaken": [],                       // verified actions only (step 13)
+  "actionsTaken": [],                       // verified actions only (V1)
   "openQuestions": [ "Merchant unknown to the customer" ],
   "language": "es"
 }
@@ -113,11 +113,11 @@ Stored in the Supabase table `public.cases` ([migration](../supabase/migrations/
 
 ## K4. Trace line
 
-One JSON line per turn, `event: "turn"`, in Vercel runtime logs (Phase 1 fields in [reply-generation.md](reply-generation.md)). Steps 9 + 11 add `conversation: { conversationId, turn, resolvedBy, move, pendingBefore, detailsKnown, extractDropped, extractMs }`. Message texts and detail values are **not** logged, only which fields are known.
+One JSON line per turn, `event: "turn"`, in Vercel runtime logs (single-message fields in [reply-generation.md](reply-generation.md)). The conversation layer adds `conversation: { conversationId, turn, resolvedBy, move, pendingBefore, detailsKnown, extractDropped, extractMs }`. Message texts and detail values are **not** logged, only which fields are known.
 
-## K5. Demo and test customers (Person 2 → Person 3)
+## K5. Demo and test customers (Carlos → Luis Pedro)
 
-**Agreed (Luis Pedro + Carlos, 2026-10-01): the slice stays as loaded in Supabase.** Test conversations (steps 17–19) quote only the charges below, so every expected outcome follows from data both sides agree on. Checked the same day against Supabase (`data_version` 1, commit `1112091`) and BigQuery `gold_serving`: same rows, counts and amount sums for all five customers, and `demo.mx` matches the stand-in in `src/lib/lookup/mock.ts`. Dates are the customer's local day (`transaction_date_local`) against the demo clock, 2026-06-17. Passwords stay in the git-ignored `test-users.local.md`, never in a test file.
+**Agreed (Luis Pedro + Carlos, 2026-10-01): the slice stays as loaded in Supabase.** Test conversations quote only the charges below, so every expected outcome follows from data both sides agree on. Checked the same day against Supabase (`data_version` 1, commit `1112091`) and BigQuery `gold_serving`: same rows, counts and amount sums for all five customers, and `demo.mx` matches the stand-in in `src/lib/lookup/mock.ts`. Dates are the customer's local day (`transaction_date_local`) against the demo clock, 2026-06-17. Passwords stay in the git-ignored `test-users.local.md`, never in a test file.
 
 | Login | Customer | Profile | Why this one |
 |---|---|---|---|
@@ -127,7 +127,7 @@ One JSON line per turn, `event: "turn"`, in Vercel runtime logs (Phase 1 fields 
 | `rechazado-sin-codigo.co` | `CLI-VAQ11UMRIQJJ` | CO, Plus, USD + COP, organizer | Declined with no response code (E4); COP amounts in the millions test the thousands separator. |
 | `ambiguo.mx` | `CLI-GMZJYO4I75ST` | MX, Plus, USD, organizer | Three near-identical withdrawals with no merchant: which rule fires depends on whether the customer gives a date. |
 
-Together they cover MX/CO/AR, USD/COP/ARS, Basic/Plus/Premium and both data sources. The other seven logins (`revertido.ar`, `rechazado.mx`, `fraude.co`, `extranjero.co`, `usd.mx`, `suspendido.co`, `sin-movimientos.mx`) stay available for break-it cases (step 19).
+Together they cover MX/CO/AR, USD/COP/ARS, Basic/Plus/Premium and both data sources. The other seven logins (`revertido.ar`, `rechazado.mx`, `fraude.co`, `extranjero.co`, `usd.mx`, `suspendido.co`, `sin-movimientos.mx`) stay available for break-it cases.
 
 **Charges to quote.** "Expected" is what `src/lib/policy/decide.ts` decides. Matching is the amount ±1% inside a window: ±3 days around an exact date, or the last 180 days when the customer says they don't remember. A test with no date at all has no window, so write "no me acuerdo" / "não lembro" when the 180-day search is intended.
 
@@ -153,5 +153,5 @@ PL-1 needs no fixture: any amount the customer doesn't have (e.g. 999 USD on 10 
 
 ## Open questions for the team
 
-- **Supabase region (Person 2):** the build plan says `us-east-1`; the existing, empty project `paguvqqelfwadcolocaq` is in `sa-east-1`. Vercel functions and Bedrock run in `us-east-1`, so a `us-east-1` project avoids a cross-continent hop on every lookup. Decide before the first load.
-- ~~**Demo customers (Person 2 + 3)**~~ closed: see [K5](#k5-demo-and-test-customers-person-2--person-3) (Luis Pedro + Carlos, 2026-10-01).
+- **Supabase region (Carlos):** the build plan says `us-east-1`; the existing, empty project `paguvqqelfwadcolocaq` is in `sa-east-1`. Vercel functions and Bedrock run in `us-east-1`, so a `us-east-1` project avoids a cross-continent hop on every lookup. Decide before the first load.
+- ~~**Demo customers (Carlos + 3)**~~ closed: see [K5](#k5-demo-and-test-customers-person-2--person-3) (Luis Pedro + Carlos, 2026-10-01).

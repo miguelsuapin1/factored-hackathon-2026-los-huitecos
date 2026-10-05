@@ -1,4 +1,4 @@
-// Dialogue policy (build step 11): given the previous state, this turn's intent scores and the extracted details,
+// Dialogue policy: given the previous state, this turn's intent scores and the extracted details,
 // decide what the conversation is about and the assistant's next move. Plain code, no model calls, so every rule is
 // testable (dialogue.test.ts) and explainable. Rules and their reasons: docs/conversation.md C5–C8.
 import type { IntentLabel, Scores } from "@/lib/intent/model";
@@ -26,9 +26,9 @@ export type Move =
   | "ask_correction" // customer said no: which detail is wrong?
   | "confirmed" // yes: the policy engine decides next (resolve.ts turns it into open_review or handoff)
   | "status_update" // the dispute is already finished (under review, with an agent, closed): say so
-  | "answer" // non-dispute intent: the Phase 1 per-intent guidance
+  | "answer" // non-dispute intent: the per-intent guidance
   | "handoff" // a person takes over (repeated clarifications here; policy reasons in resolve.ts)
-  // Set by resolve.ts after the lookup and policy engine (step 12, docs/policy.md):
+  // Set by resolve.ts after the lookup and policy engine (docs/policy.md):
   | "no_match" // PL-1: nothing matches, ask to check the details
   | "ask_narrow" // PL-2: several match, ask for the merchant or exact date
   | "explain_status" // PL-3/4/5: pending, reversed or declined: explain, no dispute
@@ -36,7 +36,7 @@ export type Move =
   | "pick" // PL-10: two candidates listed for the customer to pick
   | "lookup_status" // S1: status question with its details complete: look the charge up (no confirmation needed)
   | "status_answer" // S1: explain what happened to the charge (PL-3/4/5, or PL-9 approved + offer a review)
-  | "open_review" // PL-7: the dispute goes to review (a verified case, step 13)
+  | "open_review" // PL-7: the dispute goes to review (a verified case)
   | "record_failed"; // V2: the case couldn't be written and verified: say so, nothing is claimed
 
 export type ResolvedBy = "model" | "clarification" | "offer" | "kept_topic" | "new_topic" | "confirmation" | "words";
@@ -268,7 +268,7 @@ export function advance(prev: ConversationState, input: TurnInput): TurnOutcome 
   }
 
   // 2d. We explained a declined charge and offered an agent to check the reason (S3): "sí" / "un asesor" → a case
-  // for a person carrying the charge; "no" closes. Asking for a person outright is caught by the model (step 3, H2).
+  // for a person carrying the charge; "no" closes. Asking for a person outright is caught by the model (H2).
   if (prev.pending?.kind === "offer_agent" && !confidentSafety) {
     const text = normalize(input.text);
     if (readYesNo(input.text) === "yes" || AGENT.test(text) || REVIEW.test(text)) return humanHandoff(state, done);

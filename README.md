@@ -74,7 +74,7 @@ flowchart LR
 
 ## Data pipeline
 
-Organizer CSVs (13 tables) → **bronze** in BigQuery (every column typed, 25.6M rows, 0 cast failures) → **silver** (cleaned; bronze = silver + quarantine, reconciled on all 13 tables) → **gold** (dbt models with contracts and tests) → a **serving slice** in Supabase (2,040 customers, 23,052 charges, chosen so every policy path has real data; each load recorded in `data_version`). Log: [docs/phase-2-data-log.md](docs/phase-2-data-log.md) · data issues found: [docs/data-issues.md](docs/data-issues.md) · dbt project: [pipeline/dbt](pipeline/dbt/README.md).
+Organizer CSVs (13 tables) → **bronze** in BigQuery (every column typed, 25.6M rows, 0 cast failures) → **silver** (cleaned; bronze = silver + quarantine, reconciled on all 13 tables) → **gold** (dbt models with contracts and tests) → a **serving slice** in Supabase (2,040 customers, 23,052 charges, chosen so every policy path has real data; each load recorded in `data_version`). Log: [docs/data-pipeline.md](docs/data-pipeline.md) · data issues found: [docs/data-issues.md](docs/data-issues.md) · dbt project: [pipeline/dbt](pipeline/dbt/README.md).
 
 The organizer's text fields are templated and contain no Portuguese, so the language model was trained on **948 team-written ES/PT phrases** with a sealed test set (SHA-256 manifest; every test run logged in `reports/test_runs.jsonl`). Banking77 was tried as extra training data and rejected on measurement ([docs/intent-model.md](docs/intent-model.md) D17).
 
@@ -84,7 +84,7 @@ The organizer's text fields are templated and contain no Portuguese, so the lang
 - The human-written check is small: 31 messages from one author.
 - All results are offline; there is no production traffic.
 - The serving slice holds 2,040 customers and 12 months of charges.
-- Open findings and their status: [docs/evaluation-findings.md](docs/evaluation-findings.md).
+- What the evaluation found and how each finding was resolved: [docs/evaluation-findings.md](docs/evaluation-findings.md).
 
 ## Run it
 

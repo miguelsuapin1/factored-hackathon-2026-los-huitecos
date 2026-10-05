@@ -1,8 +1,8 @@
--- Cases created by the dispute assistant (build steps 13–14; docs/contracts.md K3, docs/verification.md).
--- Owner: Miguel (2026-09-30). Reviewed by Person 2 (supabase/ is the data folder).
+-- Cases created by the dispute assistant (docs/contracts.md K3, docs/verification.md).
+-- Owner: Miguel (2026-09-30). Reviewed by Carlos (supabase/ is the data folder).
 --
 -- A row is written for every dispute that goes to review (PL-7) or to a person (PL-1/2/6/8, repeated clarification),
--- then re-read before the customer is told it exists (step 13). No raw transcript is stored: only facts the system
+-- then re-read before the customer is told it exists. No raw transcript is stored: only facts the system
 -- verified, what the customer stated, checks done and open questions (the brief's "structured handoff").
 --
 -- Access: only the server (secret key, bypasses RLS) reads or writes. RLS is on with NO policies, and the browser

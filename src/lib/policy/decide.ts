@@ -1,4 +1,4 @@
-// Policy engine (build step 12): plain code decides what happens to a dispute once its details are known.
+// Policy engine: plain code decides what happens to a dispute once its details are known.
 // Every rule has an id (PL-n) that goes into the trace; reasons and evidence are in docs/policy.md.
 // No rule moves money: the most any rule does is open a review case or send the case to a person.
 // Type-only imports keep this module pure (tested by policy.test.ts).

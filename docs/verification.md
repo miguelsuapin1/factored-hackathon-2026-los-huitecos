@@ -1,12 +1,12 @@
-# Verification (build step 13)
+# Verification
 
-**Owner:** Miguel. The brief asks the system to "verify that actions actually happened". Here the only actions are creating a **case**: a dispute sent to review (PL-7) or passed to a person (PL-1, PL-2, PL-6, PL-8, repeated clarification). Nothing moves money. Code: [src/lib/cases/](../src/lib/cases/), the last step of [src/lib/conversation/resolve.ts](../src/lib/conversation/resolve.ts). Table: [supabase/migrations/20260930050000_cases.sql](../supabase/migrations/20260930050000_cases.sql).
+The brief asks the system to "verify that actions actually happened". Here the only actions are creating a **case**: a dispute sent to review (PL-7) or passed to a person (PL-1, PL-2, PL-6, PL-8, repeated clarification). Nothing moves money. Code: [src/lib/cases/](../src/lib/cases/), the last step of [src/lib/conversation/resolve.ts](../src/lib/conversation/resolve.ts). Table: [supabase/migrations/20260930050000_cases.sql](../supabase/migrations/20260930050000_cases.sql).
 
 ## One confirmed dispute, end to end
 
 ```
 customer: "sí"
-  → re-read the transaction (not the state's copy) → policy decides review or person        (step 12)
+  → re-read the transaction (not the state's copy) → policy decides review or person
   → build the case file in code: facts, what the customer said, checks, open questions       cases/build.ts
   → write it to Supabase `cases`                                                              cases/supabase-store.ts
   → read it back by id and compare field by field                                            V1
@@ -19,7 +19,7 @@ customer: "sí"
 ### V1. A case exists only after it's written and read back identical (Miguel, 2026-09-30)
 - **Chose:** after the insert, read the row back by id and compare `idempotencyKey`, `kind`, `rule`, `conversationId`, `customerId`, `transactionId` with what was written. Only a matching read-back sets the case reference that the reply may quote.
 - **Why:** a successful insert call isn't proof. The read-back catches a write that didn't persist and a row that isn't ours (both tested with a fake store that loses or alters writes). It costs one extra query (~0.1–0.2 s to `sa-east-1`).
-- **Wording follows the evidence:** before step 13 the reply had to say the dispute *will go* to review (P11). With a verified case it may say it *was registered*, and give the reference. The reference's characters are allowed through the reply number check (C9) because code created them.
+- **Wording follows the evidence:** without a verified case the reply may only say the dispute *will go* to review (P11). With a verified case it may say it *was registered*, and give the reference. The reference's characters are allowed through the reply number check (C9) because code created them.
 
 ### V2. If it isn't verified, the customer is told nothing was registered (Miguel, 2026-09-30)
 - **Chose:** on any failure (database down, timeout of 4 s, read-back missing or different) the move becomes `record_failed`: the reply says plainly that nothing was registered yet. For a review, the details and matched charge are kept and the confirmation is pending again, so replying "sí" later retries. The trace logs `case_not_verified` with the error.
@@ -46,6 +46,5 @@ customer: "sí"
 
 ## Limits
 
-- **One shared table** for local, preview and production (filter on `prompt_versions->>environment`). The region question (sa-east-1 vs us-east-1) is still Person 2's; the migration recreates the table anywhere.
-- ~~Asking for a person directly doesn't create a case yet.~~ Step 14 ([handoff.md](handoff.md)) creates it.
-- **Nobody works the cases yet:** the agent console is step 20 (Person 2). Case `status` starts at `open`.
+- **One shared table** for local, preview and production (filter on `prompt_versions->>environment`). The database is in sa-east-1 (São Paulo); the migration recreates the table in any region.
+- **Case lifecycle:** every case starts at `status: open`; specialists work it from the agent console.

@@ -1,4 +1,4 @@
-// Reads a test login from public.app_users (step 8, D-006). Server-only: uses SUPABASE_SECRET_KEY, like the case
+// Reads a test login from public.app_users (D-006). Server-only: uses SUPABASE_SECRET_KEY, like the case
 // store, because nobody is signed in yet. app_users grants nothing to the browser roles.
 import "server-only";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";

@@ -1,5 +1,5 @@
--- Step 8: per-customer test login + row-level security (decision D-006, docs/decisions.md).
--- Owner: Carlos (Person 2, 2026-10-01). Reviewed by Miguel in the PR.
+-- Per-customer test login + row-level security (decision D-006, docs/decisions.md).
+-- Owner: Carlos (2026-10-01). Reviewed by Miguel in the PR.
 --
 -- How it works:
 --   1. public.app_users holds the test logins: username → customer_id, password as a PBKDF2 hash (never plaintext).
@@ -25,7 +25,7 @@ create table public.app_users (
   created_at    timestamptz not null default now(),
   updated_at    timestamptz not null default now()
 );
-comment on table public.app_users is 'Test logins (step 8, team-generated). Server-only. Passwords are PBKDF2 hashes; plaintext only in the gitignored local file written by pipeline/seed_test_users.py.';
+comment on table public.app_users is 'Test logins (team-generated). Server-only. Passwords are PBKDF2 hashes; plaintext only in the gitignored local file written by pipeline/seed_test_users.py.';
 
 alter table public.app_users enable row level security;
 revoke all on table public.app_users from anon, authenticated;

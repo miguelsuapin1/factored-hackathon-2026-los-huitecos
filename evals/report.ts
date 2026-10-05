@@ -1,4 +1,4 @@
-// Evaluation report generator (build step 18): harness runs (evals/run.ts) → reports/eval_<name>.md.
+// Evaluation report generator: harness runs (evals/run.ts) → reports/eval_<name>.md.
 // The input runs are copied to evals/results/<name>/ and committed with the report, so it can be regenerated:
 //   npm run eval:report -- --name <name> evals/results/<name>/*.json
 // Usage: npm run eval:report -- [--name local] [run.json ...]   (default: the newest run of each suite in evals/runs/)
@@ -18,8 +18,8 @@ const ROOT = process.cwd();
 const SUITES: Record<string, readonly (Case | PersonaCase)[]> = { tc: TC, step17: STEP17, break: BREAK };
 const SUITE_TITLE: Record<string, string> = {
   tc: "TC-01…TC-21 (team-written scripts, docs/test-conversations.md)",
-  step17: "Step 17 personas (LLM-drafted, edited by Luis Pedro)",
-  break: "Step 19 break-it (synthetic, adversarial)",
+  step17: "Personas (LLM-drafted, edited by Luis Pedro)",
+  break: "Break-it (synthetic, adversarial)",
 };
 
 type RunFile = {
@@ -122,7 +122,7 @@ function main() {
   add("## Read this first", "",
     `- **${local ? "Offline" : "Deployed app"}, not production traffic.** ${local ? "Run against a local `npm run dev`." : ""} Label every number here as offline (docs/challenge.md).`,
     `- **Intent model:** ${fallbackTurns ? `**${fallbackTurns} of ${turnsAll.length} turns ran on the e5-small fallback**, not production's Cohere model; results describe degraded mode.` : "production model (Cohere) on every turn."}${forcedTurns ? ` ${forcedTurns} turn(s) used the fallback on purpose (forced outage simulation, e.g. TF-1).` : ""}`,
-    `- **Messages are not human-written.** TC cases are team-written, step-17 personas LLM-drafted and edited, break-it cases synthetic. The honest measure is the human-written set (step 16)${humanReport ? ", quoted under *Context*." : ", not yet run."}`,
+    `- **Messages are not human-written.** TC cases are team-written, personas LLM-drafted and edited, break-it cases synthetic. The honest measure is the human-written set${humanReport ? ", quoted under *Context*." : ", not yet run."}`,
     `- **Small samples:** ${all.graded} graded cases. Treat differences of a few cases as noise; breakdowns by language and segment even more so.`,
     ...(all.invalid ? [`- **${all.invalid} case(s) invalid** (run against the stand-in lookup for customers it has no data for) and excluded from every number.`] : []),
     ...(all.skipped ? [`- **${all.skipped} case(s) skipped** (no password for their login) and excluded.`] : []),
@@ -207,7 +207,7 @@ function main() {
     quoteTable("reports/contact_reasons.md", (row) => row.startsWith("| Queja")), "",
     "**Intent classifier vs. the keyword-rules baseline** on the sealed test set (single messages, not conversations). Quoted from `reports/intent_eval_cohere-mv3.md`:", "",
     quoteTable("reports/intent_eval_cohere-mv3.md", (row) => /^\| (keyword|embed_lr) /.test(row)), "",
-    ...(humanReport ? ["**Intent classifier vs. the keyword-rules baseline on human-written messages** (step 16; single first messages, not conversations). Quoted from `reports/intent_eval_human.md`:", "",
+    ...(humanReport ? ["**Intent classifier vs. the keyword-rules baseline on human-written messages** (single first messages, not conversations). Quoted from `reports/intent_eval_human.md`:", "",
       quoteTable("reports/intent_eval_human.md", (row) => /^\| (Served model|Keyword rules) /.test(row)), ""] : []));
 
   const out = path.join(ROOT, "reports", `eval_${name}.md`);

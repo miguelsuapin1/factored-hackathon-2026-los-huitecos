@@ -1,8 +1,8 @@
-# Conversation: memory, extracted details and confirmation (build steps 9 + 11)
+# Conversation: memory, extracted details and confirmation
 
-**Owner:** Miguel. Fixes [TC-01](test-conversations.md) (clarification answers misread, details asked twice). Code: `src/lib/conversation/`, endpoint [src/app/api/chat/route.ts](../src/app/api/chat/route.ts). Interfaces other people build against: [contracts.md](contracts.md).
+Fixes [TC-01](test-conversations.md) (clarification answers misread, details asked twice). Code: `src/lib/conversation/`, endpoint [src/app/api/chat/route.ts](../src/app/api/chat/route.ts). Interfaces other people build against: [contracts.md](contracts.md).
 
-## One turn after steps 9 + 11
+## One turn
 
 ```
 customer message + signed conversation state (from the previous turn)
@@ -25,7 +25,7 @@ Each entry says who decided it, so the team knows who to ask.
 ### C2. The conversation state travels as a signed token (Miguel, 2026-09-29)
 - **Chose:** the server returns the state (last turns, working intent, extracted details, what we're waiting for) as a token signed with HMAC-SHA256 (`SESSION_SECRET`), tied to the signed-in user, expiring with the session. The client sends it back with the next message. No database needed yet.
 - **Why signed:** the state records a pending confirmation. If the client could edit it, it could skip the confirmation step. With the signature, a tampered or foreign token is rejected and the conversation restarts.
-- **Why not Supabase now:** step 8 (per-customer login) isn't built, and a server-side store adds a failure point to every turn. Handoff cases (step 14) will be stored in Supabase; the traces can join them by `conversationId`.
+- **Why not a database:** a server-side store would add a failure point to every turn. Reviews and hand-offs are stored in Supabase as cases, and the traces join them by `conversationId`.
 - **Limit:** only the last 6 turns are kept (texts are capped at 500 characters), so the token stays a few KB.
 
 ### C3. Details are extracted by Haiku and kept only if grounded in the message (Miguel, 2026-09-29)
@@ -40,13 +40,13 @@ Each entry says who decided it, so the team knows who to ask.
 
 ### C4. A demo clock for relative dates (Miguel, 2026-09-29)
 - **Chose:** "yesterday", "el martes", "semana passada" are resolved against `DEMO_TODAY` (default **2026-06-17**, the last day in the organizer's transactions), not the real date.
-- **Why:** the data ends in June 2026. Against today's date, no relative date would ever match a transaction. **Person 2:** the gold slice must include the weeks before 2026-06-17 for the demo customers.
+- **Why:** the data ends in June 2026. Against today's date, no relative date would ever match a transaction. **Carlos:** the gold slice must include the weeks before 2026-06-17 for the demo customers.
 
 ### C5. An answer to "A or B?" is read as a choice between A and B (Miguel, 2026-09-29)
 - **Chose:** when the previous turn asked the customer to choose between two intents, the next message is scored only between those two (the classifier's probabilities for A and B, renormalized). The larger one wins if it reaches **0.60**. Exception: if the new message is confidently a safety intent on its own (talk to a person, move money), follow that.
 - If neither option reaches 0.60, ask once more; after two unresolved clarifications, offer a human agent.
 - **Why:** TC-01 turn 2 ("Error en el monto, debería ser de 250") scored `move_money` 54% in isolation, but it's clearly the "wrong amount" option we had just offered.
-- **Provisional:** 0.60 is set by reasoning, not data; no multi-turn dataset exists yet. Person 3's test conversations (step 17) will measure it.
+- **How it's checked:** 0.60 is set by reasoning, not tuned on data; the test conversations and personas exercise it (docs/evaluation.md).
 
 ### C6. The topic stays until the customer clearly changes it (Miguel, 2026-09-29)
 - **Chose:** once a dispute intent is established, a low-confidence follow-up ("fue el martes", "no sé el comercio") keeps the working intent. A confident, different intent switches the topic (and keeps the details, which may still apply).
@@ -58,11 +58,11 @@ Each entry says who decided it, so the team knows who to ask.
 
 ### C8. Confirm before acting, and code reads the yes/no (Miguel, 2026-09-29)
 - **Chose:** when the details are complete, the assistant restates them and asks for confirmation ("¿Revisamos el cargo de 350 del 10 de junio?"). The yes/no is detected by code (Spanish/Portuguese word lists), not by a model. Anything else counts as a correction: extract again, merge, confirm again.
-- On "yes", the state becomes `confirmed` and the policy engine decides what happens next (step 12): a verified review, or a person. The reply never says money was returned.
+- On "yes", the state becomes `confirmed` and the policy engine decides what happens next : a verified review, or a person. The reply never says money was returned.
 - **Why:** the brief requires knowing when not to act. Confirmation is a cheap guard, and deciding it in code means an injected message can't fake a "yes".
 
 ### C9. The number check covers the whole conversation (Miguel, 2026-09-29)
-- **Chose:** a reply may contain a number only if the customer wrote it in any of the last 6 turns, or it's a grounded detail (amount, or the day/month/year of the resolved date). Written numbers are compared by value, reading separators both ways ("1.250,00" = 1250), instead of Phase 1's digit-string match.
+- **Chose:** a reply may contain a number only if the customer wrote it in any of the last 6 turns, or it's a grounded detail (amount, or the day/month/year of the resolved date). Written numbers are compared by value, reading separators both ways ("1.250,00" = 1250), instead of the first version's digit-string match.
 - **Why:** confirmation restates the amount from an earlier turn, and "el martes" becomes "9 de junio". The rule still blocks invented numbers: the injection test's "5000" was never repeated in a reply.
 
 ### C10. A refusal's offer is remembered, and the choice is read by code (Miguel, 2026-09-29)
@@ -107,7 +107,7 @@ Each entry says who decided it, so the team knows who to ask.
 - **Found on the preview:** "fue el 10 de octubre" was asked for four times. Against the demo clock (17 June 2026), Haiku read it as 10 October 2026 (future); even as 2025 it's 250 days back, past the 180-day window (C3). C3 dropped it silently, the dialogue asked again, and Haiku's reply echoed the date back as if accepted ("¿confirmas el cargo del 10 de octubre?"). Nothing limited the re-asks.
 - **Chose (code):**
   - A month and day **without a year** that lands in the future is the most recent one ("10 de octubre" in June 2026 → 10 October 2025). An explicit year is kept.
-  - **Two windows, each with a reason** (option 3, Miguel, 2026-10-02). The 180 days in C3 was set without a recorded reason, while the serving slice holds 12 months (docs/phase-2-data-log.md: local dates 2025-06-18 to 2026-06-17), so 10 October 2025 was in our data and still refused. Now: a date or period the customer **states** may reach back **365 days** (`MAX_STATED_DAYS_BACK`, what the data covers); a search **without** a date ("no me acuerdo", "el más reciente", only the merchant) still looks back **180 days** (`MAX_DAYS_BACK`), a product choice to keep open-ended searches from matching a year of charges, not a measurement.
+  - **Two windows, each with a reason** (option 3, Miguel, 2026-10-02). The 180 days in C3 was set without a recorded reason, while the serving slice holds 12 months (docs/data-pipeline.md: local dates 2025-06-18 to 2026-06-17), so 10 October 2025 was in our data and still refused. Now: a date or period the customer **states** may reach back **365 days** (`MAX_STATED_DAYS_BACK`, what the data covers); a search **without** a date ("no me acuerdo", "el más reciente", only the merchant) still looks back **180 days** (`MAX_DAYS_BACK`), a product choice to keep open-ended searches from matching a year of charges, not a measurement.
   - A date the customer stated (quoted) that we can't use is reported, not dropped silently: **older than 365 days → a person** with a case that records the date (PL-11, docs/policy.md); **in the future → say so** and ask again.
   - Asking for details that the reply doesn't bring is limited: **ask, ask again (now offering "no me acuerdo" to search by amount), then a person** (`repeated_clarification`). Any answer that brings something new resets the count.
   - An answer to "A or B?" that carries a charge detail (an amount, a date, a period, even an unusable date) picks the charge option. Seen in the same replay: "fue el 10 de octubre" to "¿revisar el cargo o hablar con un agente?" picked the agent.
@@ -128,7 +128,5 @@ Each entry says who decided it, so the team knows who to ask.
 
 ## Limitations
 
-- **The thresholds are provisional:** CLARIFY_SHARE 0.60, 2 clarifications before an agent, 6 turns kept, and the keyword lists (yes/no, review). No multi-turn data exists to tune them. Person 3's test conversations (step 17) are the evaluation.
-- **Only disputes collect details.** Transaction status would also benefit (it needs the same details for the lookup); that comes with step 10.
-- ~~"Confirmed" doesn't do anything yet.~~ Step 12 (docs/policy.md): the charge is looked up before confirmation, and confirmed disputes go to review or to a person by rule.
+- **The thresholds are set by reasoning, not tuned:** CLARIFY_SHARE 0.60, 2 clarifications before an agent, 6 turns kept, and the keyword lists (yes/no, review). There is no real multi-turn data to tune them on; the test conversations and personas are their evaluation.
 - **Extraction adds cost, not latency:** about $0.0005 per turn, in parallel with the intent call.

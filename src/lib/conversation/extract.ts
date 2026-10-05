@@ -1,4 +1,4 @@
-// Extract step (build step 9): amount, date and merchant of the disputed charge from one customer message.
+// Extract step: amount, date and merchant of the disputed charge from one customer message.
 // Haiku reads the message with a strict schema; code keeps a value only if it's grounded in the text
 // (docs/conversation.md C3). Currency is decided by code alone. A failure only means we'll ask; it never breaks a turn.
 import Anthropic from "@anthropic-ai/sdk";

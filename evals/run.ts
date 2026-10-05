@@ -1,4 +1,4 @@
-// Evaluation harness (build steps 17–18): replays test conversations against a running app, sending each message with
+// Evaluation harness: replays test conversations against a running app, sending each message with
 // the state token from the previous answer, and grades every turn on the machine-readable fields of POST /api/chat
 // (docs/contracts.md K1), not on the reply wording.
 //

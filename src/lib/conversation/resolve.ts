@@ -1,4 +1,4 @@
-// Between the dialogue rules and the reply (steps 12–13): when a dispute's details are complete, look up the
+// Between the dialogue rules and the reply: when a dispute's details are complete, look up the
 // customer's transactions and let the policy engine decide; when the customer confirms, re-read the record and decide
 // again. Every review or hand-off is then written as a case and read back before the customer is told it exists
 // (docs/verification.md V1–V3). Tool failures never break the turn (docs/policy.md PL-8).
@@ -202,7 +202,7 @@ export async function resolveTurn(outcome: TurnOutcome, ctx: ResolveContext): Pr
     }
   }
 
-  // Step 13: a review or hand-off exists only once it's written AND read back identical (V1).
+  // V1: a review or hand-off exists only once it's written AND read back identical (V1).
   if (move === "open_review" || (move === "handoff" && trace.rule !== null)) {
     const kind = move === "open_review" ? "review" : "handoff";
     note(`policy ${trace.rule}`);

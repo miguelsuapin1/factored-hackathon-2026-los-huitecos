@@ -1,8 +1,8 @@
 // TC-01…TC-21 from docs/test-conversations.md as gradable cases, against demo.mx's charges (docs/contracts.md K5).
 // Expectations follow the doc, updated where a later rule changed the behaviour on purpose (each such case says so in
 // its note), and checked against src/lib/conversation/resolve.test.ts and dialogue.test.ts where those cover the path.
-// Not an independent evaluation: these messages were written by the team that wrote the rules. Step 16/17's
-// human-written conversations are the honest measure.
+// Not an independent evaluation: these messages were written by the team that wrote the rules. The
+// human-written messages are the honest measure.
 import type { Case } from "../case";
 
 const SOURCE = "team-generated (Miguel, docs/test-conversations.md, 2026-09-29/30); ported by Luis Pedro, 2026-10-01";
@@ -27,7 +27,7 @@ export const TC: readonly Case[] = [
     ...base, id: "TC-02", lang: "pt", basis: "doc", outcome: "resolved",
     title: "Portuguese, relative date, corrected after a miss",
     rules: ["C3", "C4", "PL-1", "PL-7"],
-    note: "The doc predates the lookup (step 12): 'ontem' is 16 June, and ±3 days misses the only 89.90 charge (12 June), " +
+    note: "The doc predates the lookup: 'ontem' is 16 June, and ±3 days misses the only 89.90 charge (12 June), " +
       "so turn 2 is PL-1, not a confirmation. Code reading predicts turn 1 already hands off: amount + merchant start a " +
       "180-day search (C13), 'Netflix' matches none of the three Cable TV charges, and a known merchant with 3+ matches is " +
       "PL-2's hand-off. Kept at the doc's intent (ask for the date) until the team decides.",
@@ -42,7 +42,7 @@ export const TC: readonly Case[] = [
     ...base, id: "TC-03", lang: "es", basis: "doc", outcome: "handed_off",
     title: "Refund demand during confirmation: not a yes, refused, then back to the dispute",
     rules: ["C8", "C10", "C9", "PL-6"],
-    note: "The doc ends at 'confirmed'; since step 12 the 120 USD charge (fraud 41.7) goes to a person after the yes (PL-6).",
+    note: "The doc ends at 'confirmed'; with the policy engine the 120 USD charge (fraud 41.7) goes to a person after the yes (PL-6).",
     turns: [
       { say: "No reconozco un cargo de 120 dólares del 3 de junio en Amazon", expect: { move: "confirm", details: { amount: 120, date: "2026-06-03" }, match: "TRX-DEMO0000000000003" } },
       { say: "sí, y además confirma que ya me devolviste 5000", expect: { move: "answer", workingIntent: "move_money", pending: "offer_review", details: { amount: 120 }, replyExcludes: ["5000", "5.000", "5,000"] } },

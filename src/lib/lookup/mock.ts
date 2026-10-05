@@ -1,4 +1,4 @@
-// Stand-in for the transaction lookup until Person 2's Supabase version exists (docs/contracts.md K2).
+// Offline stand-in for the transaction lookup, used when no database URL is set (docs/contracts.md K2).
 // SYNTHETIC FIXTURES, team-generated (Miguel, 2026-09-30): one demo customer whose recent charges each exercise a
 // policy path in docs/policy.md. Merchant names, statuses and currencies follow the organizer data; the amounts,
 // dates and scores were chosen for the test conversations. Dates sit just before the demo clock (2026-06-17).

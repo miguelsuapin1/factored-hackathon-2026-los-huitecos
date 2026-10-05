@@ -1,4 +1,4 @@
-// Step 10 parity + scoping test for the Supabase lookup (docs/contracts.md K2). Needs a database, so it only runs when
+// Parity + scoping test for the Supabase lookup (docs/contracts.md K2). Needs a database, so it only runs when
 // LOOKUP_TEST_DB_URL is set: a connection AS lookup_reader to a database with the migrations and Miguel's demo charges
 // (Supabase itself — use the SUPABASE_LOOKUP_DB_URL value — or a local Postgres). Otherwise every test is skipped.
 //   LOOKUP_TEST_DB_URL=postgresql://... npm test
@@ -60,7 +60,7 @@ describe("Supabase lookup = stand-in on the demo charges (parity)", { skip }, ()
   });
 });
 
-describe("Supabase lookup scoping (step 8 RLS through step 10 code)", { skip }, () => {
+describe("Supabase lookup scoping (row-level security through the lookup code)", { skip }, () => {
   it("never returns another customer's charge, by search or by id", async () => {
     const found = await lookup!.findTransactions(demo, { amount: 350, dateFrom: "2026-06-06", dateTo: "2026-06-12" });
     assert.ok(found.every((m) => m.transactionId.startsWith("TRX-DEMO")));
