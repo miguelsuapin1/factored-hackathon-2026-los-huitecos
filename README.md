@@ -74,7 +74,7 @@ flowchart LR
 
 ## Data pipeline
 
-Organizer CSVs (13 tables) → **bronze** in BigQuery (every column typed, 25.6M rows, 0 cast failures) → **silver** (cleaned; bronze = silver + quarantine, reconciled on all 13 tables) → **gold** (dbt models with contracts and tests) → a **serving slice** in Supabase (2,040 customers, 23,052 charges, chosen so every policy path has real data; each load recorded in `data_version`). Log: [docs/data-pipeline.md](docs/data-pipeline.md) · data issues found: [docs/data-issues.md](docs/data-issues.md) · dbt project: [pipeline/dbt](pipeline/dbt/README.md).
+Organizer CSVs (13 tables) → **bronze** in BigQuery (every column typed, 23.5M rows, 0 cast failures) → **silver** (cleaned; bronze = silver + quarantine, reconciled on all 13 tables) → **gold** (dbt models with contracts and tests) → a **serving slice** in Supabase (2,040 customers, 23,052 charges, chosen so every policy path has real data; each load recorded in `data_version`). Log: [docs/data-pipeline.md](docs/data-pipeline.md) · data issues found: [docs/data-issues.md](docs/data-issues.md) · dbt project: [pipeline/dbt](pipeline/dbt/README.md).
 
 The organizer's text fields are templated and contain no Portuguese, so the language model was trained on **948 team-written ES/PT phrases** with a sealed test set (SHA-256 manifest; every test run logged in `reports/test_runs.jsonl`). Banking77 was tried as extra training data and rejected on measurement ([docs/intent-model.md](docs/intent-model.md) D17).
 
