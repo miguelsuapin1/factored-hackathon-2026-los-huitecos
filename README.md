@@ -52,6 +52,10 @@ The learned component (intent classifier) against keyword rules:
 
 Sources: [reports/intent_eval_cohere-mv3.md](reports/intent_eval_cohere-mv3.md), [reports/intent_eval_human.md](reports/intent_eval_human.md). Every number is offline, on team-written, LLM-drafted or synthetic messages unless marked human-written. Small samples: read the confidence intervals in the reports.
 
+### Impact (projection)
+
+Money disputes take about 1,900 agent-hours a year in this bank's contact centre (9.3% of all agent time). If they come through chat, the system would take **816–1,495 of those hours** off agents each year, for about **$70–130 a year** in model cost. Today 85% of complaints arrive by phone, so the immediate saving is about a tenth of that; the dataset has no wage data, so dollars are left to an hourly-cost assumption. How it's built and why it could be wrong: [docs/impact.md](docs/impact.md) · numbers: [reports/impact_estimate.md](reports/impact_estimate.md).
+
 ## How it works
 
 ```mermaid
@@ -103,6 +107,7 @@ Evaluation against a running app ([docs/evaluation.md](docs/evaluation.md)):
 npm run eval -- --suite tc|step17|break --repeat 3
 npm run eval:report -- --name <name>          # writes reports/eval_<name>.md
 uv run python pipeline/score_human.py         # intent model vs. keyword rules on human-written messages
+uv run python analysis/impact_estimate.py     # projected agent time and cost -> reports/impact_estimate.md
 ```
 
 Data and model (Python via `uv`):
