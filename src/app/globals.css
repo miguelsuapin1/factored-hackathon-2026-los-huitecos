@@ -238,6 +238,9 @@ button, input, textarea { font: inherit; color: inherit; }
 .btn:hover:not(:disabled) { box-shadow: 0 14px 32px -12px rgba(43, 197, 151, 0.85); }
 .btn:active:not(:disabled) { transform: scale(0.98); }
 .btn:disabled { opacity: 0.45; cursor: not-allowed; box-shadow: none; }
+.card-head button.link { appearance: none; border: 1px solid var(--border); background: transparent; color: var(--text-secondary); font-size: 12px; font-weight: 500; padding: 6px 12px; border-radius: 999px; cursor: pointer; transition: background 0.2s, color 0.2s, border-color 0.2s; }
+.card-head button.link:hover:not(:disabled) { background: rgba(var(--accent-rgb), 0.1); border-color: rgba(var(--accent-rgb), 0.4); color: var(--text-primary); }
+.card-head button.link:disabled { opacity: 0.45; cursor: not-allowed; }
 .toggle { display: inline-flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-secondary); cursor: pointer; user-select: none; }
 .toggle input { accent-color: var(--amber); width: 15px; height: 15px; }
 
