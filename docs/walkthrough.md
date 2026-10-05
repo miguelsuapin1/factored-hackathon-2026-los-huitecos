@@ -2,7 +2,7 @@
 
 A guided tour of the key decisions behind GT Bank's Dispute Desk. Everything we tried that failed or was replaced: [lessons-learned.md](lessons-learned.md). Detailed logs live in [intent-model.md](intent-model.md) (decisions D1–D18), [reply-generation.md](reply-generation.md) (R1–R7), [data-issues.md](data-issues.md) and [contact-reason-analysis.md](contact-reason-analysis.md).
 
-**Live:** https://latam-bank-service-sigma.vercel.app (demo sign-in required) · **Repo:** github.com/miguelsuapin1/latam-bank-service
+**Live:** https://latam-bank-service-sigma.vercel.app (demo sign-in required) · **Repo:** https://github.com/miguelsuapin1/factored-hackathon-2026-los-huitecos
 
 ---
 
