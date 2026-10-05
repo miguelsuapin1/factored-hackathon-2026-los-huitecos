@@ -1,9 +1,9 @@
--- The serving slice (build step 7): the part of the gold layer the app reads at runtime.
--- Owner: Carlos (Person 2, 2026-09-30). Source: BigQuery gold_serving.* (pipeline/dbt/models/gold/serving),
+-- The serving slice: the part of the gold layer the app reads at runtime.
+-- Owner: Carlos (2026-09-30). Source: BigQuery gold_serving.* (pipeline/dbt/models/gold/serving),
 -- loaded by pipeline/load_supabase.py. Contents and size: reports/serving_slice.md. Contract: docs/contracts.md K2.
 --
 -- Access (same rule as public.cases): RLS is on with NO policies and the browser roles lose every privilege,
--- so only the server (secret key, bypasses RLS) can read. Step 8 adds per-customer policies on top.
+-- so only the server (secret key, bypasses RLS) can read. Migration 20261001010000 adds per-customer policies on top.
 -- Minimised on purpose: first name only, document number as SHA-256, product number last 4 digits, no is_fraud.
 
 create table public.customers (
@@ -14,7 +14,7 @@ create table public.customers (
   segment                text,
   customer_status        text not null,
   document_type          text,
-  document_number_sha256 text,                     -- step 8 login; never the raw number
+  document_number_sha256 text,                     -- login; never the raw number
   cohort_reasons         text[] not null,          -- why this customer is in the slice (stratified_sample, scenario:*, ...)
   data_source            text not null check (data_source in ('organizer', 'team_synthetic'))
 );
@@ -89,5 +89,5 @@ alter table public.data_version enable row level security;
 revoke all on table public.customers, public.products, public.transactions, public.fx_rates,
                     public.agent_pools, public.data_version from anon, authenticated;
 
-comment on table public.transactions is 'Serving slice of gold_serving.serving_transactions (step 7). Server-only until step 8 policies. See docs/contracts.md K2.';
-comment on table public.customers is 'Minimised customers of the serving slice (step 7). Server-only until step 8 policies.';
+comment on table public.transactions is 'Serving slice of gold_serving.serving_transactions. Server-only until step 8 policies. See docs/contracts.md K2.';
+comment on table public.customers is 'Minimised customers of the serving slice. Server-only until step 8 policies.';

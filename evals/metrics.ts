@@ -1,4 +1,4 @@
-// The evaluation report's numbers (build step 18), computed from harness runs. Definitions follow the brief's required
+// The evaluation report's numbers, computed from harness runs. Definitions follow the brief's required
 // metrics (docs/challenge.md "Required evaluation metrics") and are restated in the generated report.
 // Pure functions, no I/O: tested in metrics.test.ts.
 import type { Case, Outcome, PersonaCase } from "./case";

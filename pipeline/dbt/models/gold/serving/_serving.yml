@@ -1,6 +1,6 @@
 version: 2
 
-# The slice that goes to Supabase (build step 7 → steps 8, 10). Tables mirror docs/contracts.md K2.
+# The slice that goes to Supabase. Tables mirror docs/contracts.md K2.
 
 models:
   - name: serving_cohort

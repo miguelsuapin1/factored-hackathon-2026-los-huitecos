@@ -1,4 +1,4 @@
-"""Load the serving slice (BigQuery gold_serving.*) into Supabase Postgres (build step 7).
+"""Load the serving slice (BigQuery gold_serving.*) into Supabase Postgres.
 
 Tables must exist first (supabase/migrations/20260930220000_serving_slice.sql). The load replaces their contents
 in ONE transaction (all or nothing), checks every row count against the source, and records the load in
@@ -112,7 +112,7 @@ def load(url: str, data: dict[str, list[tuple]], source: str) -> None:
                 got = cur.fetchone()[0]
                 if got != n:
                     raise RuntimeError(f"{target}: loaded {got} rows, source has {n}; rolled back")
-            # Step 8: test logins point at customers by id (no foreign key, so this truncate is allowed). A slice that
+            # Test logins point at customers by id (no foreign key, so this truncate is allowed). A slice that
             # drops one of them would leave a login with no data: refuse it instead.
             cur.execute("select to_regclass('public.app_users') is not null")
             if cur.fetchone()[0]:

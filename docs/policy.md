@@ -1,15 +1,15 @@
-# Policy engine (build step 12)
+# Policy engine
 
-**Owner:** Miguel. What happens to a dispute once its details are known: plain code, one rule per situation, and each decision's rule id is logged. Code: [src/lib/policy/decide.ts](../src/lib/policy/decide.ts) (rules), [src/lib/conversation/resolve.ts](../src/lib/conversation/resolve.ts) (runs them in a turn), [src/lib/lookup/](../src/lib/lookup/) (the K2 lookup, a stand-in until step 10).
+What happens to a dispute once its details are known: plain code, one rule per situation, and each decision's rule id is logged. Code: [src/lib/policy/decide.ts](../src/lib/policy/decide.ts) (rules), [src/lib/conversation/resolve.ts](../src/lib/conversation/resolve.ts) (runs them in a turn), [src/lib/lookup/](../src/lib/lookup/) (the K2 lookup on Supabase, with a stand-in for offline tests).
 
 **No rule moves money.** The most any rule does is send a confirmed dispute to review, or pass the case to a person. "Resolve" in this project always means *routing*, never a refund or reversal.
 
 ## Where it sits in a turn
 
 ```
-dialogue rules (step 11) say the details are complete → move "confirm"
+dialogue rules say the details are complete → move "confirm"
   → lookup: the customer's own transactions, amount ±1%, date ±3 days, merchant/currency if known
-  → decideOnLookup:  0 matches → PL-1 · 2+ → PL-2 · Pending → PL-3 · Reversed → PL-4 · Declined → PL-5 · 1 approved → confirm it
+  → decideOnLookup:  0 matches → PL-1 · 2 → PL-10 (list both) · 3+ → PL-2 · Pending → PL-3 · Reversed → PL-4 · Declined → PL-5 · 1 approved → confirm it
 customer says yes → move "confirmed"
   → re-read the record by id (fresh, not from the state)
   → decideOnConfirm: fraud score ≥ 30 → PL-6 (person) · can't re-read → PL-8 (person) · otherwise → PL-7 (review)
@@ -26,9 +26,9 @@ customer says yes → move "confirmed"
 | **PL-4** | The match is **Reversed** | Explain the amount was returned; no dispute | Nothing left to dispute |
 | **PL-5** | The match is **Declined** | Explain nothing was charged; no dispute. No reason given | The response codes can't be trusted to explain a decline ([data issue E7](data-issues.md)) |
 | **PL-6** | Confirmed, approved, **fraud score ≥ 30** | A person takes the case | Data-backed cutoff, below. The customer is never told the score or the reason |
-| **PL-7** | Confirmed, approved, fraud score < 30 | The dispute goes to review | The normal path. Since step 13 a review case is written and read back before the reply gives its reference ([verification.md](verification.md)) |
+| **PL-7** | Confirmed, approved, fraud score < 30 | The dispute goes to review | The normal path. A review case is written and read back before the reply gives its reference ([verification.md](verification.md)) |
 | **PL-9** | A **status question** ("¿qué pasó con mi compra?") matches one **approved** charge | Explain it was charged normally and offer a review; if the customer says it isn't theirs or isn't right, the dispute continues with the same charge (S2) | Approved is the one status where a dispute may still make sense; the offer is the only one a status answer may make (R9) |
-| **PL-11** | The customer dates the charge **more than 365 days back** (older than the 12 months of transactions we hold) | A person takes the case; the stated date goes into the case's checks | The assistant can't see it, so asking again only loops (C17); an agent can look at the full history. 365 = the serving slice's coverage (docs/phase-2-data-log.md) |
+| **PL-11** | The customer dates the charge **more than 365 days back** (older than the 12 months of transactions we hold) | A person takes the case; the stated date goes into the case's checks | The assistant can't see it, so asking again only loops (C17); an agent can look at the full history. 365 = the serving slice's coverage (docs/data-pipeline.md) |
 | **PL-8** | The record can't be read (lookup failed or timed out, or the record changed) | A person takes the case | A tool failure must never break the turn or leave the customer without an answer |
 
 Wrongful fee and unrecognized charge follow the same rules; the intent only changes the wording.
@@ -73,16 +73,14 @@ Then the ladder: **0** → check the details once (PL-1) · **1** → that charg
 ## Rules we considered and didn't adopt
 
 - **An amount limit** ("hand off disputes above USD 500"). First proposed without evidence and **rejected on measurement** (Miguel, 2026-09-30): transaction amounts are uniform (purchases 0–500 USD), so the limit would have flagged almost nothing; complaint `claimed_amount` is uniform 0–5,000 in every currency, unrelated to `priority` or to `compensation_granted` (correlation 0.03). The data gives no basis for any amount. If the team wants one for the story, it must be written down as a business choice. See [data issue E8](data-issues.md).
-- **Foreign merchant, repeat complainer** (listed in [contact-reason-analysis.md](contact-reason-analysis.md)): not adopted until measured.
+- **Foreign merchant, repeat complainer** (listed in [contact-reason-analysis.md](contact-reason-analysis.md)): not adopted: the data gives no measured basis for them.
 
 ## Tests
 
 - `npm test`: `src/lib/policy/policy.test.ts` (each rule, the PL-6 boundary, lookup scoping) and `src/lib/conversation/resolve.test.ts` (dialogue → lookup → policy end to end, including a lookup failure and "the state never holds the fraud score").
 - Live, local, 2026-09-30 (Cohere + Haiku, stand-in lookup): TC-01 → review (PL-7); high risk → person (PL-6); pending (PL-3); declined in Portuguese (PL-5); ambiguous → merchant → review (PL-2); no match twice → person (PL-1). See [test-conversations.md](test-conversations.md).
 
-## Known limits and next steps
+## Known limits
 
-- **The lookup is a stand-in** (one synthetic demo customer, labelled in `src/lib/lookup/mock.ts`). Person 2 swaps in the Supabase version in `src/lib/lookup/index.ts`.
-- ~~"Review" isn't a record yet.~~ Step 13: reviews and hand-offs are verified cases ([verification.md](verification.md)).
-- **Wording can still overstate.** Haiku once wrote "has been sent" for a review that didn't exist yet, and once promised an agent "right away". The instructions now forbid both (reply-v3), but code can't check tense the way it checks numbers. The trace has the reply source and prompt version for review.
-- **Built as C15 (2026-09-30):** when the intent model hesitates between two charge intents, the "A or B?" question is skipped and the customer's words decide the kind (docs/conversation.md C15).
+- **Wording is checked for numbers and timing, not tense.** Haiku once wrote "has been sent" before a review existed. Reviews are now verified records before they are mentioned (V1), timing promises are rejected by code (R8), and the trace keeps the reply source and prompt version.
+- **No "A or B?" between two charge intents:** when the intent model hesitates between them, the customer's words decide the kind (docs/conversation.md C15).

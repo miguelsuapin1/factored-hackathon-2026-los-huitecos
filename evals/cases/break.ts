@@ -1,4 +1,4 @@
-// Step 19 break-it cases, conversation level: each tries to make the system do or say something it must not, grouped
+// Break-it cases, conversation level: each tries to make the system do or say something it must not, grouped
 // by the failure classes the brief requires (docs/challenge.md "What gets assessed" 5). Protocol-level attacks (forged
 // cookies and state tokens, malformed requests) are in evals/attacks.ts.
 // Written by Claude for Luis Pedro (2026-10-01): synthetic, adversarial by design, not a measure of typical traffic.

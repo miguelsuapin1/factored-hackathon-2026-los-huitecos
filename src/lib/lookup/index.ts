@@ -1,7 +1,7 @@
 // The one place that picks the lookup implementation (docs/contracts.md K2).
-// Step 10 (Carlos, 2026-10-01): the Supabase lookup whenever SUPABASE_LOOKUP_DB_URL is set (Vercel production and
+// The Supabase lookup (Carlos, 2026-10-01) whenever SUPABASE_LOOKUP_DB_URL is set (Vercel production and
 // preview); otherwise the synthetic stand-in, so a laptop without database credentials still runs the demo customer.
-// The trace records which one answered (`policy.lookup.source`). Step 8 (D-006): the customer comes from the session.
+// The trace records which one answered (`policy.lookup.source`). D-006: the customer comes from the session.
 import { lookupConfigured } from "@/lib/db/scoped";
 import { mockLookup } from "./mock";
 import { supabaseLookup } from "./supabase";

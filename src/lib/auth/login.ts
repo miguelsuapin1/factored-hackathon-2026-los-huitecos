@@ -1,4 +1,4 @@
-// Who is signing in, and which customer that makes them (step 8, D-006). Pure logic with injected lookups so it can be
+// Who is signing in, and which customer that makes them (D-006). Pure logic with injected lookups so it can be
 // unit-tested; the route wires in the Supabase reader (users.ts) and the demo-account check (session.ts).
 //
 // Two kinds of account:

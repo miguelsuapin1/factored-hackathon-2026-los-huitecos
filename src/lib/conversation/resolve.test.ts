@@ -1,4 +1,4 @@
-// End-to-end rules without models: dialogue (step 11) → lookup (K2 stand-in) → policy (step 12). Run: npm test
+// End-to-end rules without models: dialogue → lookup (K2 stand-in) → policy. Run: npm test
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import type { IntentLabel } from "@/lib/intent/model";
@@ -99,7 +99,7 @@ describe("dispute outcomes (docs/policy.md)", () => {
   });
 });
 
-describe("verification (step 13, docs/verification.md)", () => {
+describe("verification (docs/verification.md)", () => {
   it("V1: a review exists only after write + identical read-back; the reference is kept in the state", async () => {
     const store = memoryStore();
     const [, t2] = await run([dispute(350, "2026-06-09"), yes], mockLookup, store);
@@ -155,7 +155,7 @@ describe("verification (step 13, docs/verification.md)", () => {
   });
 });
 
-describe("hand-off when the customer asks (step 14)", () => {
+describe("hand-off when the customer asks", () => {
   it("creates a verified case with the customer's summary and rule DLG-human", async () => {
     const store = memoryStore();
     const [t1, t2] = await run([

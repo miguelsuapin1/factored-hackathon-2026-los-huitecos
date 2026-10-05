@@ -1,4 +1,4 @@
--- Historical human-only service baseline for the evaluation report (build step 18): first-contact resolution,
+-- Historical human-only service baseline for the evaluation report: first-contact resolution,
 -- handle time, escalation and follow-up per contact reason, country and segment, with sample sizes.
 -- Context for our system's numbers, not a like-for-like comparison (different cases, offline vs live).
 select

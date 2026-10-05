@@ -1,4 +1,4 @@
--- Step 8 isolation check (D-006). Runs as the role the lookup uses and fails loudly if any customer can see another
+-- Customer isolation check (D-006). Runs as the role the lookup uses and fails loudly if any customer can see another
 -- customer's rows. Run it with any SQL client connected as postgres (Supabase SQL editor, the connector, psql).
 -- Read-only: everything happens in a transaction that is rolled back.
 begin;
@@ -63,5 +63,5 @@ begin
 end
 $$;
 
-select 'step 8 RLS check passed' as result;
+select 'RLS check passed' as result;
 rollback;

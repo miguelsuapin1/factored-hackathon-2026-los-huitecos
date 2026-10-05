@@ -1,4 +1,4 @@
-// Builds the case file (docs/contracts.md K3) and checks a written case against its read-back (step 13).
+// Builds the case file (docs/contracts.md K3) and checks a written case against its read-back.
 // Pure code: every line an agent reads is assembled from verified data and the customer's own grounded statements,
 // never written by a model. Type-only imports keep this testable with node --test.
 import type { ConversationState, HandoffReason } from "@/lib/conversation/state";

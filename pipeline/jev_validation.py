@@ -1,4 +1,4 @@
-"""Jev (TypeSafe) vs our intent classifier on the validation phrases: could Jev be the second opinion (build step 15)?
+"""Jev (TypeSafe) vs our intent classifier on the validation phrases: could Jev be the second opinion?
 
 Each validation phrase is sent to Jev as one Choice question over our seven intents, with the label definitions and
 tie-break rules from data/phrases/LABELING_GUIDE.md as the option descriptions. Its answers are compared with the
@@ -208,7 +208,7 @@ def main():
         "**Read this first.** The phrases are team-generated and synthetic (an upper bound, D7). Only `cohere` and "
         "`jev default` use a threshold not chosen on these phrases (Cohere's was chosen on this same validation set in "
         "D11, so it is optimistic too). `jev tuned` picks its threshold here: optimistic by construction. The honest "
-        "comparison needs the human-written messages (step 16).", "",
+        "comparison needs the human-written messages.", "",
         "| System | Decision rule | Accuracy, clear (95% CI) | Macro-F1 | ES | PT | Coverage | Wrong actions | "
         "Needless questions | Ambiguous asked | Mean cost |",
         "|---|---|---|---|---|---|---|---|---|---|---|",

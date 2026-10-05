@@ -1,4 +1,4 @@
-// The transaction lookup against Supabase (build step 10, docs/contracts.md K2). Producer: Carlos (Person 2).
+// The transaction lookup against Supabase (docs/contracts.md K2). Producer: Carlos.
 //
 // Reads public.transactions through a customer-scoped transaction (src/lib/db/as-customer.ts): row-level security
 // limits every query to the signed-in customer, and the WHERE customer_id below is a second, redundant guard.

@@ -1,6 +1,6 @@
-# Phase 2 data log (step 7): Carlos
+# Data pipeline log
 
-What the data track (Person 2) did, in order, with the numbers each step produced. Everything runs in Google
+By Carlos. What the data pipeline does, in the order it was built, with the numbers each stage produced. Everything runs in Google
 Cloud (project `project-d49391de-51c4-49bf-aae`, region `us-east1`); the code and every generated report are in
 this repo. Decisions: [decisions.md](decisions.md) D-003, D-005. Rules: [data-issues.md](data-issues.md).
 Failures and fixes: [lessons-learned.md](lessons-learned.md) X1–X5.
@@ -50,7 +50,7 @@ Failures and fixes: [lessons-learned.md](lessons-learned.md) X1–X5.
 ### 2026-09-30: gold
 - Analytics (full population): `gold_contact_reason_metrics` reproduces the briefing from cleaned data
   (complaints: 17.1% of contacts, 43.6% first-contact resolution, 16.6 agent-min per resolution, 45.3% of
-  unresolved time); `gold_dispute_kpis`, `gold_baseline_human` (for the eval report, step 18),
+  unresolved time); `gold_dispute_kpis`, `gold_baseline_human` (for the eval report),
   `gold_digital_events_profile`.
 - Serving slice (`gold_serving.*`, docs/contracts.md K2): **2,040 customers** (2,002 stratified by
   country × segment with a fixed seed, 5 per demo scenario, 2 synthetic demo customers), **23,052
@@ -75,9 +75,9 @@ Failures and fixes: [lessons-learned.md](lessons-learned.md) X1–X5.
     (25 approved). Local dates 2025-06-18 to 2026-06-17 (12 months up to the demo clock).
   - Size about 10 MB for the six tables (transactions 7.6 MB), half the 20 MB estimate and 2% of the 500 MB free tier.
   - Access: RLS on, no policies, and anon/authenticated can't select any table (including `cases`). The advisor lists
-    only "RLS enabled, no policy" (INFO), which is intended until step 8.
+    only "RLS enabled, no policy" (INFO), which is intended: reads go through the restricted role of D-006.
   - `public.cases` untouched: 144 rows, same structure.
-- Loader fix on the way: a `.env.local` saved by Windows editors (BOM / UTF-16) wasn't read; fixed in f2e6ac2.
+- Loader fix: a `.env.local` saved by Windows editors (BOM / UTF-16) wasn't read; fixed in f2e6ac2.
 
 ### 2026-10-01: official dbt build in BigQuery (Carlos)
 - `uv run dbt build --profiles-dir . --target bq` from Carlos's laptop, with his own Google login: 5 seeds, 26 views,
@@ -87,7 +87,7 @@ Failures and fixes: [lessons-learned.md](lessons-learned.md) X1–X5.
   transactions and products (MD5 of the sorted IDs is identical in BigQuery and Supabase). The fixed seed keeps the
   slice reproducible.
 
-### 2026-10-01: step 8, per-customer login + row-level security (D-006)
+### 2026-10-01: per-customer login + row-level security (D-006)
 - Migration `20261001010000_step8_login_rls.sql` applied: `public.app_users` (server-only), role `lookup_reader`
   (read `customers`/`products`/`transactions` only), policies "own rows via `app.customer_id`". Browser roles still get
   nothing; `cases` untouched.
@@ -101,8 +101,8 @@ Failures and fixes: [lessons-learned.md](lessons-learned.md) X1–X5.
   Created by `pipeline/seed_test_users.py` (tested end to end on a local Postgres 16, including the role login with
   a SCRAM verifier and the Python↔TypeScript hash check). Loader now refuses a reload that drops a test customer.
 
-### 2026-10-01: step 10, the transaction lookup on Supabase (K2)
-- Steps 7 + 8 merged to main (PR #14) and live; test logins work on production; `SUPABASE_LOOKUP_DB_URL` added in
+### 2026-10-01: the transaction lookup on Supabase (K2)
+- Pipeline and login merged to main (PR #14) and live; test logins work on production; `SUPABASE_LOOKUP_DB_URL` added in
   Vercel by Miguel.
 - `src/lib/lookup/sql.ts`: amount (±1%) and local-date window in SQL, merchant/currency narrowing and score shared with
   the stand-in (`match.ts`, the stand-in now uses it too), local timestamps, newest first, always through `asCustomer`.
@@ -111,9 +111,3 @@ Failures and fixes: [lessons-learned.md](lessons-learned.md) X1–X5.
   with no customer filter). 22/22 on a local Postgres 16 with both migrations and the demo seeds.
 - Checked on Supabase as `lookup_reader`: `pendiente.ar`'s question (550.66 around 14 June) returns exactly its
   pending ATM charge, local time 20:19.
-
-## Next (step 7 finish, then 8 and 10)
-1. ~~Official `dbt build --target bq`~~ done 2026-10-01, 179/179.
-2. ~~Load the slice into Supabase~~ done 2026-10-01.
-3. ~~Step 8~~ built 2026-10-01; Carlos runs `pipeline/seed_test_users.py` and adds `SUPABASE_LOOKUP_DB_URL` to Vercel.
-4. ~~Step 10~~ built 2026-10-01 (branch `carlos/step-10-lookup`).

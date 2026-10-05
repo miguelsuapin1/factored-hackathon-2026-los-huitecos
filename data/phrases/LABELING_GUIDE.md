@@ -12,10 +12,10 @@ The intent classifier's training and evaluation data. It is **team-generated**: 
 | Field | Value |
 |---|---|
 | Written by | Claude (`claude-opus-5-5`) on 2026-09-28, prompted by Miguel |
-| Review | Automatic grammar check done (see Language review below). Still needs a native Brazilian Portuguese speaker for naturalness |
+| Review | Automatic grammar check (see Language review below); not reviewed by a native Brazilian Portuguese speaker |
 | Status | Synthetic. No real customer messages. Safe to commit |
 | Batches | Batch 1 (88 families) written first. Batch 2 (70 families, `"batch": 2`) added to **train only** after validation error analysis; see [docs/intent-model.md](../../docs/intent-model.md) D7 |
-| Next | Human-written test messages (plan step 16) are added as separate families with `"source": "human"` |
+| Human-written | Human-written test messages are a separate held-out set in `evals/human/` ([docs/evaluation.md](../../docs/evaluation.md) EV-5) |
 
 Because one author wrote every phrase, the style is more uniform than real traffic. Scores on this set are an upper bound; the human-written test messages are the honest measure.
 
