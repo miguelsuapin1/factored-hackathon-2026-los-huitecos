@@ -123,7 +123,7 @@ export function ChatDemo({ jevAvailable = false }: { jevAvailable?: boolean }) {
         <div className="messages" ref={listRef} aria-live="polite">
           {messages.length === 0 && (
             <div className="empty">
-              <h2>What does the customer want?</h2>
+              <h2>What does the customer <span className="serif plume">want?</span></h2>
               <p className="sub">
                 Each message is classified into one of 7 intents, and the assistant remembers the conversation: the
                 topic, the amount, date and merchant you mentioned, and what it asked you. It confirms the details
@@ -150,7 +150,7 @@ export function ChatDemo({ jevAvailable = false }: { jevAvailable?: boolean }) {
               </div>
             ),
           )}
-          {busy && <div className="typing">Writing a reply…</div>}
+          {busy && <div className="typing" role="status" aria-label="Writing a reply"><i /><i /><i /></div>}
         </div>
 
         <div className="composer">
@@ -194,8 +194,8 @@ export function ChatDemo({ jevAvailable = false }: { jevAvailable?: boolean }) {
           <div className="placeholder">Send a message to see the intent, confidence and the model that answered.</div>
         )}
         <div className="note">
-          Transactions come from a synthetic demo customer until the real lookup is connected. No money is ever moved:
-          a dispute goes to review or to a person, by rule.
+          Charges come from the synthetic LATAM Bank data, and you only see the signed-in customer’s. No money is ever
+          moved: a dispute goes to review or to a person, by rule.
         </div>
       </aside>
     </main>
