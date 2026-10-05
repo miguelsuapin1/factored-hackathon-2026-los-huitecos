@@ -236,7 +236,9 @@ async function main() {
     const env = { ...readEnvLocal(), ...process.env };
     if (env.SESSION_SECRET && env.SESSION_SECRET.length >= 32) process.env.SESSION_SECRET = env.SESSION_SECRET;
     const ctx: AttackContext = {
-      canSign: !!process.env.SESSION_SECRET && process.env.SESSION_SECRET.length >= 32,
+      // The local secret only matches a local app: against a deployment, a forged token fails on its signature,
+      // so S-4, S-5 and C-4 would "pass" (or fail) without testing expiry. They are skipped there instead.
+      canSign: !!process.env.SESSION_SECRET && process.env.SESSION_SECRET.length >= 32 && /localhost|127\.0\.0\.1/.test(base),
       async cookie(login) {
         const cred = creds.get(login);
         if (!cred) return null;

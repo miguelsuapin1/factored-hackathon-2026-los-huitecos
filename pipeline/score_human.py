@@ -37,6 +37,7 @@ import keyword_baseline  # noqa: E402
 
 MESSAGES = ROOT / "evals" / "human" / "messages.csv"
 MANIFEST = ROOT / "evals" / "human" / "manifest.json"
+EXAMPLES = ROOT / "evals" / "human" / "examples.csv"  # Claude-written format examples: never scored
 RESULTS = ROOT / "evals" / "results" / "human"
 REPORT = ROOT / "reports" / "intent_eval_human.md"
 PHRASES = ROOT / "data" / "phrases" / "phrases.csv"
@@ -54,7 +55,8 @@ def fold(text: str) -> str:
 
 
 def row_hash(r) -> str:
-    return hashlib.sha256(f"{r.id}\t{r.lang}\t{r.label}\t{r.ambiguous}\t{r.alt_label}\t{r.text}".encode()).hexdigest()
+    # method and seed are frozen too: a row can't be relabeled "fresh" after its score is seen.
+    return hashlib.sha256(f"{r.id}\t{r.lang}\t{r.label}\t{r.ambiguous}\t{r.alt_label}\t{r.method}\t{r.seed}\t{r.text}".encode()).hexdigest()
 
 
 def load_messages(path: Path) -> pd.DataFrame:
@@ -62,13 +64,19 @@ def load_messages(path: Path) -> pd.DataFrame:
     missing = [c for c in COLUMNS if c not in df.columns]
     if missing:
         sys.exit(f"{path}: missing columns {missing}")
-    for c in COLUMNS:
+    # Optional provenance: "fresh" (own words) or "paraphrase" of an example in evals/human/examples.csv (seed = its id).
+    for c, default in (("method", "fresh"), ("seed", "")):
+        if c not in df.columns:
+            df[c] = default
+    for c in [*COLUMNS, "method", "seed"]:
         df[c] = df[c].str.strip()
+    df.loc[df.method == "", "method"] = "fresh"
     return df
 
 
 def check(df: pd.DataFrame) -> list[str]:
     errors = []
+    examples = dict(pd.read_csv(EXAMPLES, dtype=str)[["id", "example"]].values) if EXAMPLES.exists() else {}
     for r in df.itertuples():
         where = f"{r.id or '(no id)'}"
         if not re.fullmatch(r"H\d{3,}", r.id):
@@ -91,6 +99,14 @@ def check(df: pd.DataFrame) -> list[str]:
             errors.append(f"{where}: written_on must be YYYY-MM-DD")
         if not r.text or len(r.text) > 500:
             errors.append(f"{where}: text must be 1-500 characters")
+        if r.method not in ("fresh", "paraphrase"):
+            errors.append(f"{where}: method must be fresh or paraphrase")
+        elif r.method == "paraphrase" and r.seed not in examples:
+            errors.append(f"{where}: a paraphrase needs seed = the id of its example in evals/human/examples.csv")
+        elif r.method == "paraphrase" and fold(r.text) == fold(examples[r.seed]):
+            errors.append(f"{where}: identical to example {r.seed}: rewrite it in your own words")
+        elif r.method == "fresh" and r.seed:
+            errors.append(f"{where}: seed only for paraphrases")
     for col in ("id",):
         dup = df[df[col].duplicated()][col].tolist()
         if dup:
@@ -214,6 +230,17 @@ def git_commit() -> str:
         return "unknown"
 
 
+def method_line(df) -> str:
+    """How many were written fresh vs. paraphrased from Claude's examples, and the model's accuracy on each (clear rows)."""
+    parts = []
+    for method, name in (("fresh", "written fresh"), ("paraphrase", "paraphrased from Claude's examples (evals/human/examples.csv)")):
+        sel = df.method == method
+        clear = sel & (df.ambiguous == "false")
+        acc = f", model accuracy {(df.model_pred[clear] == df.label[clear]).mean():.1%} on {int(clear.sum())} clear" if clear.any() else ""
+        parts.append(f"{int(sel.sum())} {name}{acc}")
+    return "- **Provenance:** " + "; ".join(parts) + ". A paraphrase inherits its example's wording, so the fresh number is the more honest one."
+
+
 def write_report(df, served, m_model, m_kw, paired, meta) -> str:
     models = sorted({f"{s['model']}@{s['modelVersion']}" for s in served})
     fallback = sum(1 for s in served if s["model"] == "e5small")
@@ -225,7 +252,8 @@ def write_report(df, served, m_model, m_kw, paired, meta) -> str:
         f"- **{len(df)} messages written by people** ({df.author.nunique()} author(s); {(df.lang == 'es').sum()} Spanish, "
         f"{(df.lang == 'pt').sum()} Portuguese; {m_model['n_ambiguous']} marked ambiguous). Never used for training or tuning.",
         f"- **Model served:** {', '.join(models)}." + (f" **{fallback} of {len(served)} answers came from the e5-small fallback**, not production's Cohere model." if fallback else ""),
-        "- Single first messages, intent only; offline. Small sample: read the confidence intervals.", "",
+        "- Single first messages, intent only; offline. Small sample: read the confidence intervals.",
+        method_line(df), "",
         "## Model vs. keyword-rules baseline (same messages)", "",
         "| System | Accuracy | Macro-F1 | Spanish | Portuguese | Coverage | Wrong actions | Needless questions | Ambiguous asked | Mean cost |",
         "|---|---|---|---|---|---|---|---|---|---|",

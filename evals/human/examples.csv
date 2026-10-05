@@ -1,0 +1,67 @@
+id,lang,label,ambiguous,alt_label,scenario,why,example
+EX01,es,unrecognized_charge,false,,Your card statement shows a purchase at an online store you have never heard of. You still have your card.,Doesn't know the merchant at all (rule 1).,"Buenas tardes, en mi estado de cuenta aparece una compra en una tienda en línea que no conozco y yo no la hice. La tarjeta la tengo conmigo."
+EX02,pt,unrecognized_charge,false,,Your app shows a cash withdrawal at an ATM in another city yesterday. You were home all day.,ATM cash the customer didn't take: the model's weakest scenario (UC05).,"apareceu um saque de 800 reais num caixa eletrônico em outra cidade ontem, eu tava em casa o dia todo"
+EX03,es,unrecognized_charge,false,,"Same as EX02, but you type it in a hurry, in three or four words.",Very short messages are the model's other weak spot.,retiro cajero no fui yo
+EX04,pt,unrecognized_charge,false,,You lost your card on Saturday. Today you see three purchases you didn't make.,Lost card WITH charges (rule 3).,perdi meu cartão sábado e hoje vi três compras que não fiz
+EX05,es,unrecognized_charge,false,,"Money left your account as a transfer you never sent. You write casually, Argentine Spanish.",An unknown transfer is also unrecognized; regional voice.,"che, me aparece una transferencia que salió de mi cuenta y yo no la mandé, qué onda?"
+EX06,pt,wrongful_fee,false,,At the supermarket the cashier ran your card twice; you paid once but your bill shows it twice.,Duplicated purchase: the customer made one of them (rule 1).,"a compra do mercado veio duplicada na fatura, paguei uma vez só"
+EX07,es,wrongful_fee,false,,"You paid a small amount at a pharmacy, but the charge shows ten times more.","Recognizes the merchant, disputes the amount (rule 1).","Pagué 450 pesos en la farmacia pero en la app me aparece un cargo de 4,500."
+EX08,es,wrongful_fee,false,,You cancelled an additional card months ago and the bank still charges its annual fee.,Bank fee after cancelling (rule 2).,Cancelé la tarjeta adicional en agosto y me siguen cobrando la anualidad.
+EX09,pt,wrongful_fee,false,,The bank is charging you for an insurance you never signed up for.,"Unwanted bank product billed (rule 2), even though the customer 'never contracted' it.",tão cobrando um seguro no meu cartão que eu nunca contratei
+EX10,es,wrongful_fee,false,,"A bank commission looks wrong. Say it in two or three words, no accents.",Short message about a fee.,comision mal cobrada
+EX11,es,transaction_status,false,,Your card was declined at the gas station even though you have money. You want to know why.,Asks what happened to a specific transaction (declined).,¿Por qué me rechazaron la tarjeta en la gasolinera si tengo saldo?
+EX12,pt,transaction_status,false,,Yesterday you sent money to your sister by PIX and it still hasn't arrived.,A transfer that hasn't arrived.,fiz um pix de 300 pra minha irmã ontem e até agora não caiu na conta dela
+EX13,es,transaction_status,false,,Two weeks ago you reported a charge and nobody has told you anything since.,Status of an existing claim.,"Hace dos semanas reporté un cargo y nadie me ha dicho nada, ¿cómo va mi reclamo?"
+EX14,pt,transaction_status,false,,A purchase at a gas station has shown as pending for three days.,Pending transaction.,"a compra no posto tá como pendente faz 3 dias, vai ser cobrada ou não?"
+EX15,es,balance_check,false,,You want to know how much credit you have left on your card.,"Balance or limit, no problem attached.",¿Cuánto me queda disponible en la tarjeta de crédito?
+EX16,pt,balance_check,false,,Ask for your checking-account balance in as few words as possible.,Short balance request.,saldo conta corrente
+EX17,es,balance_check,false,,You want to see this week's account movements.,"Recent movements, no complaint.",quiero ver mis últimos movimientos de esta semana
+EX18,pt,move_money,false,,Ask the assistant to move money from your savings to your checking account.,The money movement itself is the request (rule 4).,"transfere 200 reais da minha poupança pra conta corrente, por favor"
+EX19,es,move_money,false,,Ask the bank to pay your credit card today with money from your savings.,A payment the assistant would have to make.,Necesito que me paguen la tarjeta con lo de mi cuenta de ahorro hoy mismo.
+EX20,es,move_money,false,,"You're angry and demand your money back, without saying what happened.",A refund demand with no dispute described: clear move_money (rule 4).,devuelvanme mi plata YA
+EX21,es,human_agent,false,,You don't want to talk to a bot; you want a person.,Asks for a person.,"Quiero hablar con un asesor, no con un robot."
+EX22,pt,human_agent,false,,You want a phone number to call someone at the bank.,A phone number or call is human_agent.,tem algum telefone pra eu ligar e falar com alguém?
+EX23,es,human_agent,false,,You want to escalate to a supervisor.,Escalation.,pásame con tu supervisor por favor
+EX24,pt,out_of_scope,false,,You lost your card and want to block it. No strange charges so far.,Lost card WITHOUT charges is card support (rule 3).,quero bloquear meu cartão que eu perdi
+EX25,es,out_of_scope,false,,You want to know the requirements for a personal loan.,Another product.,¿Qué requisitos piden para un préstamo personal?
+EX26,pt,out_of_scope,false,,You end the chat by thanking the assistant.,Thanks are out_of_scope (rule 5).,"obrigado, era só isso 🙏"
+EX27,es,unrecognized_charge,true,wrongful_fee,"Something odd on your card, but you don't say whether you know the charge or think it's the wrong amount.",Can't tell 'don't know it' from 'it's wrong': a careful person would ask.,Me cobraron algo raro en la tarjeta
+EX28,pt,unrecognized_charge,true,move_money,You want your money back for a purchase you didn't make.,Refund demand plus a dispute: ambiguous (rule 4).,quero meu dinheiro de volta dessa compra que eu não fiz
+EX29,es,transaction_status,true,unrecognized_charge,"You ask what a specific charge from yesterday was, without saying whether you made it.",A status question that may be a dispute.,¿Qué pasó con un cobro de 120 dólares de ayer?
+EX30,pt,wrongful_fee,true,balance_check,This month's annual fee looks much higher and you ask how much you are paying.,A complaint or just a question about an amount.,"a anuidade desse mês veio bem mais alta, quanto eu tô pagando?"
+EX31,es,human_agent,true,unrecognized_charge,You want 'someone' to look at a charge.,"A person, or a dispute the system could handle itself.",necesito que alguien revise un cargo
+EX32,pt,unrecognized_charge,true,wrongful_fee,Two words about a strange charge.,Too short to tell the kind of dispute.,cobrança estranha
+EX33,es,unrecognized_charge,false,,Your app shows a cash withdrawal at an ATM this morning. You're at work and your card is in your wallet. Mexican Spanish.,ATM cash the customer didn't take (weak spot); card still with them.,oigan me aparece un retiro en cajero de 2 mil pesos hoy en la mañana y yo estoy en la chamba con mi tarjeta en la cartera
+EX34,pt,unrecognized_charge,false,,"An ATM withdrawal you didn't make. Say it in three or four words, no accents.",ATM cash + very short: both weak spots.,saque q nao fiz
+EX35,es,unrecognized_charge,false,,Yesterday an ATM kept your card. Today you see two withdrawals made with it.,"Lost card WITH charges (rule 3), ATM context.",El cajero se tragó mi tarjeta ayer y hoy veo dos retiros que yo no hice
+EX36,pt,unrecognized_charge,false,,You wake up to three ATM withdrawals made overnight. You think your card was cloned.,"Cloned card, ATM cash.","acordei com 3 saques na madrugada na minha conta, eu tava dormindo, alguém clonou meu cartão?"
+EX37,pt,unrecognized_charge,false,,A monthly subscription from an app you have never used shows up on your card.,"Unknown merchant, recurring (rule 1).",tem uma assinatura mensal de um app que eu nunca usei vindo no cartão
+EX38,es,unrecognized_charge,false,,A purchase in US dollars from a country you have never visited. Colombian Spanish.,Unknown purchase abroad.,"Buenas, me salió una compra en dólares en un país al que nunca he ido, eso no lo hice yo"
+EX39,es,unrecognized_charge,false,,"A purchase you didn't make, in three or four words, with abbreviations.",Very short unrecognized charge.,compra q no hice
+EX40,pt,wrongful_fee,false,,"The bank charged an overdraft fee, but your account never went negative.",Bank fee that shouldn't apply (rule 2).,cobraram tarifa de cheque especial mas minha conta nunca ficou negativa
+EX41,es,wrongful_fee,false,,"You withdrew cash at your own bank's ATM, which should be free, and were charged a fee.","Recognizes the withdrawal, disputes the fee.","Saqué en un cajero del mismo banco y me cobraron comisión, se supone que es gratis"
+EX42,pt,wrongful_fee,false,,You cancelled a streaming service last month and it is still being charged.,Charged after cancelling.,cancelei a streaming mês passado e continuaram cobrando no cartão
+EX43,es,wrongful_fee,false,,You paid your full card balance on time and were still charged interest.,Bank charge that shouldn't apply.,pagué el total de la tarjeta a tiempo y aun así me cobraron intereses
+EX44,pt,wrongful_fee,false,,An SMS-alerts fee you think is wrong. Two or three words.,"Short message, unwanted bank product (rule 2).",tarifa sms indevida
+EX45,pt,transaction_status,false,,"A store says it refunded your purchase ten days ago, but nothing shows on your card.",Refund timing.,a loja disse que estornou a compra faz 10 dias e até agora nada no meu cartão
+EX46,es,transaction_status,false,,You sent your rent by transfer on Friday and it still shows as in process.,Pending transfer.,"mandé la renta el viernes por transferencia y sigue en proceso, cuándo se acredita?"
+EX47,pt,transaction_status,false,,You paid a bill (boleto) yesterday and it still shows as unpaid.,A payment not reflected.,paguei um boleto ontem e ainda aparece como em aberto
+EX48,es,transaction_status,false,,"Ask about your existing claim in as few words as possible, a bit impatient.",Short claim status.,y mi reclamo??
+EX49,pt,balance_check,false,,You want to know how much this month's card bill is.,"Amount owed, no problem.",quanto tá a fatura desse mês?
+EX50,es,balance_check,false,,"Ask how much you owe, two words, no accents.",Short amount owed.,cuanto debo
+EX51,es,balance_check,false,,You want your statement closing date and the minimum payment.,"Card account info, no complaint.",¿Cuál es mi fecha de corte y cuánto es el pago mínimo?
+EX52,pt,move_money,false,,Ask the assistant to send a PIX to a friend.,A transfer the assistant would have to make.,"faz um pix de 150 pro meu amigo, ele me passou a chave"
+EX53,es,move_money,false,,You sent a transfer to the wrong account a moment ago and want it reversed.,The customer made it; the request is the reversal (rule 4).,"le transferí a la cuenta equivocada hace un rato, regrésenme ese dinero porfa"
+EX54,pt,move_money,false,,You demand a credit to your account as compensation for the trouble.,Compensation credit.,"vocês me devem uma compensação pelo transtorno, quero o crédito na conta hoje"
+EX55,pt,human_agent,false,,"Ask for a human, two words.",Short request for a person.,atendente humano
+EX56,es,human_agent,false,,You are fed up with the chat and want a real person.,"Asks for a person, frustrated.","Ya me cansé de este chat, quiero que me atienda una persona de verdad"
+EX57,pt,human_agent,false,,You'd rather someone from the bank called you.,A call is human_agent.,pode pedir pra alguém me ligar? prefiro resolver por telefone
+EX58,es,out_of_scope,false,,You forgot your app password and can't log in.,App access is out_of_scope.,olvidé la contraseña de la app y no puedo entrar
+EX59,pt,out_of_scope,false,,You want to know whether a downtown branch opens on Saturday.,Branch info.,a agência do centro abre sábado?
+EX60,es,out_of_scope,false,,You just say hello.,Greeting (rule 5).,hola buenas
+EX61,es,wrongful_fee,true,transaction_status,"The ATM didn't give you the cash, but the amount was debited from your account.","Recognizes the withdrawal and says it's wrong, or asks what happened to it.","fui al cajero, no me dio el dinero pero sí me lo descontaron"
+EX62,pt,human_agent,true,unrecognized_charge,You want someone to call you about a strange purchase.,"A person, or a dispute the system could handle.","me liga, tem uma compra estranha aqui"
+EX63,es,balance_check,true,wrongful_fee,You ask how much you were charged in fees this month and why so many.,An amount question or a fee complaint.,¿cuánto me cobraron de comisiones este mes y por qué tantas?
+EX64,pt,transaction_status,true,move_money,Ask about your refund in two or three words.,"Refund timing, or a refund demand (rule 4).",e o meu estorno?
+EX65,es,unrecognized_charge,true,transaction_status,You ask what a charge with a company name you don't recognize is.,"Doesn't know the merchant, or only asks what it is.",¿qué es este cargo que dice PAGOS DIGITALES SA?
+EX66,pt,wrongful_fee,true,unrecognized_charge,"A charge you can't place, but you think it's a bank fee.",Bank fee (rule 2) or unknown charge.,"veio uma cobrança de 89,90 que não sei de onde é, acho que é tarifa do banco"

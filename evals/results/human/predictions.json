@@ -1,0 +1,381 @@
+{
+  "meta": {
+    "ts": "2026-10-04T22:36:26+00:00",
+    "commit": "7f610e1",
+    "base": "https://latam-bank-service-sigma.vercel.app"
+  },
+  "predictions": [
+    {
+      "id": "H001",
+      "served": {
+        "intent": "out_of_scope",
+        "confidence": 0.21604453019769626,
+        "decision": "ask",
+        "threshold": 0.7,
+        "model": "cohere-mv3",
+        "modelVersion": "51ee21d",
+        "fallbackReason": null
+      }
+    },
+    {
+      "id": "H002",
+      "served": {
+        "intent": "move_money",
+        "confidence": 0.3409254035820617,
+        "decision": "ask",
+        "threshold": 0.7,
+        "model": "cohere-mv3",
+        "modelVersion": "51ee21d",
+        "fallbackReason": null
+      }
+    },
+    {
+      "id": "H003",
+      "served": {
+        "intent": "unrecognized_charge",
+        "confidence": 0.32791135387391657,
+        "decision": "ask",
+        "threshold": 0.7,
+        "model": "cohere-mv3",
+        "modelVersion": "51ee21d",
+        "fallbackReason": null
+      }
+    },
+    {
+      "id": "H004",
+      "served": {
+        "intent": "wrongful_fee",
+        "confidence": 0.8317671093893144,
+        "decision": "act",
+        "threshold": 0.7,
+        "model": "cohere-mv3",
+        "modelVersion": "51ee21d",
+        "fallbackReason": null
+      }
+    },
+    {
+      "id": "H005",
+      "served": {
+        "intent": "wrongful_fee",
+        "confidence": 0.6180345481672547,
+        "decision": "ask",
+        "threshold": 0.7,
+        "model": "cohere-mv3",
+        "modelVersion": "51ee21d",
+        "fallbackReason": null
+      }
+    },
+    {
+      "id": "H006",
+      "served": {
+        "intent": "unrecognized_charge",
+        "confidence": 0.6443652577277247,
+        "decision": "ask",
+        "threshold": 0.7,
+        "model": "cohere-mv3",
+        "modelVersion": "51ee21d",
+        "fallbackReason": null
+      }
+    },
+    {
+      "id": "H007",
+      "served": {
+        "intent": "wrongful_fee",
+        "confidence": 0.8056303612308756,
+        "decision": "act",
+        "threshold": 0.7,
+        "model": "cohere-mv3",
+        "modelVersion": "51ee21d",
+        "fallbackReason": null
+      }
+    },
+    {
+      "id": "H008",
+      "served": {
+        "intent": "transaction_status",
+        "confidence": 0.7194407006629119,
+        "decision": "act",
+        "threshold": 0.7,
+        "model": "cohere-mv3",
+        "modelVersion": "51ee21d",
+        "fallbackReason": null
+      }
+    },
+    {
+      "id": "H009",
+      "served": {
+        "intent": "move_money",
+        "confidence": 0.8079421937205621,
+        "decision": "act",
+        "threshold": 0.7,
+        "model": "cohere-mv3",
+        "modelVersion": "51ee21d",
+        "fallbackReason": null
+      }
+    },
+    {
+      "id": "H010",
+      "served": {
+        "intent": "human_agent",
+        "confidence": 0.9853340893631142,
+        "decision": "act",
+        "threshold": 0.7,
+        "model": "cohere-mv3",
+        "modelVersion": "51ee21d",
+        "fallbackReason": null
+      }
+    },
+    {
+      "id": "H011",
+      "served": {
+        "intent": "out_of_scope",
+        "confidence": 0.4371852842739473,
+        "decision": "ask",
+        "threshold": 0.7,
+        "model": "cohere-mv3",
+        "modelVersion": "51ee21d",
+        "fallbackReason": null
+      }
+    },
+    {
+      "id": "H012",
+      "served": {
+        "intent": "out_of_scope",
+        "confidence": 0.35445313099600767,
+        "decision": "ask",
+        "threshold": 0.7,
+        "model": "cohere-mv3",
+        "modelVersion": "51ee21d",
+        "fallbackReason": null
+      }
+    },
+    {
+      "id": "H013",
+      "served": {
+        "intent": "balance_check",
+        "confidence": 0.9196553838641649,
+        "decision": "act",
+        "threshold": 0.7,
+        "model": "cohere-mv3",
+        "modelVersion": "51ee21d",
+        "fallbackReason": null
+      }
+    },
+    {
+      "id": "H014",
+      "served": {
+        "intent": "unrecognized_charge",
+        "confidence": 0.8434519033323411,
+        "decision": "act",
+        "threshold": 0.7,
+        "model": "cohere-mv3",
+        "modelVersion": "51ee21d",
+        "fallbackReason": null
+      }
+    },
+    {
+      "id": "H015",
+      "served": {
+        "intent": "wrongful_fee",
+        "confidence": 0.9320017763576989,
+        "decision": "act",
+        "threshold": 0.7,
+        "model": "cohere-mv3",
+        "modelVersion": "51ee21d",
+        "fallbackReason": null
+      }
+    },
+    {
+      "id": "H016",
+      "served": {
+        "intent": "move_money",
+        "confidence": 0.3413505513638586,
+        "decision": "ask",
+        "threshold": 0.7,
+        "model": "cohere-mv3",
+        "modelVersion": "51ee21d",
+        "fallbackReason": null
+      }
+    },
+    {
+      "id": "H017",
+      "served": {
+        "intent": "balance_check",
+        "confidence": 0.6021005306446212,
+        "decision": "ask",
+        "threshold": 0.7,
+        "model": "cohere-mv3",
+        "modelVersion": "51ee21d",
+        "fallbackReason": null
+      }
+    },
+    {
+      "id": "H018",
+      "served": {
+        "intent": "move_money",
+        "confidence": 0.4725573440115154,
+        "decision": "ask",
+        "threshold": 0.7,
+        "model": "cohere-mv3",
+        "modelVersion": "51ee21d",
+        "fallbackReason": null
+      }
+    },
+    {
+      "id": "H019",
+      "served": {
+        "intent": "move_money",
+        "confidence": 0.8280620142629611,
+        "decision": "act",
+        "threshold": 0.7,
+        "model": "cohere-mv3",
+        "modelVersion": "51ee21d",
+        "fallbackReason": null
+      }
+    },
+    {
+      "id": "H020",
+      "served": {
+        "intent": "human_agent",
+        "confidence": 0.917857871632258,
+        "decision": "act",
+        "threshold": 0.7,
+        "model": "cohere-mv3",
+        "modelVersion": "51ee21d",
+        "fallbackReason": null
+      }
+    },
+    {
+      "id": "H021",
+      "served": {
+        "intent": "out_of_scope",
+        "confidence": 0.8282774529935447,
+        "decision": "act",
+        "threshold": 0.7,
+        "model": "cohere-mv3",
+        "modelVersion": "51ee21d",
+        "fallbackReason": null
+      }
+    },
+    {
+      "id": "H022",
+      "served": {
+        "intent": "out_of_scope",
+        "confidence": 0.8107374095108453,
+        "decision": "act",
+        "threshold": 0.7,
+        "model": "cohere-mv3",
+        "modelVersion": "51ee21d",
+        "fallbackReason": null
+      }
+    },
+    {
+      "id": "H023",
+      "served": {
+        "intent": "transaction_status",
+        "confidence": 0.921738943373757,
+        "decision": "act",
+        "threshold": 0.7,
+        "model": "cohere-mv3",
+        "modelVersion": "51ee21d",
+        "fallbackReason": null
+      }
+    },
+    {
+      "id": "H024",
+      "served": {
+        "intent": "transaction_status",
+        "confidence": 0.8917539543635508,
+        "decision": "act",
+        "threshold": 0.7,
+        "model": "cohere-mv3",
+        "modelVersion": "51ee21d",
+        "fallbackReason": null
+      }
+    },
+    {
+      "id": "H025",
+      "served": {
+        "intent": "unrecognized_charge",
+        "confidence": 0.46114115017568913,
+        "decision": "ask",
+        "threshold": 0.7,
+        "model": "cohere-mv3",
+        "modelVersion": "51ee21d",
+        "fallbackReason": null
+      }
+    },
+    {
+      "id": "H026",
+      "served": {
+        "intent": "unrecognized_charge",
+        "confidence": 0.6694741531578263,
+        "decision": "ask",
+        "threshold": 0.7,
+        "model": "cohere-mv3",
+        "modelVersion": "51ee21d",
+        "fallbackReason": null
+      }
+    },
+    {
+      "id": "H027",
+      "served": {
+        "intent": "balance_check",
+        "confidence": 0.6877523810038507,
+        "decision": "ask",
+        "threshold": 0.7,
+        "model": "cohere-mv3",
+        "modelVersion": "51ee21d",
+        "fallbackReason": null
+      }
+    },
+    {
+      "id": "H028",
+      "served": {
+        "intent": "balance_check",
+        "confidence": 0.3732447162436058,
+        "decision": "ask",
+        "threshold": 0.7,
+        "model": "cohere-mv3",
+        "modelVersion": "51ee21d",
+        "fallbackReason": null
+      }
+    },
+    {
+      "id": "H029",
+      "served": {
+        "intent": "wrongful_fee",
+        "confidence": 0.7221232221269095,
+        "decision": "act",
+        "threshold": 0.7,
+        "model": "cohere-mv3",
+        "modelVersion": "51ee21d",
+        "fallbackReason": null
+      }
+    },
+    {
+      "id": "H030",
+      "served": {
+        "intent": "move_money",
+        "confidence": 0.8527707938473444,
+        "decision": "act",
+        "threshold": 0.7,
+        "model": "cohere-mv3",
+        "modelVersion": "51ee21d",
+        "fallbackReason": null
+      }
+    },
+    {
+      "id": "H031",
+      "served": {
+        "intent": "human_agent",
+        "confidence": 0.9898636247130973,
+        "decision": "act",
+        "threshold": 0.7,
+        "model": "cohere-mv3",
+        "modelVersion": "51ee21d",
+        "fallbackReason": null
+      }
+    }
+  ]
+}
