@@ -1,6 +1,6 @@
 # Requests from the evaluation track (steps 16–19)
 
-What the evidence track (Luis Pedro) needs from Miguel and Carlos, and what it found that needs a fix. Each item says what to do, why, and how we'll know it's done. Details and evidence: [evaluation-findings.md](evaluation-findings.md). Tick an item by editing this file in your PR, with `(Name, YYYY-MM-DD)`.
+What the evidence track (Luis Pedro) needs from Miguel and Carlos, and what it found that needs a fix. Each item says what to do, why, and how we'll know it's done. Details and evidence: [evaluation-findings.md](../evaluation-findings.md). Tick an item by editing this file in your PR, with `(Name, YYYY-MM-DD)`.
 
 Opened 2026-10-01 (Luis Pedro).
 
@@ -31,7 +31,7 @@ Opened 2026-10-01 (Luis Pedro).
 | # | Request | Why | Done when | Priority |
 |---|---|---|---|---|
 | C1 | ✅ **Done (received 2026-10-02, Luis Pedro):** the step-17 personas ran on the real lookup, none invalid. **Share the `SUPABASE_LOOKUP_DB_URL` line** from your `.env.local` (written by `pipeline/seed_test_users.py`) with Luis Pedro, out of band. **Please don't re-run the seed script for this:** it rotates the `lookup_reader` password and all 12 test logins, which would break the live app and the shared passwords. | Without it the app uses the stand-in lookup, which only has demo.mx's and otro.mx's charges, so every test on pendiente.ar and rechazado-sin-codigo.co finds nothing; the harness marks them invalid (BD-6, TC17-11/12/21/32). | `npm run eval -- --suite step17` shows no "invalid" lines. | **High** |
-| C2 | **Keep K5 stable:** tell Luis Pedro before reloading the serving slice in a way that changes the five K5 customers' rows, or before rotating test passwords. | The expected outcomes in `evals/cases/` quote those exact charges ([contracts.md](contracts.md) K5). | Ongoing. | Medium |
+| C2 | **Keep K5 stable:** tell Luis Pedro before reloading the serving slice in a way that changes the five K5 customers' rows, or before rotating test passwords. | The expected outcomes in `evals/cases/` quote those exact charges ([contracts.md](../contracts.md) K5). | Ongoing. | Medium |
 | C3 | *Optional:* add test logins for two organizer customers with a clean high-risk charge: `CLI-I57AUINJWKZB` (MX Premium, 56.00 USD, Empresa Telefónica, 2026-05-25, fraud 73.09) and `CLI-HTX9ITCO0IMR` (CO, 49,618.78 COP, Tienda General, 2026-06-09, fraud 63.43). Both unique within ±1% and ±3 days (checked 2026-10-01). | PL-6 (high risk → a person) is only testable on demo.mx's synthetic charge; `fraude.co`'s only ≥30 charge is a merchant-less deposit. Adding logins only adds rows; it shouldn't need a rotation, but follow C1's warning. | Two new rows in `test-users.local.md`; K5 updated in `contracts.md`. | Low |
 
 ## Waiting on these (Luis Pedro)

@@ -58,7 +58,7 @@ Each entry says who decided it, so the team knows who to ask.
 
 ### C8. Confirm before acting, and code reads the yes/no (Miguel, 2026-09-29)
 - **Chose:** when the details are complete, the assistant restates them and asks for confirmation ("¿Revisamos el cargo de 350 del 10 de junio?"). The yes/no is detected by code (Spanish/Portuguese word lists), not by a model. Anything else counts as a correction: extract again, merge, confirm again.
-- On "yes", the state becomes `confirmed`. Until steps 12–14 exist, the reply only says the details are confirmed and will be checked: it never says a claim was opened or money returned.
+- On "yes", the state becomes `confirmed` and the policy engine decides what happens next (step 12): a verified review, or a person. The reply never says money was returned.
 - **Why:** the brief requires knowing when not to act. Confirmation is a cheap guard, and deciding it in code means an injected message can't fake a "yes".
 
 ### C9. The number check covers the whole conversation (Miguel, 2026-09-29)

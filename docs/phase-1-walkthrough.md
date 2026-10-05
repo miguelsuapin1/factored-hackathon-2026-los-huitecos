@@ -97,12 +97,20 @@ The threshold minimizes a stated cost: **acting on the wrong intent = 5, acting 
 
 ## 6. What's honestly not done (tell the judges)
 
-- **All training and test messages were written by one author (Claude).** Scores are an upper bound until **human-written test messages** exist, and the Portuguese needs a native review.
+_Updated 2026-10-04, at the end of Phase 2._
+
+- **The training and test phrases were written by one author (Claude)**, so the sealed test score (91.7%) is an upper bound. The honest check is 31 human-written messages (Luis Pedro): 83.3% vs. 50.0% for keyword rules, a small sample from one person ([report](../reports/intent_eval_human.md)).
+- **The Portuguese has had no native review**, and the organizer data has no Portuguese at all.
 - **The test set is small** (84 clear messages), so confidence intervals are wide.
-- **No account data is used yet.** The assistant asks for dates and amounts instead of looking up transactions; there's no conversation memory, no confirmation step and no human handoff yet.
 - **Capacity limit:** Cohere on this AWS account allows 20 requests per minute, fine for a demo, not for a bank.
-- **The data cleaning layer (silver/gold) isn't built yet**; the analysis runs on raw data.
+- **All results are offline**: no production traffic.
 
-## 7. Phase 2 at a glance
+## 7. What Phase 2 added
 
-See the build plan: data pipeline and Supabase load, test login with per-customer access, the transaction lookup tool, the policy engine, verification, structured handoff, the evaluation harness with human-written tests and attack cases, the agent console, and the final slides and video.
+Phase 2 turned the Phase 1 intent-and-reply loop into the full service:
+
+- **Data:** bronze → silver → gold in BigQuery with dbt, and a serving slice in Supabase ([phase-2-data-log.md](phase-2-data-log.md)).
+- **Access:** per-customer test logins and row-level security ([decisions.md](decisions.md) D-006).
+- **Conversation:** memory, extraction and confirmation ([conversation.md](conversation.md)).
+- **Control:** the policy engine, verified cases and the structured hand-off ([policy.md](policy.md), [verification.md](verification.md), [handoff.md](handoff.md)).
+- **Evidence:** the evaluation harness and its results on the deployed app ([evaluation.md](evaluation.md), [../reports/eval_production-cohere.md](../reports/eval_production-cohere.md)).

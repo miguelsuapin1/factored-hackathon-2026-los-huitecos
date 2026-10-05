@@ -3,7 +3,7 @@
 # Project context
 Factored AI & Data Hackathon 2026 (10-day sprint from 2026-09-25, deadline ~2026-10-05, to confirm). Team: Miguel (miguelsuapin1), lpcuellar, Carloscuellark.
 We build **transaction-dispute intake** (unrecognized charges + wrongful fees) for a **fictional bank, "GT Bank"**, in Spanish and Portuguese.
-Read first: [docs/phase-1-walkthrough.md](docs/phase-1-walkthrough.md) (what exists and why). Brief: docs/challenge.md. Decisions: docs/decisions.md, docs/intent-model.md (D1–D16), docs/reply-generation.md (R1–R7), docs/conversation.md (C1–, steps 9 + 11), docs/policy.md (PL-1–PL-8, step 12), docs/verification.md (V1–V5, step 13), docs/handoff.md (H1–H4, R8, step 14), docs/evaluation.md (EV-1–EV-6, steps 16–19; findings docs/evaluation-findings.md, team requests docs/evaluation-requests.md). Team interfaces: docs/contracts.md. Data findings: docs/contact-reason-analysis.md, docs/data-issues.md. What failed and was replaced: docs/lessons-learned.md (add new entries as they happen).
+Read first: [docs/phase-1-walkthrough.md](docs/phase-1-walkthrough.md) (what exists and why). Brief: docs/challenge.md. Decisions: docs/decisions.md, docs/intent-model.md (D1–D16), docs/reply-generation.md (R1–R7), docs/conversation.md (C1–, steps 9 + 11), docs/policy.md (PL-1–PL-8, step 12), docs/verification.md (V1–V5, step 13), docs/handoff.md (H1–H4, R8, step 14), docs/evaluation.md (EV-1–EV-6, steps 16–19; findings docs/evaluation-findings.md, team requests docs/team/evaluation-requests.md). Team interfaces: docs/contracts.md. Data findings: docs/contact-reason-analysis.md, docs/data-issues.md. What failed and was replaced: docs/lessons-learned.md (add new entries as they happen).
 
 ## Current state (end of Phase 1, 2026-09-29)
 - Live: https://latam-bank-service-sigma.vercel.app — `/` sign-in, `/app` chat. Every push to `main` deploys.
@@ -67,12 +67,7 @@ uv run python pipeline/score_human.py         # step 16: intent model vs keyword
 ```
 
 ## Accounts & infrastructure
-- GitHub `miguelsuapin1/latam-bank-service` (public). No `gh` CLI; git uses the keychain credential.
-- Vercel team `miguelsuapin-1909s-projects` (team_WtIAxy18QvOOQWBoFrcnidFW), project `latam-bank-service` (prj_gGZ6kb85SYj3GESHcr2pj3wqenvT). **The local `vercel` CLI is logged into a different account (publink): use the Vercel connector, not the CLI.**
-- Vercel env: `AWS_ROLE_ARN` (OIDC role `latam-bank-vercel`, keyless, can only invoke Cohere embed), `BEDROCK_REGION`, `DEMO_*`, `SESSION_SECRET`, `ANTHROPIC_API_KEY` (sensitive).
-- AWS account 082229155656 (Free plan, credits). Local profiles: `factored` (organizer's read-only S3 keys), `bedrock` (IAM user latam-bank-bedrock, embeddings only). IAM user `miguel` is read-only; IAM changes need root (Miguel does them).
-- GCP project `project-d49391de-51c4-49bf-aae` (Carlos): bucket `gs://factored_gt_latam_bank_raw/raw/` (S3 copy), BigQuery datasets in us-east1: `raw_ext` + `bronze` (D-003, `pipeline/bigquery/bronze_bq.py`), then `staging`, `silver`, `silver_quarantine`, `ref`, `ops`, `gold`, `gold_serving` (D-005, `pipeline/dbt`). Progress log: docs/phase-2-data-log.md.
-- Supabase project `paguvqqelfwadcolocaq` (org "hackathon", sa-east-1): `cases` (Miguel) + the serving slice (Carlos, loaded 2026-10-01 by `pipeline/load_supabase.py`, about 10 MB). Schema changes go in supabase/migrations/.
+Account ids, project ids and IAM details are kept out of the public repo: see your git-ignored `CLAUDE.local.md` (ask Miguel for his copy).
 
 ## Gotchas we already hit
 - **Next.js 16:** middleware is `src/proxy.ts`; read `node_modules/next/dist/docs/` before using an API (see AGENTS.md).

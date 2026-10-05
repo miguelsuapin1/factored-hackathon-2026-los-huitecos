@@ -1,6 +1,6 @@
 # Evaluation (build steps 16–19)
 
-Owner: Luis Pedro. How the system is evaluated end to end: the harness, the test sets, what is measured and why. Results: `reports/eval_<name>.md` (generated). Findings and fixes: [evaluation-findings.md](evaluation-findings.md). What we need from the team: [evaluation-requests.md](evaluation-requests.md).
+Owner: Luis Pedro. How the system is evaluated end to end: the harness, the test sets, what is measured and why. Results: `reports/eval_<name>.md` (generated). Findings and fixes: [evaluation-findings.md](evaluation-findings.md). Team requests (internal): [team/evaluation-requests.md](team/evaluation-requests.md).
 
 ## How it works
 
@@ -56,7 +56,7 @@ From docs/challenge.md "Required evaluation metrics", computed in `evals/metrics
 ## Limits
 
 - No set is human-written yet (EV-5): every number is on team-written or synthetic messages, which favours the system (the same people wrote the rules).
-- Until Cohere access (evaluation-requests.md M3), runs use the fallback intent model.
+- The first runs used the fallback intent model; since 2026-10-04 runs use Cohere on the deployed app ([report](../reports/eval_production-cohere.md)).
 - Small samples: tens of cases. Differences of one or two cases are noise.
 - The harness can't see the `cases` table, so "no raw transcript in a case" (V5) and case contents aren't graded; a case is graded by kind and verification only.
 - Tool failures that need code changes to induce (lookup down, case store down) are covered by unit tests (PL-8, V2), not the harness.
