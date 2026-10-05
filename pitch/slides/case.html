@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>GT Bank · Structured hand-off</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&family=Geist+Mono:wght@100..900&family=Instrument+Serif:ital@1&display=block">
+<link rel="stylesheet" href="slide.css">
+<style>
+  /* Left: what the customer saw (real replies from the production evaluation run). Right: the case row it wrote. */
+  .chat { left: 50px; top: 238px; width: 640px; height: 718px; padding: 24px 26px; }
+  .lab { font-family: var(--mono); font-size: 13.5px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); margin-bottom: 14px; white-space: nowrap; }
+  .lab.teal { color: var(--teal); }
+  .lab.red { color: var(--red); }
+  .turn { margin-bottom: 15px; display: grid; gap: 5px; }
+  .bubble { max-width: 92%; padding: 12px 16px; border-radius: 16px; font-size: 17px; line-height: 1.42; }
+  .cust { justify-self: end; background: #2bc597; color: #03120d; border-bottom-right-radius: 5px; font-weight: 500; }
+  .bank { justify-self: start; background: rgba(255, 255, 255, 0.045); border: 1.5px solid rgba(160, 190, 178, 0.18); color: var(--ink); border-bottom-left-radius: 5px; }
+  .en { font-size: 14.5px; line-height: 1.4; color: var(--muted); font-style: italic; }
+  .cust + .en { justify-self: end; text-align: right; max-width: 92%; }
+  .bank + .en { justify-self: start; max-width: 92%; }
+  .chat .note { position: absolute; left: 26px; right: 26px; bottom: 24px; padding: 13px 16px; border-radius: 12px; border: 1.5px solid rgba(var(--teal-rgb), 0.3); background: rgba(var(--teal-rgb), 0.05); font-size: 16px; line-height: 1.4; color: var(--sec); }
+  .chat .note b { color: var(--ink); font-weight: 560; }
+
+  .rec { left: 740px; top: 238px; width: 1210px; height: 718px; padding: 24px 28px; border-color: rgba(var(--red-rgb), 0.32); }
+  .rec-head { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; flex-wrap: nowrap; }
+  .ref { font-family: var(--mono); font-size: 26px; font-weight: 600; color: var(--ink); letter-spacing: 0.02em; margin-right: 8px; }
+  .rec .pill { font-size: 13px; padding: 5px 11px; }
+  .row { display: grid; grid-template-columns: 196px 1fr; gap: 18px; padding: 17px 0; border-top: 1px solid rgba(160, 190, 178, 0.12); }
+  .key { font-family: var(--mono); font-size: 13.5px; letter-spacing: 0.06em; color: var(--teal); padding-top: 3px; }
+  .key small { display: block; margin-top: 4px; font-size: 12px; letter-spacing: 0.04em; color: var(--faint); }
+  .val { font-size: 18px; line-height: 1.45; color: var(--body); }
+  .val code { font-family: var(--mono); font-size: 15px; color: var(--ink); }
+  .facts { display: grid; gap: 10px; }
+  .fact { display: flex; justify-content: space-between; gap: 16px; align-items: baseline; }
+  .src { flex: none; font-family: var(--mono); font-size: 12.5px; color: var(--muted); border: 1.5px solid rgba(160, 190, 178, 0.22); border-radius: 999px; padding: 2px 10px; }
+  .checks { display: flex; flex-wrap: nowrap; gap: 6px; align-items: center; font-size: 15.5px; color: var(--body); white-space: nowrap; }
+  .checks span.step { padding: 3px 10px; border-radius: 8px; background: rgba(255, 255, 255, 0.035); border: 1px solid rgba(160, 190, 178, 0.16); }
+  .checks i { font-style: normal; color: var(--faint); }
+  .q { color: var(--ink); }
+
+  .band { top: 984px; height: 72px; display: flex; align-items: center; justify-content: center; gap: 46px; font-size: 21px; color: var(--ink); }
+  .band span { display: inline-flex; align-items: center; gap: 13px; }
+  .band span::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--teal); }
+</style>
+</head>
+<body>
+<div class="backdrop"><canvas></canvas><div class="glow g1"></div><div class="glow g2"></div><div class="glow g3"></div></div>
+<div class="stage">
+  <div class="topbar">
+    <div class="brand">
+      <svg width="42" height="42" viewBox="0 0 40 40" aria-hidden="true"><defs><linearGradient id="t" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#4be3b2"/><stop offset=".55" stop-color="#17b29a"/><stop offset="1" stop-color="#1287a6"/></linearGradient><linearGradient id="f" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".95"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient></defs><rect width="40" height="40" rx="11" fill="url(#t)"/><path d="M27.6 13.4A9.6 9.6 0 1 0 29.4 20.6H20.4" fill="none" stroke="#f4fbf8" stroke-width="3.3" stroke-linecap="round" stroke-linejoin="round"/><path d="M29.4 20.6C30.6 26.6 33.4 31.4 38.5 35" fill="none" stroke="url(#f)" stroke-width="2.2" stroke-linecap="round"/><circle cx="29.3" cy="11.6" r="2.6" fill="#ff5a52"/></svg>
+      <div class="wordmark">GT <span>Bank</span></div>
+    </div>
+    <div class="event">Dispute Desk · Factored Hackathon 2026</div>
+  </div>
+
+  <div class="kicker">Hand-off · one row in public.cases · written and read back</div>
+  <h1>No transcript. <em>A case a person can act on.</em></h1>
+
+  <div class="card chat">
+    <div class="lab">What the customer saw</div>
+    <div class="turn">
+      <div class="bubble cust">No reconozco un cargo de 120 dólares del 3 de junio</div>
+      <div class="en">“I don't recognize a $120 charge from June 3.”</div>
+    </div>
+    <div class="turn">
+      <div class="bubble bank">Encontré un cargo de 120 USD en Conciertos Live, el 3 de junio. ¿Es este el cargo que no reconoces?</div>
+      <div class="en">“I found a 120 USD charge at Conciertos Live on June 3. Is this the one?”</div>
+    </div>
+    <div class="turn">
+      <div class="bubble cust">sí</div>
+      <div class="en">“Yes.”</div>
+    </div>
+    <div class="turn">
+      <div class="bubble bank">Perfecto, un agente especialista se hará cargo de tu caso con todos los detalles ya confirmados, así que no necesitarás repetirlos. Tu número de caso es GT-5EETTXDQ.</div>
+      <div class="en">“A specialist will take your case with the details already confirmed. Your case number is GT-5EETTXDQ.”</div>
+    </div>
+    <div class="note"><b>The reply never says why.</b> The fraud score stays inside the bank; policy PL&#8209;6 sent it to a person after the customer's “yes”.</div>
+  </div>
+
+  <div class="card rec">
+    <div class="lab red">What the specialist receives</div>
+    <div class="rec-head">
+      <span class="ref">GT-5EETTXDQ</span>
+      <span class="pill red">handoff</span><span class="pill">rule PL-6</span><span class="pill">reason high_risk</span><span class="pill">status open</span><span class="pill">es</span>
+    </div>
+    <div class="row"><div class="key">summary<small>built by code</small></div><div class="val">unrecognized_charge: 120 USD at Conciertos Live on 2026-06-03. handed off: high_risk (PL-6).</div></div>
+    <div class="row"><div class="key">request<small>customer_statements</small></div><div class="val">amount <code>120</code> · currency <code>USD</code> · date <code>2026-06-03</code></div></div>
+    <div class="row"><div class="key">verified_facts<small>each with its source</small></div><div class="val facts">
+      <div class="fact"><span>Transaction TRX-DEMO0000000000003: 120 USD at Conciertos Live, 2026-06-03, status Approved, channel Web</span><span class="src">lookup:supabase</span></div>
+      <div class="fact"><span>Fraud score 41.7 (hand-off cutoff 30; not shown to the customer)</span><span class="src">lookup:supabase</span></div>
+      <div class="fact"><span>Customer confirmed this is the charge they mean</span><span class="src">conversation</span></div>
+    </div></div>
+    <div class="row"><div class="key">checks_done<small>actions taken</small></div><div class="val checks">
+      <span class="step">topic: unrecognized_charge</span><i>→</i><span class="step">lookup: 1 match</span><i>→</i><span class="step">customer confirmed</span><i>→</i><span class="step">re-read: Approved</span><i>→</i><span class="step">policy PL&#8209;6</span>
+    </div></div>
+    <div class="row"><div class="key">open_questions</div><div class="val q">Possible fraud: confirm the customer has the card and whether others could use it; consider blocking.</div></div>
+    <div class="row"><div class="key">prompt_versions</div><div class="val"><code>reply-v7</code> · <code>cohere-mv3@51ee21d</code> · <code>extract-v4</code> · <code>production</code></div></div>
+  </div>
+
+  <div class="band"><span>No raw chat stored</span><span>Every fact names its source</span><span>The customer isn't told why; the specialist is</span></div>
+  <div class="sources">row GT-5EETTXDQ, production evaluation run 2026-10-04 (synthetic demo customer) · src/lib/cases/build.ts · supabase/migrations/20260930050000_cases.sql</div>
+</div>
+<script src="backdrop.js"></script>
+</body>
+</html>

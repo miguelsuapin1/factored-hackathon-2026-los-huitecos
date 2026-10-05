@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>GT Bank · Data pipeline</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&family=Geist+Mono:wght@100..900&family=Instrument+Serif:ital@1&display=block">
+<link rel="stylesheet" href="slide.css">
+<style>
+  .card { padding: 22px 26px 24px; }
+  .lab { font-family: var(--mono); font-size: 13.5px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; white-space: nowrap; }
+  .lab.bronze { color: #e0a267; }
+  .lab.silver { color: #c9d6d0; }
+  .lab.gold { color: var(--gold); }
+  .lab.teal { color: var(--teal); }
+  .lab.red { color: var(--red); }
+  .card .title { margin-bottom: 11px; }
+  .body p + p { margin-top: 12px; }
+
+  .s1 { left: 50px; top: 251px; width: 399px; height: 248px; }
+  .s2 { left: 500px; top: 251px; width: 299px; height: 248px; }
+  .s2 .pills { position: absolute; left: 26px; bottom: 24px; }
+  .s3 { left: 850px; top: 251px; width: 374px; height: 248px; border-color: rgba(224, 162, 103, 0.28); }
+  .s4 { left: 1275px; top: 251px; width: 673px; height: 248px; border-color: rgba(201, 214, 208, 0.24); }
+  .s4 .main { width: 300px; }
+  .quarantine { position: absolute; left: 334px; top: 20px; width: 314px; height: 207px; border: 1.5px dashed rgba(var(--red-rgb), 0.4); border-radius: 14px; background: rgba(var(--red-rgb), 0.045); padding: 16px 18px; }
+  .quarantine .lab { margin-bottom: 10px; font-size: 13px; }
+  .quarantine .body { font-size: 16px; }
+  .quarantine .pill { margin-top: 14px; }
+  .qnote { margin-top: 12px; font-size: 14.5px; line-height: 1.4; color: var(--muted); }
+
+  .g1c { left: 50px; top: 588px; width: 699px; height: 361px; border-color: rgba(var(--gold-rgb), 0.3); }
+  .inner { position: absolute; top: 93px; width: 314px; height: 244px; border: 1.5px solid rgba(160, 190, 178, 0.14); border-radius: 14px; background: rgba(255, 255, 255, 0.018); padding: 20px 18px; }
+  .inner .lab { font-size: 13px; margin-bottom: 10px; }
+  .inner .body { font-size: 16.5px; line-height: 1.43; }
+  .inner .foot { position: absolute; left: 18px; right: 18px; bottom: 18px; font-size: 16.5px; line-height: 1.43; color: var(--sec); }
+  .i1 { left: 26px; }
+  .i2 { left: 357px; }
+
+  .l1 { left: 800px; top: 588px; width: 499px; height: 361px; }
+  .a1 { left: 1350px; top: 588px; width: 598px; height: 361px; border-color: rgba(var(--teal-rgb), 0.3); }
+  .l1 .pills, .a1 .pills { position: absolute; left: 26px; bottom: 24px; }
+
+  .band { top: 976px; height: 81px; padding: 12px 30px; }
+  .band .lab { color: var(--teal); font-size: 13.5px; margin-bottom: 9px; }
+  .band .pills { gap: 8px; flex-wrap: nowrap; }
+  .band .pill { font-size: 13.5px; padding: 5px 12px; }
+</style>
+</head>
+<body>
+<div class="backdrop"><canvas></canvas><div class="glow g1"></div><div class="glow g2"></div><div class="glow g3"></div></div>
+<div class="stage">
+  <div class="topbar">
+    <div class="brand">
+      <svg width="42" height="42" viewBox="0 0 40 40" aria-hidden="true"><defs><linearGradient id="t" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#4be3b2"/><stop offset=".55" stop-color="#17b29a"/><stop offset="1" stop-color="#1287a6"/></linearGradient><linearGradient id="f" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".95"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient></defs><rect width="40" height="40" rx="11" fill="url(#t)"/><path d="M27.6 13.4A9.6 9.6 0 1 0 29.4 20.6H20.4" fill="none" stroke="#f4fbf8" stroke-width="3.3" stroke-linecap="round" stroke-linejoin="round"/><path d="M29.4 20.6C30.6 26.6 33.4 31.4 38.5 35" fill="none" stroke="url(#f)" stroke-width="2.2" stroke-linecap="round"/><circle cx="29.3" cy="11.6" r="2.6" fill="#ff5a52"/></svg>
+      <div class="wordmark">GT <span>Bank</span></div>
+    </div>
+    <div class="event">Dispute Desk · Factored Hackathon 2026</div>
+  </div>
+
+  <div class="kicker">Architecture · Data · Reproducible with scripts and dbt</div>
+  <h1>From the organizers' CSVs <em>to the app, without losing a row.</em></h1>
+
+  <svg class="wires" viewBox="0 0 2000 1125">
+    <path d="M449 375 H495"/><path d="M489 369 L496 375 L489 381"/>
+    <path d="M799 375 H845"/><path d="M839 369 L846 375 L839 381"/>
+    <path d="M1224 375 H1270"/><path d="M1264 369 L1271 375 L1264 381"/>
+    <path d="M1612 499 V547 H400 V581"/><path d="M394 575 L400 582 L406 575"/>
+    <path d="M749 768 H795"/><path d="M789 762 L796 768 L789 774"/>
+    <path d="M1299 768 H1345"/><path d="M1339 762 L1346 768 L1339 774"/>
+  </svg>
+
+  <div class="card dashed s1">
+    <div class="lab">Source · S3</div>
+    <div class="title">Organizer data</div>
+    <div class="body"><p><b>13 CSV tables, 23.5M rows,</b> Mexico, Colombia and Argentina.</p><p>Synthetic (LATAM Bank v1.0.0). Checked, not assumed: no duplicates or late loads, but nulls, broken links, no MXN.</p></div>
+  </div>
+
+  <div class="card dashed s2">
+    <div class="lab">Copy</div>
+    <div class="title">Cloud Storage</div>
+    <div class="body"><b>Storage Transfer,</b> cloud to cloud, one-off.</div>
+    <div class="pills"><div class="pill">7,671 files</div><div class="pill">5.3 GB</div></div>
+  </div>
+
+  <div class="card s3">
+    <div class="lab bronze">Bronze · BigQuery</div>
+    <div class="title">As it arrived</div>
+    <div class="body"><p><b>Everything as text, no cleaning.</b></p><p>Every row keeps its <b>source file and load time</b> (lineage).</p></div>
+  </div>
+
+  <div class="card s4">
+    <div class="main">
+      <div class="lab silver">Silver · dbt</div>
+      <div class="title">Clean and typed</div>
+      <div class="body"><b>Types and dedup by key</b> (the latest load wins), required fields; broken links nulled and flagged.</div>
+    </div>
+    <div class="quarantine">
+      <div class="lab red">Quarantine</div>
+      <div class="body"><b>Every rejected row, with its reason.</b> Nothing is dropped silently.</div>
+      <div class="pill red">bronze = silver + rejected</div>
+      <div class="qnote">0 rows rejected in the organizer data; proven with fixtures.</div>
+    </div>
+  </div>
+
+  <div class="card g1c">
+    <div class="lab gold">Gold · dbt</div>
+    <div class="title">Ready to use</div>
+    <div class="inner i1">
+      <div class="lab">Analytics</div>
+      <div class="body"><b>Contact reasons, dispute KPIs, human-only service baseline.</b></div>
+      <div class="foot">Rebuilt from clean data: confirms the workflow choice.</div>
+    </div>
+    <div class="inner i2">
+      <div class="lab">Serving · for the app</div>
+      <div class="body"><b>Stratified sample by country × segment + guaranteed demo scenarios.</b></div>
+      <div class="foot">≈10&nbsp;MB loaded; tested against a 100&nbsp;MB budget.</div>
+    </div>
+  </div>
+
+  <div class="card l1">
+    <div class="lab teal">Load · Supabase Postgres</div>
+    <div class="title">One transaction</div>
+    <div class="body"><p><b>All or nothing:</b> if it fails, no half-load is left.</p><p><b>Checks every row count</b> against BigQuery.</p><p><b>Logs each load</b> in data_version: commit and row&nbsp;counts.</p></div>
+    <div class="pills"><div class="pill">customers</div><div class="pill">products</div><div class="pill">transactions</div><div class="pill">FX</div></div>
+  </div>
+
+  <div class="card a1">
+    <div class="lab teal">App · Vercel</div>
+    <div class="title">Reads only the customer's data</div>
+    <div class="body"><p><b>Role lookup_reader with row-level security (RLS):</b> the database returns only the signed-in customer's rows.</p><p><b>Cases live in a separate table,</b> reachable only from the server.</p></div>
+    <div class="pills"><div class="pill teal"><span class="dot"></span>RLS per customer</div><div class="pill">no money movement</div></div>
+  </div>
+
+  <div class="band">
+    <div class="lab">dbt tests on every build · also runs without cloud (DuckDB + fixtures, same models)</div>
+    <div class="pills">
+      <div class="pill teal"><span class="dot"></span>bronze = silver + rejected</div>
+      <div class="pill teal"><span class="dot"></span>serving rows only for slice customers</div>
+      <div class="pill teal"><span class="dot"></span>every demo scenario present</div>
+      <div class="pill teal"><span class="dot"></span>fits the budget</div>
+      <div class="pill teal"><span class="dot"></span>one exchange rate per day</div>
+    </div>
+  </div>
+  <div class="sources">pipeline/bigquery/bronze_bq.py · pipeline/dbt (staging → intermediate → silver · silver_quarantine → gold) · pipeline/load_supabase.py · docs/phase-2-data-log.md</div>
+</div>
+<script src="backdrop.js"></script>
+</body>
+</html>

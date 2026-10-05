@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>GT Bank · One conversation turn</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&family=Geist+Mono:wght@100..900&family=Instrument+Serif:ital@1&display=block">
+<link rel="stylesheet" href="slide.css">
+<style>
+  .c1 { left: 50px; top: 263px; width: 312px; height: 236px; }
+  .c2 { left: 413px; top: 263px; width: 311px; height: 236px; }
+  .c3a { left: 788px; top: 226px; width: 436px; height: 163px; padding-top: 21px; }
+  .c3b { left: 788px; top: 406px; width: 436px; height: 123px; padding-top: 19px; }
+  .c3a .head, .c3b .head { margin-bottom: 12px; }
+  .c4 { left: 1288px; top: 263px; width: 330px; height: 236px; }
+  .legend { left: 1663px; top: 263px; width: 285px; height: 236px; padding: 22px 24px; }
+  .legend .lbl { font-family: var(--mono); font-size: 13px; letter-spacing: 0.2em; color: var(--muted); text-transform: uppercase; margin-bottom: 14px; }
+  .legend .pill { width: 100%; margin-bottom: 9px; font-size: 13.5px; }
+
+  .c5 { left: 50px; top: 598px; width: 587px; height: 366px; padding-bottom: 18px; }
+  .c6 { left: 688px; top: 598px; width: 386px; height: 366px; }
+  .c7 { left: 1126px; top: 598px; width: 410px; height: 366px; }
+  .c8 { left: 1588px; top: 598px; width: 360px; height: 366px; }
+  .c8 .pills { position: absolute; left: 26px; bottom: 24px; flex-direction: column; align-items: flex-start; }
+
+  .rules { margin-top: 12px; display: grid; gap: 7px; }
+  .rule { display: flex; align-items: center; justify-content: space-between; height: 36px; padding: 0 15px; border-radius: 9px; border: 1.5px solid rgba(160, 190, 178, 0.16); background: rgba(255, 255, 255, 0.018); font-size: 16.5px; color: var(--ink); }
+  .rule code { font-family: var(--mono); font-size: 12.5px; letter-spacing: 0.1em; color: var(--muted); }
+  .rule.red { border-color: rgba(var(--red-rgb), 0.38); background: rgba(var(--red-rgb), 0.08); }
+  .rule.green { border-color: rgba(var(--teal-rgb), 0.4); background: rgba(var(--teal-rgb), 0.05); }
+
+  .band { top: 990px; height: 67px; display: flex; align-items: center; justify-content: center; gap: 46px; font-size: 21px; color: var(--ink); }
+  .band span { display: inline-flex; align-items: center; gap: 13px; }
+  .band span::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--teal); }
+</style>
+</head>
+<body>
+<div class="backdrop"><canvas></canvas><div class="glow g1"></div><div class="glow g2"></div><div class="glow g3"></div></div>
+<div class="stage">
+  <div class="topbar">
+    <div class="brand">
+      <svg width="42" height="42" viewBox="0 0 40 40" aria-hidden="true"><defs><linearGradient id="t" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#4be3b2"/><stop offset=".55" stop-color="#17b29a"/><stop offset="1" stop-color="#1287a6"/></linearGradient><linearGradient id="f" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".95"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient></defs><rect width="40" height="40" rx="11" fill="url(#t)"/><path d="M27.6 13.4A9.6 9.6 0 1 0 29.4 20.6H20.4" fill="none" stroke="#f4fbf8" stroke-width="3.3" stroke-linecap="round" stroke-linejoin="round"/><path d="M29.4 20.6C30.6 26.6 33.4 31.4 38.5 35" fill="none" stroke="url(#f)" stroke-width="2.2" stroke-linecap="round"/><circle cx="29.3" cy="11.6" r="2.6" fill="#ff5a52"/></svg>
+      <div class="wordmark">GT <span>Bank</span></div>
+    </div>
+    <div class="event">Dispute Desk · Factored Hackathon 2026</div>
+  </div>
+
+  <div class="kicker">Architecture · One conversation turn · POST /api/chat</div>
+  <h1>The model classifies. <em>Code decides.</em></h1>
+
+  <svg class="wires" viewBox="0 0 2000 1125">
+    <path d="M362 381 H408"/><path d="M402 375 L409 381 L402 387"/>
+    <path d="M724 381 H757 M757 308 V467 M757 308 H783 M757 467 H783"/><path d="M777 302 L784 308 L777 314"/><path d="M777 461 L784 467 L777 473"/>
+    <path d="M1224 308 H1256 M1224 467 H1256 M1256 308 V467 M1256 381 H1283"/><path d="M1277 375 L1284 381 L1277 387"/>
+    <path d="M1455 499 V555 H205 V593"/><path d="M199 587 L205 594 L211 587"/>
+    <path d="M637 781 H683"/><path d="M677 775 L684 781 L677 787"/>
+    <path d="M1074 781 H1121"/><path d="M1115 775 L1122 781 L1115 787"/>
+    <path d="M1536 781 H1583"/><path d="M1577 775 L1584 781 L1577 787"/>
+  </svg>
+
+  <div class="small-label" style="left:790px; top:199px;">In parallel</div>
+
+  <div class="card dashed c1">
+    <div class="head"><div class="num ghost">1</div><div class="title">Message</div><div class="tag muted">Input</div></div>
+    <div class="body"><b>Spanish or Portuguese.</b> The signed session provides the customer id; the conversation state travels in a signed token.</div>
+  </div>
+
+  <div class="card c2">
+    <div class="head"><div class="num">2</div><div class="title">Mask</div><div class="tag">Code</div></div>
+    <div class="body"><b>Card numbers, PINs, CVVs, passwords, emails and IDs</b> are masked before they reach models, state, cases or logs.</div>
+  </div>
+
+  <div class="card accent c3a">
+    <div class="head"><div class="num">3a</div><div class="title">Intent</div><div class="tag">Learned model</div></div>
+    <div class="body"><b>Cohere Embed v3 + softmax,</b> 7 categories. Threshold 0.70; if Bedrock fails, local e5-small (0.61).</div>
+  </div>
+
+  <div class="card llm c3b">
+    <div class="head"><div class="num">3b</div><div class="title">Details</div><div class="tag gold">LLM</div></div>
+    <div class="body"><b>Haiku reads amount, date and merchant;</b> code keeps only what the customer actually wrote.</div>
+  </div>
+
+  <div class="card c4">
+    <div class="head"><div class="num">4</div><div class="title">Dialogue</div><div class="tag">Code</div></div>
+    <div class="body"><b>Unsure of the intent?</b> It asks. <b>Amount or date missing?</b> It asks for it. No review opens without the customer's “yes”.</div>
+  </div>
+
+  <div class="card legend">
+    <div class="lbl">Who does what</div>
+    <div class="pill blue"><span class="dot"></span>Model: classifies</div>
+    <div class="pill teal"><span class="dot"></span>Code: decides</div>
+    <div class="pill gold"><span class="dot"></span>LLM: reads &amp; phrases</div>
+    <div class="pill red"><span class="dot"></span>Human: the hard cases</div>
+  </div>
+
+  <div class="card accent c5">
+    <div class="head"><div class="num">5</div><div class="title">Policy PL-1 … PL-11</div><div class="tag">Code</div></div>
+    <div class="body"><b>Looks up the charge only in the customer's own rows</b> (RLS, role lookup_reader).</div>
+    <div class="rules">
+      <div class="rule">Not found → ask once, then a person<code>PL-1</code></div>
+      <div class="rule">Several → ask for a detail or pick<code>PL-2 · PL-10</code></div>
+      <div class="rule">Pending, reversed, declined → explain<code>PL-3–5</code></div>
+      <div class="rule red">Fraud risk ≥ 30 → human<code>PL-6</code></div>
+      <div class="rule green">Confirmed, score under 30 → open a review<code>PL-7</code></div>
+    </div>
+  </div>
+
+  <div class="card c6">
+    <div class="head"><div class="num">6</div><div class="title">Verify</div><div class="tag">Code</div></div>
+    <div class="body"><b>Writes the case to Supabase and reads it back</b> before giving the customer its reference.</div>
+    <div class="callout red"><span class="lbl">Hand-off to a person</span>Structured case: <b>the request, verified facts with their source, checks run and open questions.</b> No raw chat.</div>
+  </div>
+
+  <div class="card llm c7">
+    <div class="head"><div class="num">7</div><div class="title">Phrase</div><div class="tag gold">LLM</div></div>
+    <div class="body"><b>Claude Haiku 4.5</b> puts the instruction chosen by code into words.</div>
+    <div class="callout green"><span class="lbl">Checked in code</span>Rejects <b>numbers the customer or the record didn't give</b> and stock promises of speed. If it fails: ES/PT template.</div>
+  </div>
+
+  <div class="card dashed c8">
+    <div class="head"><div class="num ghost">8</div><div class="title">Response</div><div class="tag muted">Output</div></div>
+    <div class="body"><p><b>Text in the customer's language</b> + signed state token.</p><p><b>One JSON log line per turn:</b> model, rule applied, time and cost per step.</p></div>
+    <div class="pills"><div class="pill">0 wrong actions · 168 runs</div><div class="pill">p50 3.0 s per reply</div></div>
+  </div>
+
+  <div class="band"><span>No money ever moves</span><span>The LLM never picks the action</span><span>Every case reference is verified</span></div>
+  <div class="sources">src/app/api/chat/route.ts · src/lib/policy/decide.ts · src/lib/cases · src/lib/reply/compose.ts · metrics: reports/eval_production-cohere.md (offline)</div>
+</div>
+<script src="backdrop.js"></script>
+</body>
+</html>

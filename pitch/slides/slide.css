@@ -1,0 +1,93 @@
+/* Shared look for the GT Bank pitch slides (2000 x 1125), matching the app's Quetzal theme (src/app/globals.css).
+   Fonts: Geist, Geist Mono and Instrument Serif (SIL OFL). Opened in a browser they load from Google Fonts (link in each
+   slide); render.mjs renders offline from the npm copies below (`npm install` in this folder, see README.md). */
+@font-face { font-family: "Geist Local"; src: url("node_modules/geist/dist/fonts/geist-sans/Geist-Variable.woff2") format("woff2"); font-weight: 100 900; }
+@font-face { font-family: "Geist Mono Local"; src: url("node_modules/geist/dist/fonts/geist-mono/GeistMono-Variable.woff2") format("woff2"); font-weight: 100 900; }
+@font-face { font-family: "Instrument Serif Local"; src: url("node_modules/@fontsource/instrument-serif/files/instrument-serif-latin-400-italic.woff2") format("woff2"); font-style: italic; font-weight: 400; }
+
+:root {
+  --bg: #07120f;
+  --ink: #ecf4f0;
+  --body: #c8d7d0;
+  --sec: #a0b6ac;
+  --muted: #7d958b;
+  --faint: #56706a;
+  --teal: #35d6a3;
+  --teal-rgb: 53, 214, 163;
+  --blue: #4cc9db;
+  --gold: #e8c26a;
+  --gold-rgb: 232, 194, 106;
+  --red: #ff635b;
+  --red-rgb: 255, 99, 91;
+  --line: rgba(160, 190, 178, 0.55);
+  --card: rgba(12, 27, 23, 0.78);
+  --card-border: rgba(120, 220, 190, 0.17);
+  --mono: "Geist Mono", "Geist Mono Local", ui-monospace, monospace;
+  --serif: "Instrument Serif", "Instrument Serif Local", Georgia, serif;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { width: 2000px; height: 1125px; overflow: hidden; background: var(--bg); }
+body { font-family: "Geist", "Geist Local", "Helvetica Neue", Arial, sans-serif; color: var(--body); -webkit-font-smoothing: antialiased; position: relative; }
+
+.backdrop { position: absolute; inset: 0; z-index: 0; overflow: hidden; }
+.backdrop canvas { position: absolute; inset: 0; width: 2000px; height: 1125px; }
+.glow { position: absolute; border-radius: 50%; filter: blur(90px); }
+.g1 { width: 1100px; height: 1100px; left: -380px; top: -560px; background: radial-gradient(circle, rgba(53, 214, 163, 0.22), transparent 62%); }
+.g2 { width: 1000px; height: 1000px; right: -380px; top: 300px; background: radial-gradient(circle, rgba(25, 180, 196, 0.17), transparent 62%); }
+.g3 { width: 700px; height: 700px; left: 820px; bottom: -480px; background: radial-gradient(circle, rgba(255, 90, 82, 0.07), transparent 62%); }
+
+.stage { position: absolute; inset: 0; z-index: 1; }
+
+/* header */
+.topbar { position: absolute; left: 0; top: 0; width: 2000px; height: 76px; background: linear-gradient(180deg, rgba(5, 14, 11, 0.72), rgba(7, 18, 15, 0.45)); border-bottom: 1px solid rgba(120, 220, 190, 0.08); }
+.brand { position: absolute; left: 50px; top: 17px; display: flex; align-items: center; gap: 15px; }
+.brand svg { filter: drop-shadow(0 6px 16px rgba(53, 214, 163, 0.28)); }
+.wordmark { font-size: 24px; color: var(--ink); font-weight: 650; letter-spacing: -0.025em; }
+.wordmark span { font-weight: 350; opacity: 0.72; }
+.event { position: absolute; right: 52px; top: 30px; font-family: var(--mono); font-size: 13px; letter-spacing: 0.24em; color: var(--muted); text-transform: uppercase; }
+
+/* title block */
+.kicker { position: absolute; left: 50px; top: 118px; display: flex; align-items: center; gap: 14px; font-family: var(--mono); font-size: 14px; letter-spacing: 0.2em; color: var(--teal); text-transform: uppercase; white-space: nowrap; }
+.kicker::before { content: ""; width: 28px; height: 1.5px; background: var(--teal); opacity: 0.85; }
+h1 { position: absolute; left: 50px; top: 136px; font-size: 52px; line-height: 1.15; font-weight: 640; letter-spacing: -0.04em; color: var(--ink); white-space: nowrap; }
+h1 em { font-family: var(--serif); font-style: italic; font-weight: 400; font-size: 1.14em; letter-spacing: -0.012em; background: linear-gradient(100deg, #35d6a3 0%, #19b4c4 85%); -webkit-background-clip: text; background-clip: text; color: transparent; padding-right: 0.08em; }
+
+/* cards */
+.card { position: absolute; border: 1.5px solid var(--card-border); border-radius: 24px; background: linear-gradient(180deg, rgba(13, 29, 25, 0.95), rgba(9, 21, 18, 0.93)); padding: 24px 26px; }
+.card.dashed { border-style: dashed; border-color: rgba(120, 220, 190, 0.2); background: rgba(8, 19, 16, 0.86); }
+.card.accent { border-color: rgba(var(--teal-rgb), 0.3); }
+.card.llm { border-color: rgba(var(--gold-rgb), 0.3); }
+.head { display: flex; align-items: center; gap: 13px; margin-bottom: 18px; }
+.num { flex: none; min-width: 34px; height: 34px; padding: 0 7px; border-radius: 9px; display: grid; place-items: center; font-size: 15px; font-weight: 600; color: #03120d; background: linear-gradient(135deg, #2bc597 0%, #17a3b3 100%); }
+.num.ghost { background: transparent; color: var(--sec); border: 1.5px solid rgba(160, 190, 178, 0.35); }
+.title { font-size: 25px; font-weight: 600; color: var(--ink); letter-spacing: -0.02em; white-space: nowrap; }
+.tag { margin-left: auto; font-family: var(--mono); font-size: 12.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--teal); white-space: nowrap; }
+.tag.gold { color: var(--gold); }
+.tag.muted { color: var(--muted); }
+.body { font-size: 17.5px; line-height: 1.47; color: var(--sec); }
+.body b { color: var(--ink); font-weight: 560; }
+.body p + p { margin-top: 12px; }
+
+.callout { margin-top: 16px; border-radius: 14px; padding: 15px 17px; font-size: 16px; line-height: 1.45; color: var(--sec); }
+.callout b { color: var(--ink); font-weight: 560; }
+.callout .lbl { display: block; font-family: var(--mono); font-size: 12.5px; letter-spacing: 0.2em; text-transform: uppercase; margin-bottom: 8px; }
+.callout.red { background: rgba(var(--red-rgb), 0.07); border: 1.5px solid rgba(var(--red-rgb), 0.3); }
+.callout.red .lbl { color: var(--red); }
+.callout.green { background: rgba(var(--teal-rgb), 0.06); border: 1.5px solid rgba(var(--teal-rgb), 0.3); }
+.callout.green .lbl { color: var(--teal); }
+
+.pills { display: flex; flex-wrap: wrap; gap: 9px; }
+.pill { display: inline-flex; align-items: center; gap: 8px; font-family: var(--mono); font-size: 13.5px; letter-spacing: 0.04em; padding: 7px 13px; border-radius: 999px; border: 1.5px solid rgba(160, 190, 178, 0.24); color: var(--body); background: rgba(255, 255, 255, 0.015); white-space: nowrap; }
+.pill .dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; flex: none; }
+.pill.teal { color: var(--teal); border-color: rgba(var(--teal-rgb), 0.4); background: rgba(var(--teal-rgb), 0.06); }
+.pill.blue { color: var(--blue); border-color: rgba(76, 201, 219, 0.4); background: rgba(76, 201, 219, 0.06); }
+.pill.gold { color: var(--gold); border-color: rgba(var(--gold-rgb), 0.4); background: rgba(var(--gold-rgb), 0.06); }
+.pill.red { color: var(--red); border-color: rgba(var(--red-rgb), 0.4); background: rgba(var(--red-rgb), 0.06); }
+
+.band { position: absolute; left: 50px; width: 1900px; border: 1.5px solid rgba(var(--teal-rgb), 0.22); border-radius: 18px; background: rgba(var(--teal-rgb), 0.035); }
+.sources { position: absolute; left: 50px; top: 1077px; font-family: var(--mono); font-size: 13.5px; letter-spacing: 0.03em; color: var(--faint); white-space: nowrap; }
+
+svg.wires { position: absolute; inset: 0; width: 2000px; height: 1125px; pointer-events: none; }
+svg.wires path { fill: none; stroke: var(--line); stroke-width: 1.6; }
+.small-label { position: absolute; font-family: var(--mono); font-size: 13px; letter-spacing: 0.2em; color: var(--muted); text-transform: uppercase; }
