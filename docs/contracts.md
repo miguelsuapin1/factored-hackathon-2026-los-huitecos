@@ -9,6 +9,7 @@ The interfaces between the system's components. Each one has a producer and a co
 | K3 | Case file (reviews and hand-offs) | policy engine → agent console | table `public.cases`; see [verification.md](verification.md) |
 | K4 | Trace line | every turn → evaluation report | one JSON line per turn in the runtime logs |
 | K5 | Demo and test customers | serving slice → test conversations | Supabase serving slice; agreed by Luis Pedro and Carlos, 2026-10-01 |
+| K6 | Agent console + hand-off chat | hand-off cases → agent console ↔ customer chat | `src/lib/agent/`, `/agent`, `/api/agent/*`, `/api/handoff`; see below |
 
 ## K1. `POST /api/chat`
 
@@ -150,6 +151,18 @@ Together they cover MX/CO/AR, USD/COP/ARS, Basic/Plus/Premium and both data sour
 | ambiguo.mx | `TRX-KB3BCKQKAA2OT00Q57VL`, `TRX-N4OFZ3SVM86XNWB6F7OG`, `TRX-70B1SMWBEZWIH577GVBX` | 06-16, 06-15, 06-10 | 427.59, 427.26, 426.40 USD | none / Withdrawal | Approved | "no me acuerdo" → 3 matches → PL-2, no merchant to give → a person. "el 16 de junio" → 2 matches (06-15, 06-16) → PL-10 |
 
 PL-1 needs no fixture: any amount the customer doesn't have (e.g. 999 USD on 10 June, TC-08). PL-8 is a forced tool failure, not data. Changing any of these rows in the slice, or a login's customer, is a change to this contract.
+
+## K6. Agent console and the hand-off chat
+
+**Built (Carlos, 2026-10-05, decision D-007).** When the assistant hands a conversation to a person and the case is verified (K3, `kind = handoff`), the request appears in the agent console; an agent accepts it and chats with the customer in the same chat window. No change to `POST /api/chat` (K1) or to the `cases` columns (K3).
+
+- **Who:** agents sign in at `/agent/login` with one shared login (env `AGENT_USERNAME`, `AGENT_PASSWORD`). Their cookie `gt_agent` (`{ r: "agent" }`) and the customer's `gt_session` (`{ c: customerId }`) can't stand in for each other (`src/lib/auth/session.ts`, `src/proxy.ts`).
+- **State:** the case's own `status`: `open` (waiting) → `in_progress` (accepted; conditional update, so only one agent wins) → `closed`. Reviews (`kind = review`) are not shown.
+- **Messages:** table `public.case_messages` (`case_id` → `cases.id`, `sender` customer | agent | system, `body` ≤ 1,000 chars), migration `20261005060000_step20_case_messages.sql`. Server-only like `cases`. Customer text is masked before insert (H4). System messages are codes (`agent_joined`, `agent_closed`) rendered in each reader's language.
+- **Agent API** (agent cookie): `GET /api/agent/requests[?all=1]` (inbox; default = this deployment's `prompt_versions.environment`), `GET /api/agent/case?ref=GT-…&after=<id>` (case, briefing, customer profile, transaction, new messages), `POST /api/agent/case { ref, action: accept | close | message, text? }`.
+- **Customer API** (customer cookie): `GET /api/handoff?ref=GT-…&after=<id>` → `{ status, language, messages }`; `POST /api/handoff { ref, text }` (only while `in_progress`). Only the customer the case belongs to: another customer's reference answers 404, like a missing one.
+- **Briefing:** a table and a paragraph built by code from the case row, the customer profile and the transaction (`src/lib/agent/briefing.ts`), never by a model and never from a transcript. The agent sees the fraud score; the customer never does.
+- **Transport:** polling through server routes (inbox every 4 s, open case and customer chat every 2 s). The browser never reads the database.
 
 ## Open questions for the team
 

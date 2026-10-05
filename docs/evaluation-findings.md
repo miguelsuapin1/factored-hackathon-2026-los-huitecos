@@ -66,7 +66,7 @@ it("TC-02: a merchant that can't narrow three matches asks for the date before a
 
 ## EF-2. Fallback mode: "A or B?" depends on the runner-up label 📊
 
-**What happens.** TC-14, TC-19 and TC-20 open with a status question and get `ask_clarify` instead of a search. C15 skips the clarification only when the **top two** labels are both charge intents (`dialogue.ts`, step 5). Scores from `/api/classify`, e5-small, threshold 0.61:
+**What happens.** TC-14, TC-19 and TC-20 open with a status question and get `ask_clarify` instead of a search. C15 skips the clarification only when the **top two** labels are both charge intents (`dialogue.ts`). Scores from `/api/classify`, e5-small, threshold 0.61:
 
 | Turn | Top two | Second a charge intent? | Move |
 |---|---|---|---|
