@@ -91,3 +91,19 @@ GCP project `project-d49391de-51c4-49bf-aae`, location `us-east1` (dataset and b
 **Evidence:** `supabase/tests/step8_rls_check.sql` (passed on Supabase 2026-10-01; checked to fail when run without the role), `src/lib/auth/auth.test.ts` (hashing, Python↔TS hash compatibility, wrong/unknown/disabled user, id-only login, forged and pre-step-8 cookies), and the seed script re-checks isolation through the pooler as `lookup_reader` after every run.
 
 **Trade-offs:** one more secret (`SUPABASE_LOOKUP_DB_URL`) and a direct Postgres connection from Vercel; password hashing is ours, not a managed identity service. `app_users.customer_id` has no foreign key (the step-7 loader truncates `customers`); the loader refuses a reload that would orphan a login instead.
+
+## D-007: Agent console with a live hand-off chat, by polling through server routes (2026-10-05)
+**Status:** accepted, built and tested (Carlos, 2026-10-05).
+
+**Problem:** every hand-off becomes a verified case (K3), but nobody could pick it up, and the customer was told "an agent will take over" with nothing behind it.
+
+**Chosen (Carlos, 2026-10-05):**
+- **One shared agent login** from env (`AGENT_USERNAME`, `AGENT_PASSWORD`), its own cookie that customer sessions can't impersonate (and the reverse).
+- **Request inbox + accept + chat.** The case's existing `status` is the request state (open → in_progress → closed; accept is a conditional update so two agents can't take the same request). Messages live in a new server-only table `public.case_messages`; `cases` columns are unchanged.
+- **Polling through server routes** (2–4 s), not Supabase Realtime: Realtime would need browser read policies on cases and messages, which breaks the rule that the browser key reads nothing. Polling works on Vercel as is and keeps every read behind a session check.
+- **Briefing built by code** from the case facts (intent, what the customer said, the matched and confirmed transaction, why a person, open questions, checks done), not by a model and not from a transcript (the brief's "structured handoff").
+- **Customer side:** after a verified hand-off the chat shows "connecting you to an agent", then the agent's messages; while the agent is on the case, the customer's messages go to the agent, masked first (H4).
+
+**Evidence:** `src/lib/agent/service.test.ts` (accept once, no writing before accepting, scoping by customer, masking, polling order), `briefing.test.ts`, agent-session tests in `auth.test.ts`; a two-browser run (agent + customer) on a local server with the seeded memory store.
+
+**Trade-offs and limits:** one shared login (no per-agent attribution or routing by `agent_pools`); polling adds a request every 2 s per open screen; no notification when the agent's tab is in the background beyond the count in the tab title; the 300+ open test cases from evaluation runs are hidden by default (environment filter), not deleted.

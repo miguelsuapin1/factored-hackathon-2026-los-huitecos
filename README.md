@@ -2,7 +2,7 @@
 
 An AI customer-service system for **transaction disputes** (charges a customer doesn't recognize, and fees they consider wrong) at **GT Bank**, a fictional Latin American bank. It works in **Spanish and Portuguese**, finds the charge in the signed-in customer's own records, explains it or opens a verified review, and hands hard cases to a specialist with the facts already checked.
 
-**The model chooses the words. Code decides what happens.** Built for the Factored AI & Data Hackathon 2026 on the organizer's synthetic LATAM Bank dataset.
+**The model chooses the words. Code decides what happens.** Built by **Los Huitecos** for the Factored AI & Data Hackathon 2026 on the organizer's synthetic LATAM Bank dataset.
 
 **Live:** https://latam-bank-service-sigma.vercel.app (sign-in required; test logins are in the submission email)
 
@@ -25,6 +25,8 @@ From the organizer's data (686,296 contacts, 67,095 complaints, Jun 2023 – Jun
 | **Disputed** | "No reconozco un cargo de 350 dólares del 10 de junio" → "Sí" | The charge is confirmed, a review case is written and read back, then its reference is quoted (PL-7) |
 | **Handed off** | "No reconozco un cargo de 120 dólares del 3 de junio" | Fraud score 41.7 ≥ 30: a specialist gets a structured case (request, verified facts, actions, open questions), no transcript (PL-6) |
 | **Refused** | "Devuélveme 5000" | No money moves, ever: a review or a person is offered instead |
+
+**Agent console** (`/agent`, [D-007](docs/decisions.md)): every hand-off arrives in a specialist's inbox with the case's verified facts and a code-built briefing (no transcript). The specialist accepts it and chats with the customer live, in the customer's own chat window; the customer's messages are masked before they are stored, and a customer can only ever reach their own case.
 
 ## Results (offline)
 
@@ -69,12 +71,12 @@ flowchart LR
 - **Understand:** sensitive data is masked before any model sees it. The intent model abstains below 0.70 confidence, a threshold chosen on validation by cost (wrong action 5, acting on an ambiguous message 2, needless question 1).
 - **Decide:** dialogue and policy are plain code with unit tests ([docs/conversation.md](docs/conversation.md), [docs/policy.md](docs/policy.md)). The fraud cutoff (score ≥ 30) was chosen on 2023–25 data and checked on held-out 2026 ([report](reports/fraud_threshold.md)).
 - **Act and verify:** the lookup only ever sees the signed-in customer's rows. A case is written and read back before the reply quotes its reference ([docs/verification.md](docs/verification.md)).
-- **Escalate:** hand-offs carry verified facts, actions taken and open questions, and never promise timing ([docs/handoff.md](docs/handoff.md)).
+- **Escalate:** hand-offs carry verified facts, actions taken and open questions, and never promise timing ([docs/handoff.md](docs/handoff.md)). A specialist picks them up in the agent console ([docs/contracts.md](docs/contracts.md) K6).
 - **Fall back safely:** if Bedrock fails, a local multilingual-e5-small model inside the function classifies; if Haiku fails, ES/PT templates answer. One JSON trace line per turn records the models, prompt versions, rule and latency.
 
 ## Data pipeline
 
-Organizer CSVs (13 tables) → **bronze** in BigQuery (every column typed, 25.6M rows, 0 cast failures) → **silver** (cleaned; bronze = silver + quarantine, reconciled on all 13 tables) → **gold** (dbt models with contracts and tests) → a **serving slice** in Supabase (2,040 customers, 23,052 charges, chosen so every policy path has real data; each load recorded in `data_version`). Log: [docs/data-pipeline.md](docs/data-pipeline.md) · data issues found: [docs/data-issues.md](docs/data-issues.md) · dbt project: [pipeline/dbt](pipeline/dbt/README.md).
+Organizer CSVs (13 tables) → **bronze** in BigQuery (every column typed, 23.5M rows, 0 cast failures) → **silver** (cleaned; bronze = silver + quarantine, reconciled on all 13 tables) → **gold** (dbt models with contracts and tests) → a **serving slice** in Supabase (2,040 customers, 23,052 charges, chosen so every policy path has real data; each load recorded in `data_version`). Log: [docs/data-pipeline.md](docs/data-pipeline.md) · data issues found: [docs/data-issues.md](docs/data-issues.md) · dbt project: [pipeline/dbt](pipeline/dbt/README.md).
 
 The organizer's text fields are templated and contain no Portuguese, so the language model was trained on **948 team-written ES/PT phrases** with a sealed test set (SHA-256 manifest; every test run logged in `reports/test_runs.jsonl`). Banking77 was tried as extra training data and rejected on measurement ([docs/intent-model.md](docs/intent-model.md) D17).
 
@@ -116,8 +118,8 @@ uv run python pipeline/load_supabase.py                      # gold serving slic
 ## Repository
 
 ```
-src/app, src/components   Next.js app: sign-in, chat, API routes (/api/chat, /api/classify)
-src/lib                   intent, conversation, policy, lookup, cases, privacy, reply
+src/app, src/components   Next.js app: sign-in, chat, agent console (/agent), API routes
+src/lib                   intent, conversation, policy, lookup, cases, agent, privacy, reply
 supabase/                 migrations (schema, row-level security) and the RLS check
 pipeline/                 data prep, dbt project, model training and evaluation scripts
 data/phrases/             team-written ES/PT phrase set, labeling guide, sealed split manifest
@@ -126,7 +128,7 @@ reports/                  generated reports (never hand-edited)
 docs/                     decisions and design notes (start at docs/README.md)
 ```
 
-## Team
+## Team: Los Huitecos
 
 Miguel ([@miguelsuapin1](https://github.com/miguelsuapin1)) · Luis Pedro ([@lpcuellar](https://github.com/lpcuellar)) · Carlos ([@Carloscuellark](https://github.com/Carloscuellark))
 

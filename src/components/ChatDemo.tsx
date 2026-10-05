@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import type { IntentResult } from "@/lib/intent/classify";
 import type { ReplyResult } from "@/lib/reply/compose";
 import { INTENT_LABELS, MODEL_LABELS } from "@/lib/intent/labels";
+import { HANDOFF_TEXT, useHandoffChat } from "./useHandoffChat";
 
 // The `conversation` block of /api/chat (docs/contracts.md K1).
 type Conversation = {
@@ -54,14 +55,24 @@ export function ChatDemo({ jevAvailable = false }: { jevAvailable?: boolean }) {
   const nextId = useRef(1);
   const stateToken = useRef<string | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
+  // Step 20: once a hand-off case is verified, an agent can pick it up and chat here (useHandoffChat).
+  const handoff = useHandoffChat();
 
   useEffect(() => {
     listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: "smooth" });
-  }, [messages, busy]);
+  }, [messages, busy, handoff.messages, handoff.status]);
 
   async function send(text: string) {
     const clean = text.trim();
     if (!clean || busy) return;
+    if (handoff.live) {
+      // An agent is on the case: the message goes to them, not to the assistant.
+      setDraft("");
+      setBusy(true);
+      if (!(await handoff.send(clean))) setDraft(clean);
+      setBusy(false);
+      return;
+    }
     setDraft("");
     setBusy(true);
     setMessages((m) => [...m, { id: nextId.current++, role: "user", text: clean }]);
@@ -83,6 +94,8 @@ export function ChatDemo({ jevAvailable = false }: { jevAvailable?: boolean }) {
       stateToken.current = conversation.state;
       setMessages((m) => [...m, { id, role: "bot", result: data.intent as IntentResult, reply: data.reply as ReplyResult, conversation }]);
       setSelected(id);
+      const handedOff = conversation.case;
+      if (handedOff?.kind === "handoff" && handedOff.verified && handedOff.reference) handoff.start(handedOff.reference);
     } catch (err) {
       setMessages((m) => [...m, { id: nextId.current++, role: "error", text: (err as Error).message }]);
     } finally {
@@ -91,6 +104,7 @@ export function ChatDemo({ jevAvailable = false }: { jevAvailable?: boolean }) {
   }
 
   function reset() {
+    handoff.reset();
     stateToken.current = null;
     setMessages([]);
     setSelected(null);
@@ -150,6 +164,7 @@ export function ChatDemo({ jevAvailable = false }: { jevAvailable?: boolean }) {
               </div>
             ),
           )}
+          {handoff.reference && handoff.status && <HandoffThread h={handoff} />}
           {busy && <div className="typing" role="status" aria-label="Writing a reply"><i /><i /><i /></div>}
         </div>
 
@@ -179,7 +194,7 @@ export function ChatDemo({ jevAvailable = false }: { jevAvailable?: boolean }) {
               aria-label="Message"
             />
             <button className="btn" type="submit" disabled={busy || !draft.trim()}>
-              Send
+              {handoff.live ? (handoff.language === "pt" ? "Enviar ao atendente" : "Enviar al agente") : "Send"}
             </button>
           </form>
         </div>
@@ -199,6 +214,27 @@ export function ChatDemo({ jevAvailable = false }: { jevAvailable?: boolean }) {
         </div>
       </aside>
     </main>
+  );
+}
+
+/** The live part of a hand-off, under the assistant's messages: waiting → agent joined → closed. */
+function HandoffThread({ h }: { h: ReturnType<typeof useHandoffChat> }) {
+  const t = HANDOFF_TEXT[h.language];
+  const banner = h.status === "open" ? [t.waiting, t.waitingSub] : h.status === "in_progress" ? [t.live, t.liveSub] : [t.closed, t.closedSub];
+  return (
+    <>
+      <div className={`handoff-banner${h.live ? " live" : ""}`} role="status">
+        <b>{banner[0]}</b>
+        <span className="sub">{banner[1]} · {h.reference}</span>
+      </div>
+      {h.messages.filter((m) => m.sender !== "system").map((m) => (
+        <div key={`h${m.id}`} className={`msg ${m.sender === "customer" ? "user" : "agent"}`}>
+          {m.sender === "agent" && <span className="reply-meta">{t.agent} · GT Bank</span>}
+          <span className="reply-text">{m.body}</span>
+        </div>
+      ))}
+      {h.error && <div className="msg error">{h.error}</div>}
+    </>
   );
 }
 

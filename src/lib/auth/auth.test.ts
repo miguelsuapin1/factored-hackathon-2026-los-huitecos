@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import { before, describe, it } from "node:test";
 import { authenticate, type LoginDeps, type StoredLogin } from "./login";
 import { hashPassword, verifyPassword } from "./password";
-import { createSession, signJson, verifySession } from "./session";
+import { checkAgentCredentials, createAgentSession, createSession, signJson, verifyAgentSession, verifySession } from "./session";
 
 // Low iteration count so the suite stays fast; the format and code path are the real ones.
 const FAST = 1000;
@@ -98,5 +98,29 @@ describe("session", () => {
   });
   it("can't be created without a customer", async () => {
     await assert.rejects(createSession("demo", ""), /customer/);
+  });
+});
+
+describe("agent session", () => {
+  before(() => {
+    process.env.SESSION_SECRET ??= "test-secret-test-secret-test-secret-42";
+    process.env.AGENT_USERNAME = "agente";
+    process.env.AGENT_PASSWORD = "agent-pass";
+  });
+  it("an agent cookie is accepted as an agent, never as a customer", async () => {
+    const token = await createAgentSession("agente");
+    assert.equal((await verifyAgentSession(token))?.u, "agente");
+    assert.equal(await verifySession(token), null);
+  });
+  it("a customer cookie is never accepted as an agent", async () => {
+    assert.equal(await verifyAgentSession(await createSession("demo.mx", "CLI-DEMO00000001")), null);
+    const now = Math.floor(Date.now() / 1000);
+    assert.equal(await verifyAgentSession(await signJson({ r: "agent", u: "x", c: "CLI-DEMO00000001", exp: now + 60 })), null);
+    assert.equal(await verifyAgentSession(await signJson({ r: "agent", u: "x", exp: now - 1 })), null);
+  });
+  it("checks the shared agent credentials, and never accepts empty ones", async () => {
+    assert.equal(await checkAgentCredentials("agente", "agent-pass"), true);
+    assert.equal(await checkAgentCredentials("agente", "wrong"), false);
+    assert.equal(await checkAgentCredentials("", ""), false);
   });
 });

@@ -62,15 +62,46 @@ export async function verifySession(token: string | undefined): Promise<Payload 
   return payload.exp > Date.now() / 1000 ? payload : null;
 }
 
+async function sameCredentials(username: string, password: string, expectedUser: string, expectedPass: string) {
+  const digest = async (s: string) => new Uint8Array(await crypto.subtle.digest("SHA-256", encoder.encode(s)));
+  const [a, b] = await Promise.all([digest(`${username}\n${password}`), digest(`${expectedUser}\n${expectedPass}`)]);
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) diff |= a[i] ^ b[i];
+  return diff === 0;
+}
+
 /** Constant-time check of the shared demo account (DEMO_USERNAME / DEMO_PASSWORD env vars). It signs in
  *  as the synthetic demo customer; per-customer test logins live in public.app_users (src/lib/auth/login.ts). */
 export async function checkCredentials(username: string, password: string) {
   const expectedUser = process.env.DEMO_USERNAME;
   const expectedPass = process.env.DEMO_PASSWORD;
   if (!expectedUser || !expectedPass) throw new Error("DEMO_USERNAME / DEMO_PASSWORD are not configured");
-  const digest = async (s: string) => new Uint8Array(await crypto.subtle.digest("SHA-256", encoder.encode(s)));
-  const [a, b] = await Promise.all([digest(`${username}\n${password}`), digest(`${expectedUser}\n${expectedPass}`)]);
-  let diff = 0;
-  for (let i = 0; i < a.length; i++) diff |= a[i] ^ b[i];
-  return diff === 0;
+  return sameCredentials(username, password, expectedUser, expectedPass);
+}
+
+// ── Agent console (D-007) ──────────────────────────────────────────────────────────────────────────────────────
+// A separate cookie with its own payload shape ({ r: "agent" }), so a customer session can never pass as an agent's
+// and the reverse: verifySession requires a customer id `c`, verifyAgentSession requires r === "agent".
+
+export const AGENT_COOKIE = "gt_agent";
+export type AgentPayload = { r: "agent"; u: string; exp: number };
+
+export async function createAgentSession(username: string) {
+  const payload: AgentPayload = { r: "agent", u: username, exp: Math.floor(Date.now() / 1000) + SESSION_TTL_SECONDS };
+  return signJson(payload);
+}
+
+export async function verifyAgentSession(token: string | undefined): Promise<AgentPayload | null> {
+  const payload = await verifyJson<AgentPayload>(token);
+  if (!payload || payload.r !== "agent" || typeof payload.u !== "string" || "c" in payload) return null;
+  return payload.exp > Date.now() / 1000 ? payload : null;
+}
+
+/** The shared agent login (AGENT_USERNAME / AGENT_PASSWORD env vars, D-007). Constant-time, like the demo account. */
+export async function checkAgentCredentials(username: string, password: string) {
+  const expectedUser = process.env.AGENT_USERNAME;
+  const expectedPass = process.env.AGENT_PASSWORD;
+  if (!expectedUser || !expectedPass) throw new Error("AGENT_USERNAME / AGENT_PASSWORD are not configured");
+  if (!username || !password) return false;
+  return sameCredentials(username, password, expectedUser, expectedPass);
 }

@@ -3,7 +3,7 @@
 By Carlos. What the data pipeline does, in the order it was built, with the numbers each stage produced. Everything runs in Google
 Cloud (project `project-d49391de-51c4-49bf-aae`, region `us-east1`); the code and every generated report are in
 this repo. Decisions: [decisions.md](decisions.md) D-003, D-005. Rules: [data-issues.md](data-issues.md).
-Failures and fixes: [lessons-learned.md](lessons-learned.md) X1–X5.
+Failures and fixes: [lessons-learned.md](lessons-learned.md) X1–X6.
 
 ## Where things are
 
@@ -29,7 +29,7 @@ Failures and fixes: [lessons-learned.md](lessons-learned.md) X1–X5.
 
 ### 2026-09-30: silver, full population (D-005)
 - Tooling decision: dbt (options A–C and Dataform compared in D-005). Same models run on BigQuery and DuckDB.
-- Staging types every column: **0 cast failures** across 25.6M rows.
+- Staging types every column: **0 cast failures** across 23.5M rows (23,495,188 in the 13 bronze tables).
 - Silver applies the data-issue rules and flags each row it touches (`_rule_flags`). Counts per rule are in
   `reports/silver_quality.md`, e.g. C1 44,570 wrong-owner product links removed, A5 99,477 USD amounts derived,
   6,698 complaint subcategories derived from their category, E1 772, E2 62, E3 1,065, E5 3,274.
@@ -45,7 +45,8 @@ Failures and fixes: [lessons-learned.md](lessons-learned.md) X1–X5.
   with the problems the organizer data lacks: a duplicate delivery, a late file (Pending → Reversed), a row
   without an amount, and (with `--drift`) an extra column.
 - `dbt build --target duckdb`: **178/178 steps pass**, including 3 unit tests (USD derivation, local date,
-  wrong-owner complaint link) and the fixture expectations. With `--drift` the schema contract fails loudly.
+  wrong-owner complaint link). The fixture expectations were **not** among them: dbt skipped them until
+  2026-10-05 (see that entry). With `--drift` the schema contract fails loudly.
 
 ### 2026-09-30: gold
 - Analytics (full population): `gold_contact_reason_metrics` reproduces the briefing from cleaned data
@@ -111,3 +112,16 @@ Failures and fixes: [lessons-learned.md](lessons-learned.md) X1–X5.
   with no customer filter). 22/22 on a local Postgres 16 with both migrations and the demo seeds.
 - Checked on Supabase as `lookup_reader`: `pendiente.ar`'s question (550.66 around 14 June) returns exactly its
   pending ATM charge, local time 20:19.
+
+### 2026-10-05: the fixture expectations now run (Luis Pedro)
+- `tests/fixtures/fixture_expectations.sql` (FIX-DUP/LATE/MISS, A5, C1, E1, E3, E5, A7, C3) had never run: dbt 1.11
+  keeps `tests/fixtures/` for unit-test fixtures and skips singular tests there without a warning
+  (`dbt/parser/read_files.py`). The manifest had no node for it, enabled or disabled (lessons-learned X6).
+- Moved to `pipeline/dbt/tests/fixture_expectations.sql`, same `enabled=var('fixtures', false)` switch. Offline
+  build: 118 data tests, **179/179 pass**, `fixture_expectations` included (fixture transactions: bronze 6 =
+  silver 3 + quarantine 3). On a tampered copy of the fixture DB (FIX-LATE back to Pending, FIX-DUP twice in
+  silver) it fails with exactly those 2 expectations.
+- BigQuery unchanged: the test is disabled there (checked with `compile_offline.py`), and `serving_has_every_scenario`
+  (the opposite switch) runs instead, so both targets build 179 steps.
+- Bronze total corrected here and in pipeline/dbt/README.md: 23,495,188 rows, not 25.6M (the reconciliation table in
+  `reports/silver_quality.md`; BigQuery `bronze.__TABLES__` gives the same sum).
