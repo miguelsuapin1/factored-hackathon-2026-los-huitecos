@@ -1,0 +1,30 @@
+GT BANK DISPUTE DESK - VOICE-OVER (about 3:00)
+
+[0:00–0:22 · THE PROBLEM]
+In the organizers' data, complaints are 17% of contacts but 23% of agent hours, and fewer than half are solved on first contact. Four in ten formal complaints dispute a charge or a fee, something we can check against the records. So we built one workflow: dispute intake, in Spanish and Portuguese.
+
+
+[0:22–1:28 · DEMO]
+[DEMO CASE 1: normal resolution]
+First, a normal dispute, in Spanish. The customer even types their card number and PIN; code masks both before any model sees them. It finds the charge in this customer's own records and asks to confirm. Only after the "yes" does it open a review, and the case number was written to the database and read back first.
+
+[DEMO CASE 2: ambiguous]
+Second, an ambiguous one: two charges match. Instead of guessing, it lists both and lets the customer pick.
+
+[DEMO CASE 3: the customer asks for a person]
+Third, in Portuguese: the customer asks for a person. It asks for one line of context, then hands off with a case number.
+
+[DEMO CASE 4: policy decides a person is needed]
+Last: nobody asked for a person, but this charge's fraud score is high, so after the "yes", policy hands it off, without telling the customer why. The specialist gets no transcript. They get this: the request, verified facts with their sources, the checks it ran, and open questions.
+
+
+[1:28–2:13 · ARCHITECTURE]
+Our core decision: the model classifies, code decides, and the LLM only reads and writes. A classifier we trained on Cohere embeddings reads the intent; when unsure, it asks. Claude Haiku pulls out the amount, date and merchant; code keeps only what the customer wrote. Eleven policy rules in code then choose: explain, ask, open a review, or hand off. Haiku words that choice; if it invents a number, code swaps in a template. No money ever moves. Underneath, raw data lands in BigQuery as-is, dbt builds silver and gold, and every row is kept or quarantined with a reason. Postgres row-level security lets each customer read only their own rows.
+
+
+[2:13–2:45 · EVIDENCE]
+On 24 clear messages a teammate wrote by hand, the classifier was right 83% of the time; keyword rules, 50%. The rules acted wrongly on half; the model on none, because when it's unsure, it asks. Then we ran 56 test conversations, three times each, against the live app, prompt-injection and cross-customer attacks included: zero wrong actions, zero leaks, a three-second median reply, and under a cent of LLM cost per successful resolution.
+
+
+[2:45–3:03 · LIMITS AND CLOSE]
+These are offline results, on synthetic data and team-written tests. Our Portuguese still needs a native review, and ATM withdrawals are our weak spot. But when it's unsure, it asks; when it can't help, a person gets a verified case. GT Bank Dispute Desk.
