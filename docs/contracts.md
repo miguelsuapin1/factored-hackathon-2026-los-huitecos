@@ -6,9 +6,10 @@ The interfaces where one person's work plugs into another's. Agree here first, t
 |---|---|---|---|
 | K1 | `POST /api/chat` v2 (multi-turn) | Miguel → Person 3 (eval harness, steps 17–18) | implemented on `miguel/step-9-11-memory` (Miguel, 2026-09-29) |
 | K2 | Transaction lookup | Person 2 (step 10) → Miguel (steps 12–13) | types in `src/lib/lookup/types.ts`; stand-in used by step 12 (Miguel, 2026-09-30); Person 2 to confirm |
-| K3 | Case file (reviews and hand-offs) | Miguel (steps 13–14) → Person 2 (agent console, step 20) | table `public.cases` live (Miguel, 2026-09-30); see docs/verification.md |
+| K3 | Case file (reviews and hand-offs) | Miguel (steps 13–14) → Person 2 (agent console, step 20) | table `public.cases` live (Miguel, 2026-09-30); see docs/verification.md. The console reads hand-offs and moves `status` open → in_progress → closed (K6) |
 | K4 | Trace line | everyone → Person 3 (eval report) | Phase 1 shape + conversation fields |
 | K5 | Demo and test customers | Person 2 (slice + logins) → Person 3 (test conversations, steps 16–19) | agreed (Luis Pedro + Carlos, 2026-10-01) |
+| K6 | Agent console + hand-off chat | Person 2 (step 20) ↔ Miguel (K1 chat UI, K3 cases) | built on `carlos/step-20-agent-console` (Carlos, 2026-10-05); see below |
 
 ## K1. `POST /api/chat` v2
 
@@ -150,6 +151,18 @@ Together they cover MX/CO/AR, USD/COP/ARS, Basic/Plus/Premium and both data sour
 | ambiguo.mx | `TRX-KB3BCKQKAA2OT00Q57VL`, `TRX-N4OFZ3SVM86XNWB6F7OG`, `TRX-70B1SMWBEZWIH577GVBX` | 06-16, 06-15, 06-10 | 427.59, 427.26, 426.40 USD | none / Withdrawal | Approved | "no me acuerdo" → 3 matches → PL-2, no merchant to give → a person. "el 16 de junio" → 2 matches (06-15, 06-16) → PL-10 |
 
 PL-1 needs no fixture: any amount the customer doesn't have (e.g. 999 USD on 10 June, TC-08). PL-8 is a forced tool failure, not data. Changing any of these rows in the slice, or a login's customer, is a change to this contract.
+
+## K6. Agent console and the hand-off chat (Person 2, step 20)
+
+**Built (Carlos, 2026-10-05, decision D-007).** When the assistant hands a conversation to a person and the case is verified (K3, `kind = handoff`), the request appears in the agent console; an agent accepts it and chats with the customer in the same chat window. No change to `POST /api/chat` (K1) or to the `cases` columns (K3).
+
+- **Who:** agents sign in at `/agent/login` with one shared login (env `AGENT_USERNAME`, `AGENT_PASSWORD`). Their cookie `gt_agent` (`{ r: "agent" }`) and the customer's `gt_session` (`{ c: customerId }`) can't stand in for each other (`src/lib/auth/session.ts`, `src/proxy.ts`).
+- **State:** the case's own `status`: `open` (waiting) → `in_progress` (accepted; conditional update, so only one agent wins) → `closed`. Reviews (`kind = review`) are not shown.
+- **Messages:** table `public.case_messages` (`case_id` → `cases.id`, `sender` customer | agent | system, `body` ≤ 1,000 chars), migration `20261005060000_step20_case_messages.sql`. Server-only like `cases`. Customer text is masked before insert (H4). System messages are codes (`agent_joined`, `agent_closed`) rendered in each reader's language.
+- **Agent API** (agent cookie): `GET /api/agent/requests[?all=1]` (inbox; default = this deployment's `prompt_versions.environment`), `GET /api/agent/case?ref=GT-…&after=<id>` (case, briefing, customer profile, transaction, new messages), `POST /api/agent/case { ref, action: accept | close | message, text? }`.
+- **Customer API** (customer cookie): `GET /api/handoff?ref=GT-…&after=<id>` → `{ status, language, messages }`; `POST /api/handoff { ref, text }` (only while `in_progress`). Only the customer the case belongs to: another customer's reference answers 404, like a missing one.
+- **Briefing:** a table and a paragraph built by code from the case row, the customer profile and the transaction (`src/lib/agent/briefing.ts`), never by a model and never from a transcript. The agent sees the fraud score; the customer never does.
+- **Transport:** polling through server routes (inbox every 4 s, open case and customer chat every 2 s). The browser never reads the database.
 
 ## Open questions for the team
 

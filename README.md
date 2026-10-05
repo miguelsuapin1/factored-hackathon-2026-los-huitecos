@@ -13,6 +13,11 @@ with row-level security (decision D-006). Test logins live in Supabase `public.a
 shared demo account (`DEMO_USERNAME`, `DEMO_PASSWORD`) signs in as the synthetic demo customer. Credentials are shared
 with the judges in the submission and never committed.
 
+**Agent console** (`/agent`, decision D-007): when the assistant hands a customer to a person, the request appears
+there with the case facts and a code-built summary; an agent accepts it and chats with the customer in the same chat
+window. One shared agent login (`AGENT_USERNAME`, `AGENT_PASSWORD`). Without `SUPABASE_SECRET_KEY` (local only) it
+runs on three seeded synthetic requests.
+
 ## Stack
 | Layer | Choice |
 |---|---|
