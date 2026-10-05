@@ -2,7 +2,7 @@
 
 An AI customer-service system for **transaction disputes** (charges a customer doesn't recognize, and fees they consider wrong) at **GT Bank**, a fictional Latin American bank. It works in **Spanish and Portuguese**, finds the charge in the signed-in customer's own records, explains it or opens a verified review, and hands hard cases to a specialist with the facts already checked.
 
-**The model chooses the words. Code decides what happens.** Built for the Factored AI & Data Hackathon 2026 on the organizer's synthetic LATAM Bank dataset.
+**The model chooses the words. Code decides what happens.** Built by **Los Huitecos** for the Factored AI & Data Hackathon 2026 on the organizer's synthetic LATAM Bank dataset.
 
 **Live:** https://latam-bank-service-sigma.vercel.app (sign-in required; test logins are in the submission email)
 
@@ -126,7 +126,7 @@ reports/                  generated reports (never hand-edited)
 docs/                     decisions and design notes (start at docs/README.md)
 ```
 
-## Team
+## Team: Los Huitecos
 
 Miguel ([@miguelsuapin1](https://github.com/miguelsuapin1)) · Luis Pedro ([@lpcuellar](https://github.com/lpcuellar)) · Carlos ([@Carloscuellark](https://github.com/Carloscuellark))
 
