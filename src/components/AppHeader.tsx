@@ -16,7 +16,7 @@ export function AppHeader() {
   return (
     <header className="topbar">
       <div className="topbar-row">
-        <GTBankLogo subtitle="Dispute assistant · fictional bank, synthetic data" />
+        <GTBankLogo subtitle="Dispute Desk · fictional bank, synthetic data" />
         <div className="topbar-actions">
           <a className="credit" href="https://www.factored.ai" target="_blank" rel="noreferrer">
             <span>Built for the AI &amp; Data Hackathon 2026 by</span>

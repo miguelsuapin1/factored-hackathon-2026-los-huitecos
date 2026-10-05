@@ -1,24 +1,30 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Geist, Geist_Mono, Instrument_Serif } from "next/font/google";
+import { QuetzalBackdrop } from "@/components/QuetzalBackdrop";
 import { themeInitScript } from "@/components/ThemeToggle";
 import "./globals.css";
 
-const inter = Inter({ variable: "--font-inter", subsets: ["latin"] });
+const geist = Geist({ variable: "--font-geist", subsets: ["latin"] });
+const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
+const serif = Instrument_Serif({ variable: "--font-serif", subsets: ["latin"], weight: "400", style: ["normal", "italic"] });
 
 export const metadata: Metadata = {
-  title: "GT Bank · Dispute Assistant",
+  title: "GT Bank · Dispute Desk",
   description:
     "Bilingual (Spanish/Portuguese) transaction-dispute assistant for a fictional bank, built for the Factored AI & Data Hackathon 2026.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="es" className={inter.variable} suppressHydrationWarning>
+    <html lang="es" className={`${geist.variable} ${geistMono.variable} ${serif.variable}`} suppressHydrationWarning>
       <head>
         {/* Apply a saved light/dark choice before first paint (no flash). */}
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>
-      <body>{children}</body>
+      <body>
+        <QuetzalBackdrop />
+        <div className="page">{children}</div>
+      </body>
     </html>
   );
 }
