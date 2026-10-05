@@ -1,5 +1,6 @@
 {{ config(enabled=var('fixtures', false)) }}
 -- Runs only on the synthetic fixture bronze (pipeline/dbt/fixtures/build_fixture_bronze.py, --vars '{fixtures: true}').
+-- Keep it out of tests/fixtures/: dbt reserves that folder for unit-test fixtures and silently skips singular tests in it.
 -- Each row returned is a broken expectation.
 with checks as (
   -- FIX-DUP: two identical deliveries → exactly one in silver, one in quarantine as an older load

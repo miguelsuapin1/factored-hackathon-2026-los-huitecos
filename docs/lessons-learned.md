@@ -83,6 +83,7 @@ Everything we tried and replaced, dropped or had to fix, in one place. Failures 
 | X3 | Treating `customer_id` as required for every table | 3,745,446 digital events (24%) went to quarantine; they are anonymous sessions, not bad rows | Only keys are required for digital events; anonymous rows kept and flagged (A7). **Profile a table before writing its rules** | 📊 reports/silver_quality.md |
 | X4 | Filling missing transcript durations from the linked interaction (E6 plan) | 0 of 24,029 could be filled: the interaction lacks it too | Flag only. Check a fill rule's coverage before promising it | 📝 query in D-005 session |
 | X5 | Planning demo scenarios from organizer data only | No repeated charges exist (0 near-duplicates, 2 customers with 3+ similar amounts) | Serving slice carries the team's labelled synthetic demo charges (data issue G) | 📊 reports/serving_slice.md |
+| X6 | Keeping the fixture checks in `pipeline/dbt/tests/fixtures/` | dbt 1.11 keeps `tests/fixtures/` (and `tests/generic/`) for other files and skips singular tests there without a warning. Our docs counted them in the offline build's 178/178; they had never run | Moved to `tests/fixture_expectations.sql` (Luis Pedro, 2026-10-05): 179/179, and a tampered fixture DB fails it. **After adding a test, check that it shows up in the run, and make it fail once** | 📊 offline build in pipeline/dbt/README.md |
 
 ## Gaps in this record
 
