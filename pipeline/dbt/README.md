@@ -32,7 +32,8 @@ dependency order to `target/plan/` (datasets pinned to `us-east1`, then seeds, v
 only the execution is external. Prefer `dbt build` whenever a login is available.
 
 ## Key numbers (first full build, 2026-09-30)
-- 25.6M bronze rows → silver with **0 quarantined, 0 cast failures, 0 unexplained**; 84/84 silver data tests pass on BigQuery; 178/178 build steps (incl. 3 unit tests and the fixture expectations) pass on DuckDB.
+- 23.5M bronze rows (23,495,188) → silver with **0 quarantined, 0 cast failures, 0 unexplained**; 84/84 silver data tests pass on BigQuery.
+- Offline on DuckDB: 179/179 build steps pass, incl. 3 unit tests and `fixture_expectations` (since 2026-10-05; the 178/178 of 2026-09-30 had silently skipped it, [lessons-learned X6](../../docs/lessons-learned.md)). Check that `PASS fixture_expectations` is in the output.
 - Serving slice: 2,040 customers, 23,052 transactions, ≈20 MB estimated. See [reports/serving_slice.md](../../reports/serving_slice.md).
 
 ## Variables (dbt_project.yml)
