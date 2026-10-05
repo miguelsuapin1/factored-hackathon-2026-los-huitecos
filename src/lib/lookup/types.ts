@@ -1,4 +1,4 @@
-// Transaction lookup contract (docs/contracts.md K2). Producer: Person 2 (step 10). Consumer: the policy engine.
+// Transaction lookup contract (docs/contracts.md K2). Producer: Carlos. Consumer: the policy engine.
 // Always scoped to the signed-in customer: the customer id comes from the session, never from the conversation.
 
 export type CustomerSession = { customerId: string };

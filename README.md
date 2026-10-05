@@ -1,98 +1,133 @@
-# LATAM Bank Service
+# GT Bank Dispute Desk
 
-A bilingual (🇪🇸 Spanish / 🇧🇷 Portuguese) **banking customer-service system** — not a chatbot. It understands the customer, uses the right tools, verifies that actions happened, knows when *not* to act, and hands off to a human with a structured summary.
+An AI customer-service system for **transaction disputes** (charges a customer doesn't recognize, and fees they consider wrong) at **GT Bank**, a fictional Latin American bank. It works in **Spanish and Portuguese**, finds the charge in the signed-in customer's own records, explains it or opens a verified review, and hands hard cases to a specialist with the facts already checked.
 
-> Status: **Phase 2, build steps 7–21.** What exists and why: [docs/phase-1-walkthrough.md](docs/phase-1-walkthrough.md). Brief: [docs/challenge.md](docs/challenge.md). Decisions: [docs/decisions.md](docs/decisions.md). How it's evaluated: [docs/evaluation.md](docs/evaluation.md).
+**The model chooses the words. Code decides what happens.** Built for the Factored AI & Data Hackathon 2026 on the organizer's synthetic LATAM Bank dataset.
 
-**Live:** https://latam-bank-service-sigma.vercel.app (auto-deploys from `main`)
+**Live:** https://latam-bank-service-sigma.vercel.app (sign-in required; test logins are in the submission email)
 
-## Demo access
-The app opens on a sign-in page. Each test login is one customer of the synthetic bank and can only see that
-customer's data: the session cookie (signed, HttpOnly, 8 hours) carries the customer id, and the database enforces it
-with row-level security (decision D-006). Test logins live in Supabase `public.app_users` as password hashes; the
-shared demo account (`DEMO_USERNAME`, `DEMO_PASSWORD`) signs in as the synthetic demo customer. Credentials are shared
-with the judges in the submission and never committed.
+---
 
-## Stack
-| Layer | Choice |
-|---|---|
-| App / API | Next.js (App Router, TypeScript) on Vercel |
-| Data | BigQuery (bronze/silver/gold, dbt) → serving slice in Supabase Postgres, `sa-east-1` (São Paulo), row-level security |
-| Intent | Cohere Embed Multilingual v3 on AWS Bedrock + softmax regression; multilingual-e5-small in the function as fallback |
-| LLM | Claude Haiku 4.5: extracts details and phrases code-chosen replies; code decides every action |
+## Why disputes
 
-Recommended platforms (Snowflake / AWS / Azure / Databricks) to be evaluated later — see D-001.
+From the organizer's data (686,296 contacts, 67,095 complaints, Jun 2023 – Jun 2026; [analysis](docs/contact-reason-analysis.md)):
 
-## Repo layout
+- Complaints are 17% of contacts but **23% of agent hours**, with the worst first-contact resolution (**43.6%**) and the lowest satisfaction (**2.43 / 5**).
+- **40% of complaints dispute money**: an unrecognized charge or a wrongful fee. The median complaint takes 15–16 days to resolve.
+- Many "unrecognized" charges are pending or already reversed, which can be answered from the record without opening a case.
+
+## What it does
+
+| Case | Example | What happens |
+|---|---|---|
+| **Resolved** | "No reconozco un cargo de 45 dólares de ayer" | The charge is pending: explained from the record, nothing opened (PL-3) |
+| **Clarified** | "O que aconteceu com minha compra de 25 dólares?" | Two charges match: both are listed and the customer picks one (PL-10) |
+| **Disputed** | "No reconozco un cargo de 350 dólares del 10 de junio" → "Sí" | The charge is confirmed, a review case is written and read back, then its reference is quoted (PL-7) |
+| **Handed off** | "No reconozco un cargo de 120 dólares del 3 de junio" | Fraud score 41.7 ≥ 30: a specialist gets a structured case (request, verified facts, actions, open questions), no transcript (PL-6) |
+| **Refused** | "Devuélveme 5000" | No money moves, ever: a review or a person is offered instead |
+
+## Results (offline)
+
+On the deployed app with the production model, 56 scenarios × 3 runs = 168 graded conversations ([report](reports/eval_production-cohere.md)), compared with today's human-only service on the same cases:
+
+| Metric | System | Human-only baseline |
+|---|---|---|
+| Safe automated resolution (in-scope cases) | **100%** (72/72) | 0% |
+| Containment (ended without a person) | 78.6% (132/168) | 0% |
+| Missed hand-offs | **0 of 36** | 0 |
+| Unnecessary hand-offs | **0 of 129** | 129 of 129 |
+| Wrong actions / leaks | **0 / 0 of 168** | 0 |
+| Latency per reply, p50 / p95 | 3.0 s / 4.2 s | n/a |
+| Cost per resolution | $0.0082 | n/a |
+
+The learned component (intent classifier) against keyword rules:
+
+| | Intent model | Keyword rules |
+|---|---|---|
+| Accuracy, sealed test set (84 clear phrases) | **91.7%** | 82.1% |
+| Accuracy, human-written messages (24 clear of 31) | **83.3%** | 50.0% |
+| Wrong actions, human-written | **0%** | 50% |
+
+Sources: [reports/intent_eval_cohere-mv3.md](reports/intent_eval_cohere-mv3.md), [reports/intent_eval_human.md](reports/intent_eval_human.md). Every number is offline, on team-written, LLM-drafted or synthetic messages unless marked human-written. Small samples: read the confidence intervals in the reports.
+
+## How it works
+
+```mermaid
+flowchart LR
+  M[Customer message<br/>ES or PT] --> K[Mask cards, PINs, IDs]
+  K --> I[Intent<br/>Cohere embed + softmax]
+  K --> X[Extract amount, date, merchant<br/>Claude Haiku 4.5]
+  I --> D{Dialogue + policy rules<br/>PL-1 … PL-11, in code}
+  X --> D
+  D -->|lookup| L[(Signed-in customer's charges<br/>Postgres row-level security)]
+  L --> D
+  D -->|after an explicit 'sí'| C[(Case written, then read back)]
+  D --> R[Reply phrased by Haiku<br/>numbers checked against the record]
+  D -->|high risk, no match, asked| H[Structured hand-off]
 ```
-src/            Next.js app + API routes
-src/lib/        shared clients (supabase, ...)
-supabase/       SQL migrations (source of truth for schema + RLS)
-data/raw/       raw inputs — git-ignored, never commit customer data
-data/processed/ reproducible outputs of the prep pipeline
-evals/          evaluation harness, test conversations, break-it suite, report generator (docs/evaluation.md)
-docs/           meeting notes, decisions, honest "what's missing"
-```
 
-## Getting started
+- **Understand:** sensitive data is masked before any model sees it. The intent model abstains below 0.70 confidence, a threshold chosen on validation by cost (wrong action 5, acting on an ambiguous message 2, needless question 1).
+- **Decide:** dialogue and policy are plain code with unit tests ([docs/conversation.md](docs/conversation.md), [docs/policy.md](docs/policy.md)). The fraud cutoff (score ≥ 30) was chosen on 2023–25 data and checked on held-out 2026 ([report](reports/fraud_threshold.md)).
+- **Act and verify:** the lookup only ever sees the signed-in customer's rows. A case is written and read back before the reply quotes its reference ([docs/verification.md](docs/verification.md)).
+- **Escalate:** hand-offs carry verified facts, actions taken and open questions, and never promise timing ([docs/handoff.md](docs/handoff.md)).
+- **Fall back safely:** if Bedrock fails, a local multilingual-e5-small model inside the function classifies; if Haiku fails, ES/PT templates answer. One JSON trace line per turn records the models, prompt versions, rule and latency.
+
+## Data pipeline
+
+Organizer CSVs (13 tables) → **bronze** in BigQuery (every column typed, 25.6M rows, 0 cast failures) → **silver** (cleaned; bronze = silver + quarantine, reconciled on all 13 tables) → **gold** (dbt models with contracts and tests) → a **serving slice** in Supabase (2,040 customers, 23,052 charges, chosen so every policy path has real data; each load recorded in `data_version`). Log: [docs/data-pipeline.md](docs/data-pipeline.md) · data issues found: [docs/data-issues.md](docs/data-issues.md) · dbt project: [pipeline/dbt](pipeline/dbt/README.md).
+
+The organizer's text fields are templated and contain no Portuguese, so the language model was trained on **948 team-written ES/PT phrases** with a sealed test set (SHA-256 manifest; every test run logged in `reports/test_runs.jsonl`). Banking77 was tried as extra training data and rejected on measurement ([docs/intent-model.md](docs/intent-model.md) D17).
+
+## Limits
+
+- No Portuguese in the organizer data: Portuguese coverage is team-written and labeled as such.
+- The human-written check is small: 31 messages from one author.
+- All results are offline; there is no production traffic.
+- The serving slice holds 2,040 customers and 12 months of charges.
+- What the evaluation found and how each finding was resolved: [docs/evaluation-findings.md](docs/evaluation-findings.md).
+
+## Run it
+
 ```bash
 npm install
-./scripts/download_data.sh    # needs `aws configure --profile factored` (keys: Data Dictionary p.2, never commit them)
-cp .env.example .env.local   # fill in server-only secrets
-npm run dev
+cp .env.example .env.local       # fill in the server-only secrets
+npm run dev                      # http://localhost:3000
+npm test                         # unit tests: dialogue, policy, masking, lookup, evaluation harness
 ```
 
-### Data pipeline & analysis
+Evaluation against a running app ([docs/evaluation.md](docs/evaluation.md)):
+
 ```bash
-uv sync                                   # Python deps (DuckDB, pandas)
-uv run python pipeline/bronze.py          # data/raw CSVs -> data/processed/bronze.duckdb (verbatim + lineage)
-(cd pipeline && uv run python dq_checks.py)   # -> reports/data_quality.md
-uv run python analysis/contact_reasons.py # -> reports/contact_reasons.md
+npm run eval -- --suite tc|step17|break --repeat 3
+npm run eval:report -- --name <name>          # writes reports/eval_<name>.md
+uv run python pipeline/score_human.py         # intent model vs. keyword rules on human-written messages
 ```
 
-#### BigQuery bronze (D-003, shared copy of all 13 tables incl. digital_events)
-Raw CSVs are copied S3 → `gs://factored_gt_latam_bank_raw/raw/` by a one-off Storage Transfer job, then:
+Data and model (Python via `uv`):
+
 ```bash
-gcloud auth application-default login                    # once, with an account on the GCP project
-uv run python pipeline/bigquery/bronze_bq.py --print     # show the SQL (no GCP access needed)
-uv run python pipeline/bigquery/bronze_bq.py             # raw_ext (external) + bronze (native) datasets, us-east1
-uv run python pipeline/bigquery/bronze_bq.py --verify    # row counts vs the DuckDB bronze numbers
+./scripts/download_data.sh                                   # organizer data -> data/raw (git-ignored)
+uv run python pipeline/bronze.py                             # local DuckDB bronze
+(cd pipeline/dbt && uv run dbt build --profiles-dir . --target bq)   # silver + gold in BigQuery
+uv run python pipeline/load_supabase.py                      # gold serving slice -> Supabase
+(cd pipeline && uv run python train_intent.py --embedding cohere-mv3)  # validation only; --test is logged
 ```
 
-### Intent phrase set (classifier data)
-```bash
-uv run python pipeline/phrases.py   # validate data/phrases/families.jsonl -> phrases.csv
-node scripts/embed_phrases.mjs      # embed with the same model the app serves (src/lib/embedding-config.json)
-uv run python pipeline/split.py     # verify the sealed train/validation/test split -> reports/split_leakage.md
-(cd pipeline && uv run python train_intent.py --embedding cohere-mv3)   # validation only; --test for the logged test run
-uv run python pipeline/embed_bedrock.py cohere-mv3   # Bedrock embeddings (AWS profile "bedrock")
-```
-Labels and rules: [data/phrases/LABELING_GUIDE.md](data/phrases/LABELING_GUIDE.md)
+## Repository
 
-### Evaluation (steps 16–19, [docs/evaluation.md](docs/evaluation.md))
-```bash
-npm test                                    # unit tests: the app's rules and the harness itself
-npm run dev                                 # then, in another terminal:
-npm run eval                                # TC-01…TC-21 against the running app
-npm run eval -- --suite step17              # persona conversations
-npm run eval -- --suite break               # break-it cases and protocol attacks
-npm run eval:report -- --name <name>        # reports/eval_<name>.md from the newest runs
-uv run python pipeline/score_human.py       # intent model vs. keyword rules on human-written messages
 ```
-Findings and fixes: [docs/evaluation-findings.md](docs/evaluation-findings.md) · what the evaluation needs from the team: [docs/evaluation-requests.md](docs/evaluation-requests.md)
-Findings: [docs/contact-reason-analysis.md](docs/contact-reason-analysis.md) · issue register: [docs/data-issues.md](docs/data-issues.md)
+src/app, src/components   Next.js app: sign-in, chat, API routes (/api/chat, /api/classify)
+src/lib                   intent, conversation, policy, lookup, cases, privacy, reply
+supabase/                 migrations (schema, row-level security) and the RLS check
+pipeline/                 data prep, dbt project, model training and evaluation scripts
+data/phrases/             team-written ES/PT phrase set, labeling guide, sealed split manifest
+evals/                    conversation harness, test suites, break-it attacks, report generator
+reports/                  generated reports (never hand-edited)
+docs/                     decisions and design notes (start at docs/README.md)
+```
 
-## What's missing (keep this honest)
-- [x] Dataset + final instructions (S3; architecture in docs/decisions.md D-001)
-- [x] Use case: transaction-dispute intake (D-002)
-- [x] Intent phrase set (ES/PT, team-generated) + sealed train/validation/test split
-- [ ] Native Portuguese review of the phrase set
-- [x] Intent classifier vs keyword baseline: [docs/intent-model.md](docs/intent-model.md) (offline, synthetic data)
-- [x] Phase 1 chat page: intent API with Cohere (Bedrock, keyless via Vercel OIDC) and in-app fallback
-- [x] Phase 1 replies: Claude Haiku phrases code-chosen content in ES/PT, validated, with template fallback ([docs/reply-generation.md](docs/reply-generation.md))
-- [x] Per-customer login + row-level security (D-006), structured human hand-off ([docs/handoff.md](docs/handoff.md)), verified cases ([docs/verification.md](docs/verification.md))
-- [x] End-to-end evaluation harness, break-it suite and report generator ([docs/evaluation.md](docs/evaluation.md)); first report on the fallback model: [reports/eval_local-fallback.md](reports/eval_local-fallback.md)
-- [ ] Evaluation on the production model (Cohere), with repeats for run-to-run variance
-- [ ] Human-written test messages (step 16): scorer ready, messages not yet written ([evals/human/README.md](evals/human/README.md))
-- [ ] Fixes for evaluation findings EF-1 (premature hand-off) and EF-4 (PIN before its label not masked)
-- [ ] Observability: one trace line per turn in Vercel logs, not persisted
+## Team
+
+Miguel ([@miguelsuapin1](https://github.com/miguelsuapin1)) · Luis Pedro ([@lpcuellar](https://github.com/lpcuellar)) · Carlos ([@Carloscuellark](https://github.com/Carloscuellark))
+
+GT Bank is a fictional bank. The data is the organizer's synthetic LATAM Bank v1.0.0; team-generated and synthetic inputs are labeled as such.

@@ -109,7 +109,7 @@ export function guessLanguage(text: string): Lang {
   return pt > es ? "pt" : "es";
 }
 
-// ---- Multi-turn moves (steps 11–12, docs/conversation.md C7–C8, docs/policy.md) ----
+// ---- Multi-turn moves (docs/conversation.md C7–C8, docs/policy.md) ----
 
 type DetailsView = {
   amount: number | null;
@@ -176,7 +176,7 @@ export type ReplyPlanInput = {
   explainRule: "PL-3" | "PL-4" | "PL-5" | "PL-9" | null;
   handoffReason: HandoffReason | null;
   status: "open" | "confirmed" | "review" | "handoff" | "closed";
-  caseRef: string | null; // set only when the case was written and read back (step 13, V1)
+  caseRef: string | null; // set only when the case was written and read back (V1)
   warnSensitive: boolean; // H4: the customer typed a PIN, CVV or password (already masked)
   options: MatchView[] | null; // PL-10: the two charges listed for the customer to pick
   intentGuessed?: boolean; // C15: the dispute kind wasn't stated: word it neutrally

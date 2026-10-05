@@ -1,6 +1,6 @@
-# Structured hand-off and sensitive data (build step 14)
+# Structured hand-off and sensitive data
 
-**Owner:** Miguel. The brief's human-required case: "a structured handoff that transfers verified facts and open questions, not the raw transcript". Every hand-off is a verified case in Supabase `public.cases` ([verification.md](verification.md)); this step adds the one path that didn't create a case (the customer asking for a person), masks sensitive data at the door, and adds a code check against timing promises. Code: [src/lib/conversation/dialogue.ts](../src/lib/conversation/dialogue.ts), [src/lib/cases/build.ts](../src/lib/cases/build.ts), [src/lib/privacy/mask.ts](../src/lib/privacy/mask.ts), [src/lib/reply/checks.ts](../src/lib/reply/checks.ts).
+The brief's human-required case: "a structured handoff that transfers verified facts and open questions, not the raw transcript". Every hand-off is a verified case in Supabase `public.cases` ([verification.md](verification.md)); this covers the customer asking for a person directly, masking sensitive data at the door, and a code check against timing promises. Code: [src/lib/conversation/dialogue.ts](../src/lib/conversation/dialogue.ts), [src/lib/cases/build.ts](../src/lib/cases/build.ts), [src/lib/privacy/mask.ts](../src/lib/privacy/mask.ts), [src/lib/reply/checks.ts](../src/lib/reply/checks.ts).
 
 ## Every way a conversation reaches a person
 
@@ -49,14 +49,14 @@ Every row is written and read back before the customer hears the case number (V1
 
 ### R8. Replies may not promise timing: checked by code (Miguel, 2026-09-30)
 - **Chose:** a reply containing an explicit speed promise ("ahora mismo", "enseguida", "en breve", "de inmediato", "em breve", "agora mesmo", "imediatamente", …) is rejected and the fixed template is used, like the number check (R4). `reply-v4`.
-- **Why:** the prompt forbade it since reply-v3 (P11), and Haiku still wrote "em breve" and "ahora mismo" in step 14's live tests. We don't control how fast agents or reviewers respond. Verified live: "ahora mismo" → template.
+- **Why:** the prompt forbade it since reply-v3 (P11), and Haiku still wrote "em breve" and "ahora mismo" in live tests. We don't control how fast agents or reviewers respond. Verified live: "ahora mismo" → template.
 - **Guard for the guard:** a unit test runs every fixed template (every move × hand-off reason × language) through the check, since templates are what the customer gets when a reply is rejected. It caught our own "responde en unos minutos" in the record-failed template, reworded to "más tarde".
 - **Limit:** plain "ahora"/"agora" passes (our own template says "Ahora revisaremos ese cargo").
 
 ### R9. Explanations may not offer actions the system won't take (Miguel, 2026-09-30)
 - **Chose:** status answers for pending, reversed and declined charges are *explain-only*: a reply that offers to investigate, review, verify, analyse or open something is rejected by code and the template is used. PL-9's own offer is exempt, because code backs it (S2).
 - **Why:** with the instruction "don't offer anything beyond this explanation" (reply-v5), Haiku still wrote "podemos investigarlo juntos" on every declined answer tested. Nothing in the system would investigate.
-- **Cost:** for declined charges the template is used every time (seen 3 of 3), so that Haiku call (~$0.0008) is wasted. Better fix: give the answer a real next step (see policy.md), then Haiku has no reason to invent one.
+- **Cost:** for declined charges the template is used every time (seen 3 of 3), so that Haiku call (~$0.0008) is wasted.
 
 ## Verified
 

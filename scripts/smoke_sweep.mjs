@@ -1,5 +1,5 @@
 // Smoke sweep before merging (exploratory; conversations written by Claude, so NOT an evaluation: scores for the
-// judges come from Person 3's human-written tests). Replays 30 conversations against a running server and flags:
+// judges come from the human-written tests). Replays 30 conversations against a running server and flags:
 // HTTP errors, unexpected final move, template fallbacks, restarts, slow turns (> 6 s), leaked card/ID digits.
 // Usage: node scripts/smoke_sweep.mjs [base-url=http://localhost:3000] [normal|fallback] [out.json]
 // REPEAT=5 node scripts/smoke_sweep.mjs ...   runs each conversation 5 times: Haiku's reading varies between runs,

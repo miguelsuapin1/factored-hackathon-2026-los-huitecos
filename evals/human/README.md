@@ -1,4 +1,4 @@
-# Human-written test messages (build step 16)
+# Human-written test messages
 
 **Para quienes escriben los mensajes: [GUIA.md](GUIA.md)** (en español: qué escribir, las 66 tarjetas de situación en español y cómo entregar).
 

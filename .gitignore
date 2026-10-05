@@ -73,3 +73,6 @@ test-users.local.md
 
 # evaluation harness runs (evals/run.ts); reports are generated from them
 /evals/runs/
+
+# personal agent notes (account and infrastructure ids)
+CLAUDE.local.md

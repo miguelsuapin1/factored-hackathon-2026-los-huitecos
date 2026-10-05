@@ -41,9 +41,9 @@ Transactions give the context disputes are checked against. Of 4.43M transaction
 4. **Mexican accounts are denominated in USD** ([A5](data-issues.md#a-organizer-claims-that-dont-hold)). Amounts are always shown with the record's own currency.
 5. Outcomes don't differ by country, segment or accent. Fairness has to be measured on our own evaluation set.
 
-## 4. Recommendation (D-002, for team decision)
+## 4. Workflow choice (D-002, accepted by the team 2026-09-28)
 
-### Recommended: **Transaction-dispute intake** (unrecognized charges and wrongful fees)
+### Chosen: **Transaction-dispute intake** (unrecognized charges and wrongful fees)
 - **The largest quality gap**: the complaint bucket has the worst first-contact resolution (43.6%), the most follow-ups (63%), the lowest CSAT (2.43) and 23% of agent hours. Disputes are 40% of complaints.
 - **It exercises every behavior the judges score**:
   - *Normal path:* the charge is found and turns out to be pending or already reversed. The system explains this from the record, and no case is needed.
@@ -56,7 +56,7 @@ Transactions give the context disputes are checked against. Of 4.43M transaction
 ### Alternative: **Account & payment inquiries**
 The biggest volume (35% of contacts), simple grounding, and a strong cost-per-contact story. But baseline quality is already high (91.5% first-contact resolution, 0% negative sentiment), so showing *quality* improvement is harder, and the human-handoff path is thinner.
 
-### Not recommended
+### Not chosen
 - **Card support**: there's no card-specific contact reason. Card operations (block/unblock) are only inferable from `product_status`.
 - **Credit eligibility**: there's no application data, and eligibility rules would be entirely synthetic. The brief also requires a separate risk model and policy service, which is heavy for 10 days.
 

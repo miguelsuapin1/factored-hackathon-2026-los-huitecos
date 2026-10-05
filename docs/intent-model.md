@@ -45,7 +45,7 @@ Full reports: [v1](../reports/intent_eval_e5small.md) · [v2](../reports/intent_
 1. **Accuracy is not significantly better than the rules.** Paired family bootstrap: +3.5 points, 95% CI −11.9 to +19.0. With 84 test phrases in 14 families we can't claim a real difference.
 2. **Safety is significantly better.** Wrong actions drop by 17.8 points (95% CI 8.3–28.6). All 12 of the model's test errors had confidence below 0.61, so the system would have asked instead of acting. The rules have no confidence, so all 15 of theirs would have been acted on.
 3. **The cost is many clarifying questions:** 57% of clear messages. This is the main weakness (see Limitations).
-4. **Errors are complementary:** only 3 phrases fooled both. Rules and model disagreeing is a useful signal to ask (idea for build step 15).
+4. **Errors are complementary:** only 3 phrases fooled both. Rules and model disagreeing is a useful signal to ask.
 
 ## Decision log
 
@@ -55,7 +55,7 @@ Each entry: what we chose, what else we considered, and why.
 - **Chose:** 158 families written by us (Claude-generated, labeled team-generated), in Spanish and Portuguese.
 - **Alternatives:** train on `call_transcripts` / `complaints.description`.
 - **Why:** the organizer text is templated. 171K transcripts contain 42 distinct customer texts that ignore the call's topic, and every intent label is "consulta_general" ([data-issues B1–B3](data-issues.md#b-text-data-is-templated-it-cant-train-or-evaluate-language-understanding)). There's also no Portuguese. A model trained on it would learn nothing.
-- **Cost:** one author wrote everything, so style is uniform and results are an upper bound. The human-written test messages (build step 16) will give the honest number.
+- **Cost:** one author wrote everything, so style is uniform and results are an upper bound. The human-written test messages give the honest number: 83.3% on 24 clear messages ([report](../reports/intent_eval_human.md)).
 
 ### D2. Group phrases into families and split by family
 - **Chose:** each family = one scenario × {formal, casual, short} × {Spanish, Portuguese}. Whole families go to train, validation or test.
@@ -157,10 +157,9 @@ Each entry: what we chose, what else we considered, and why.
   - Its out-of-scope questions, expected to be the most useful part, hurt most (83.2–83.6%): English card-support questions pull Spanish/Portuguese phrases toward `out_of_scope`.
   - Leakage check: 0 of our 834 non-test phrases has a Banking77 sentence at cosine ≥ 0.92.
 - **Why, most likely:** it's English and in-domain for a UK app (top-ups, virtual cards), while our customers write Spanish/Portuguese about a Latin American bank. Cross-lingual embeddings carry the topic but also the other product's boundaries.
-- **Caveat: the scoring favours our own style.** The phrases it's scored on were written by the same single author as our training phrases, so a model trained only on them has a home advantage; this can't show whether Banking77's real human phrasing helps with real customers. The conclusion is "on our phrases, it doesn't help and makes the model less careful", not "it can't help". **Re-run the same script scored on Person 3's human-written messages** (step 16) once they exist; that's allowed, since the scoring is on their messages, never on Banking77.
-- **What would test it better (not done):** a small machine-translated Spanish/Portuguese subset of the dispute-related categories (labelled as translated), judged the same way. Only worth it if Person 3's human-written messages show a gap it could fill.
+- **Caveat: the scoring favours our own style.** The phrases it's scored on were written by the same single author as our training phrases, so a model trained only on them has a home advantage; this can't show whether Banking77's real human phrasing helps with real customers. The conclusion is "on our phrases, it doesn't help and makes the model less careful", not "it can't help".
 
-### D18. Jev (TypeSafe) compared on validation as a possible second opinion: promising, not adopted yet (Miguel, 2026-10-02)
+### D18. Jev (TypeSafe) compared on validation as a possible second opinion: promising, not adopted (Miguel, 2026-10-02)
 - **What Jev is:** a hosted "System One" model that answers a typed question about text with a probability per option, not generated text. Here: one Choice per phrase over our seven intents, instructions and option descriptions in English taken from `data/phrases/LABELING_GUIDE.md` (tie-breaks included), the customer's message in Spanish or Portuguese as the state. Zero-shot: Jev never saw our training phrases. Model pinned to `jev-1.13.0`. TypeSafe says English is its strongest language and other languages are "handled but not equally well", so this checks that claim on ours.
 - **How:** [pipeline/jev_validation.py](../pipeline/jev_validation.py), **validation only** (114 phrases, 84 clear + 30 ambiguous, 57 ES / 57 PT); the sealed test set is not read and nothing is logged to `test_runs.jsonl`. Cohere is refitted exactly as `train_intent.py` fits it and scored at its served threshold (0.70).
 - **Result** ([reports/intent_jev_validation.md](../reports/intent_jev_validation.md)):
@@ -170,7 +169,7 @@ Each entry: what we chose, what else we considered, and why.
   - **Cost and speed:** 669 input tokens per message, $0.003 for all 114 ($0.042 per million input tokens); 177 ms p50, 290 ms p95 per request from a laptop (Cohere's intent step is ~160 ms from Vercel).
 - **Threshold for the app (2026-10-02):** chosen by the same rule as ours (D11 weights, lowest threshold at the minimum mean cost) on Jev's top probability, over a grid widened to 0.99: **0.99, near-optimal band 0.95–0.99**, the same under every cost weighting tried. Jev's probabilities come rounded to two decimals: right answers on clear phrases sit at 1.00 (median), its 3 mistakes at ≤ 0.55, ambiguous phrases at ≤ 0.98. So 0.99 is one step above the most confident ambiguous phrase ("Tengo un problema con mi tarjeta", 0.98): one phrase decides it; read the band. Exported with the exact question to `src/lib/intent-model-jev.json`.
 - **"Use Jev" toggle (2026-10-02):** in the chat (and `/api/classify`), only where the server sets `JEV_TOGGLE=1` and `TYPESAFE_API_KEY` (local and Preview; not Production). Jev replaces the intent step only; dialogue, policy, lookup, cases and replies are unchanged. If Jev fails, Cohere → e5 answer and the trace says why (`jev auth`, `jev timeout`…). Privacy as everywhere else: masked text only, masked again inside `jev.ts` (docs/handoff.md H4). Live, local: a dispute reached a review, "Tengo un problema con mi tarjeta" asked (0.98 < 0.99), a refund demand was refused, a PIN typed first was masked before Jev; 160–310 ms per call. Seen: Jev rates a lone "sí" as out of scope at 1.00 (Cohere 0.71); the yes/no rule (C12) already keeps it inside the conversation.
-- **Decision: nothing changes in the app by default.** The phrases are single-author and synthetic (D7), Jev's tuned threshold was chosen on the same 114 phrases, and the interesting result (Jev as good as or better than our classifier zero-shot, in both languages) is exactly the kind validation flatters. **Next:** score Jev on the human-written messages (step 16) with the same question, beside Cohere and the keyword rules; only if it holds there, consider it as the step 15 second opinion or as a primary, with a one-time logged test run committed in advance (D13).
+- **Decision: nothing changes in the app by default.** The phrases are single-author and synthetic (D7), Jev's tuned threshold was chosen on the same 114 phrases, and the interesting result (Jev as good as or better than our classifier zero-shot, in both languages) is exactly the kind validation flatters. Jev stays an experiment behind a toggle that is off in production.
 
 ## Errors worth knowing (test)
 
@@ -180,12 +179,12 @@ Each entry: what we chose, what else we considered, and why.
 
 ## Limitations
 
-- **Synthetic, single-author data.** Real customers write differently. Treat 85.7% as an upper bound until human-written tests exist.
+- **Synthetic, single-author data.** Real customers write differently. Treat 85.7% as an upper bound; on 24 clear human-written messages the served model scores 83.3%.
 - **Small test set** (84 clear + 30 ambiguous phrases). Intervals are wide (±11 points).
-- **Many clarifying questions** (57% of clear messages). Improvable with more training scenarios, conversation context (the next turn often resolves it), and entity extraction. It's also a direct consequence of the cost weights.
+- **Many clarifying questions** (57% of clear messages). It's a direct consequence of the cost weights, and the dialogue layer resolves most of them on the next turn using the conversation's context and extracted details.
 - **Portuguese not reviewed by a native speaker.**
-- **Small train/serve difference in the fallback (e5-small).** Training embedded the phrases in one batch; the app embeds one message at a time. The 8-bit quantized model calibrates activations per batch, so confidences differ by up to 0.03 (labels matched on all 14 checked phrases). Fix for the next retrain: embed phrases one at a time. Cohere is computed server-side per text and matched within 0.01.
-- **Only the message is used.** No account context yet (for example, whether the customer actually has a pending transaction).
+- **Small train/serve difference in the fallback (e5-small).** Training embedded the phrases in one batch; the app embeds one message at a time. The 8-bit quantized model calibrates activations per batch, so confidences differ by up to 0.03 (labels matched on all 14 checked phrases). Cohere is computed server-side per text and matched within 0.01.
+- **The classifier sees only the message.** Account context (for example, whether the charge is pending) is applied afterwards by the policy engine.
 
 ## Reproduce
 

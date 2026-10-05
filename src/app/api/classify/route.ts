@@ -36,7 +36,7 @@ export async function POST(request: Request) {
   warmFallback();
   try {
     const result = await classifyMessage(text, { forceFallback: body.forceFallback === true, useJev: body.useJev === true && jevEnabled() });
-    // Structured trace line (tracing proper is build step 6). The message text is not logged.
+    // Structured trace line. The message text is not logged.
     console.log(JSON.stringify({
       event: "intent_classified", traceId: result.traceId, model: result.model, intent: result.intent,
       confidence: Number(result.confidence.toFixed(4)), decision: result.decision, fallbackReason: result.fallbackReason,

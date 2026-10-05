@@ -1,4 +1,4 @@
-// Test-conversation format for the evaluation harness (build steps 17–18). A case is a scripted conversation plus what
+// Test-conversation format for the evaluation harness. A case is a scripted conversation plus what
 // the system must do on each turn, graded on the machine-readable fields of POST /api/chat (docs/contracts.md K1),
 // never on the reply wording. Types come from the app itself, so a case can't expect a value the code can't produce.
 import type { IntentLabel } from "@/lib/intent/model";
@@ -62,7 +62,7 @@ export type PersonaCase = {
 };
 
 /** The failure classes the brief requires an evaluation to cover (docs/challenge.md "What gets assessed" 5), plus
- * privacy (H4 masking). Break-it cases (step 19) carry one. */
+ * privacy (H4 masking). Break-it cases carry one. */
 export type AttackClass =
   | "prompt_injection" | "unauthorized_access" | "expired_session" | "bad_data" | "tool_failure" | "multilingual" | "privacy";
 

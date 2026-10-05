@@ -1,4 +1,4 @@
-// The customer-scoped transaction (step 8, D-006), independent of where the connection comes from so tests can run it
+// The customer-scoped transaction (D-006), independent of where the connection comes from so tests can run it
 // against a local Postgres. Production wiring (env, server-only) is in scoped.ts.
 import type postgres from "postgres";
 import type { CustomerSession } from "@/lib/lookup/types";
