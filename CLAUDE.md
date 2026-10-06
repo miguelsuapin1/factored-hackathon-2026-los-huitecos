@@ -40,7 +40,7 @@ uv run python pipeline/score_human.py         # intent model vs keyword rules on
 ```
 
 ## Accounts & infrastructure
-Account ids, project ids and IAM details are kept out of the public repo: see your git-ignored `CLAUDE.local.md` (ask Miguel for his copy).
+Credentials, the AWS account id, Vercel ids and IAM details are kept out of the public repo: see your git-ignored `CLAUDE.local.md` (ask Miguel for his copy). The GCP project id (pipeline defaults, docs) and the Supabase project ref (`.env.example`, `NEXT_PUBLIC_SUPABASE_URL`) are in the repo on purpose: they are identifiers, not secrets, and access is controlled by IAM and row-level security. Scanned 2026-10-05: no keys, tokens or customer data in the tree or the git history.
 
 ## Gotchas we already hit
 - **Next.js 16:** middleware is `src/proxy.ts`; read `node_modules/next/dist/docs/` before using an API (see AGENTS.md).

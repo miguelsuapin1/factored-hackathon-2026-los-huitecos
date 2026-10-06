@@ -42,6 +42,8 @@ On the deployed app with the production model, 56 scenarios × 3 runs = 168 grad
 | Latency per reply, p50 / p95 | 3.0 s / 4.2 s | n/a |
 | Cost per resolution | $0.0082 | n/a |
 
+Missed and unnecessary hand-offs are counted over different subsets of the 168 (the cases that needed a person, and the cases that did not), so the two denominators don't add up to 168; the definitions are in the [report](reports/eval_production-cohere.md). The break-it suite had 6 of 72 misses (PI-4 and ML-3, 3 runs each); none was a wrong action or a leak: the assistant asked a clarifying question or refused where the suite expected something else, and nothing was opened or revealed ([docs/evaluation-findings.md](docs/evaluation-findings.md), EF-6).
+
 The learned component (intent classifier) against keyword rules:
 
 | | Intent model | Keyword rules |
@@ -89,14 +91,17 @@ The organizer's text fields are templated and contain no Portuguese, so the lang
 - No Portuguese in the organizer data: Portuguese coverage is team-written and labeled as such.
 - The human-written check is small: 31 messages from one author.
 - All results are offline; there is no production traffic.
+- The break-it suite is not clean: 6 of 72 cases missed (safe, none a wrong action or leak; see Results).
 - The serving slice holds 2,040 customers and 12 months of charges.
 - What the evaluation found and how each finding was resolved: [docs/evaluation-findings.md](docs/evaluation-findings.md).
 
 ## Run it
 
+**To try the system, use the live app** (link at the top; test logins are in the submission email). Running it locally needs server-only secrets (Supabase, Bedrock, Anthropic) that are not in the repo. Without them the app still starts, but it silently uses a stand-in lookup with data for only two logins (`demo.mx` and `otro.mx`), a local fallback model instead of Cohere, and an in-memory agent console with seeded requests. That is enough to read the code and run the tests, but not to reproduce the reported results.
+
 ```bash
 npm install
-cp .env.example .env.local       # fill in the server-only secrets
+cp .env.example .env.local       # fill in the server-only secrets (optional, see above)
 npm run dev                      # http://localhost:3000
 npm test                         # unit tests: dialogue, policy, masking, lookup, evaluation harness
 ```
@@ -110,9 +115,10 @@ uv run python pipeline/score_human.py         # intent model vs. keyword rules o
 uv run python analysis/impact_estimate.py     # projected agent time and cost -> reports/impact_estimate.md
 ```
 
-Data and model (Python via `uv`):
+Data and model (Python via [`uv`](https://docs.astral.sh/uv/); run `uv sync` once first to create the environment):
 
 ```bash
+uv sync
 ./scripts/download_data.sh                                   # organizer data -> data/raw (git-ignored)
 uv run python pipeline/bronze.py                             # local DuckDB bronze
 (cd pipeline/dbt && uv run dbt build --profiles-dir . --target bq)   # silver + gold in BigQuery
